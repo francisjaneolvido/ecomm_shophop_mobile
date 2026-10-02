@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import 'authentication/login_screen.dart';
+
 
 
 class LandingScreen extends StatefulWidget {
@@ -560,10 +562,14 @@ class _LandingScreenState extends State<LandingScreen>
 
 
                   ElevatedButton(
-
-
-                    onPressed:(){},
-
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const LoginScreen(),
+      ),
+    );
+  },
 
 
                     style:
