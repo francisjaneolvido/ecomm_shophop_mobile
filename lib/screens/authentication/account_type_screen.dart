@@ -69,21 +69,6 @@ class _AccountTypeScreenState
     }
   }
 
-  void _showMessage(String message) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: AppColors.navy,
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-        ),
-      );
-  }
 
   @override
   Widget build(BuildContext context) {

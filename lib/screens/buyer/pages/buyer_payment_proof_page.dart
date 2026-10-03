@@ -266,6 +266,7 @@ class _BuyerPaymentProofPageState extends State<BuyerPaymentProofPage> {
                     vertical: 5,
                   ),
                   decoration: BoxDecoration(
+                    // ignore: deprecated_member_use
                     color: Colors.white.withOpacity(.13),
                     borderRadius: BorderRadius.circular(999),
                   ),
@@ -291,6 +292,7 @@ class _BuyerPaymentProofPageState extends State<BuyerPaymentProofPage> {
                 Text(
                   state.description,
                   style: TextStyle(
+                    // ignore: deprecated_member_use
                     color: Colors.white.withOpacity(.76),
                     fontSize: 11,
                     height: 1.45,
