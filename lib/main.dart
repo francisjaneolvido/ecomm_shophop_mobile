@@ -2,8 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'theme/app_colors.dart';
-import 'screens/splash_screen.dart';
+import 'package:shophop/core/theme/app_colors.dart';
+import 'package:shophop/features/onboarding/presentation/screens/splash_screen.dart';
 
 void main() {
   runApp(const ShopHopApp());
