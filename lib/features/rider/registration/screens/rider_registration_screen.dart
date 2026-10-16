@@ -44,6 +44,8 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
 
   String? _sex;
   DateTime? _birthdayDate;
+  String? _regionCode;
+  String? _regionName;
   String? _provinceCode;
   String? _provinceName;
   String? _municipalityCode;
@@ -211,6 +213,8 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
       email: _email.text,
       contactNo: _contact.text,
       birthday: _birthday.text,
+      regionCode: _regionCode,
+      regionName: _regionName,
       provinceCode: _provinceCode!,
       provinceName: _provinceName!,
       municipalityCode: _municipalityCode!,
@@ -304,7 +308,7 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
                   controller: _scroll,
                   keyboardDismissBehavior:
                       ScrollViewKeyboardDismissBehavior.onDrag,
-                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -349,7 +353,13 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
                 provinceCode: _provinceCode,
                 municipalityCode: _municipalityCode,
                 barangayCode: _barangayCode,
-                onProvinceChanged: (code, name) => setState(() {
+                onRegionChanged: (code, name) {
+            setState(() {
+              _regionCode = code;
+              _regionName = name.isEmpty ? null : name;
+            });
+          },
+          onProvinceChanged: (code, name) => setState(() {
                   _provinceCode = code;
                   _provinceName = name.isEmpty ? null : name;
                   _municipalityCode = null;

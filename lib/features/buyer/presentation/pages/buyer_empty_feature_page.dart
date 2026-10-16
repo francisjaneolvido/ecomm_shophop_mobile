@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-
 import 'package:shophop/core/theme/app_colors.dart';
+import 'package:shophop/shared/widgets/shop_hop_ui.dart';
 
+/// Explicit placeholder; does not pretend that a missing backend is connected.
 class BuyerEmptyFeaturePage extends StatelessWidget {
   const BuyerEmptyFeaturePage({
     super.key,
@@ -23,64 +24,29 @@ class BuyerEmptyFeaturePage extends StatelessWidget {
     return SafeArea(
       child: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(20),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 440),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(28),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: AppColors.grayBorder),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      color: AppColors.tealLight,
-                      borderRadius: BorderRadius.circular(22),
-                    ),
-                    child: Icon(icon, color: AppColors.tealDark, size: 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ShopHopEmptyState(
+                  icon: icon,
+                  title: title,
+                  description: description,
+                  actionLabel: actionLabel,
+                  onAction: onAction,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'More ShopHop mobile features are on the way.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppColors.navy.withValues(alpha: .43),
+                    fontSize: 10.5,
                   ),
-                  const SizedBox(height: 18),
-                  Text(
-                    title,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: AppColors.navy,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    description,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: AppColors.navy.withValues(alpha: 0.5),
-                      fontSize: 12,
-                      height: 1.55,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  FilledButton(
-                    onPressed: onAction,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.teal,
-                      foregroundColor: AppColors.navy,
-                      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 13),
-                    ),
-                    child: Text(
-                      actionLabel,
-                      style: const TextStyle(fontWeight: FontWeight.w800),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),

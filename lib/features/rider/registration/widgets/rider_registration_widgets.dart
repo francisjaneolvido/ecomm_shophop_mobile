@@ -25,7 +25,7 @@ class RiderRegistrationHeader extends StatelessWidget {
           'Become a ShopHop rider',
           style: RiderUi.text(
             color: AppColors.navy,
-            fontSize: 28,
+            fontSize: MediaQuery.sizeOf(context).width < 355 ? 24 : 27,
             fontWeight: FontWeight.w800,
             height: 1.1,
             letterSpacing: -0.6,
@@ -105,7 +105,7 @@ class RiderRegistrationProgress extends StatelessWidget {
                     duration: const Duration(milliseconds: 180),
                     height: 2,
                     color: lineStep < currentStep
-                        ? AppColors.teal
+                        ? const Color(0xFF087968)
                         : AppColors.grayBorder,
                   ),
                 );
@@ -122,10 +122,10 @@ class RiderRegistrationProgress extends StatelessWidget {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: completed || active ? AppColors.teal : Colors.white,
+                  color: completed || active ? const Color(0xFF087968) : Colors.white,
                   border: Border.all(
                     color: completed || active
-                        ? AppColors.teal
+                        ? const Color(0xFF087968)
                         : AppColors.grayBorder,
                     width: 1.5,
                   ),
@@ -164,7 +164,7 @@ class RiderRegistrationProgress extends StatelessWidget {
                     color: reached
                         ? AppColors.navy
                         : AppColors.navy.withValues(alpha: 0.27),
-                    fontSize: 9,
+                    fontSize: 10,
                     fontWeight:
                         reached ? FontWeight.w600 : FontWeight.w500,
                   ),

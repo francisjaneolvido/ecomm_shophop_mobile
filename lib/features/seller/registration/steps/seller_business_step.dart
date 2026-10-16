@@ -84,9 +84,11 @@ class SellerBusinessStep extends StatelessWidget {
           textInputAction:
               TextInputAction.next,
           validator: (value) {
-            if (value == null ||
-                value.trim().isEmpty) {
+            if (value == null || value.trim().isEmpty) {
               return 'Business name is required.';
+            }
+            if (value.trim().length < 3 || value.trim().length > 30) {
+              return 'Business name must have 3–30 characters.';
             }
 
             return null;

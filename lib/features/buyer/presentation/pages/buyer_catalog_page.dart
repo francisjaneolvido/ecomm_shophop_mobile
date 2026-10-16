@@ -318,7 +318,7 @@ class _BuyerCatalogPageState extends State<BuyerCatalogPage> {
                         crossAxisCount: columns,
                         crossAxisSpacing: 10,
                         mainAxisSpacing: 10,
-                        childAspectRatio: width < 430 ? 0.62 : 0.67,
+                        childAspectRatio: width < 340 ? 0.50 : width < 430 ? 0.59 : 0.65,
                       ),
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
@@ -463,11 +463,7 @@ class _CatalogHeader extends StatelessWidget {
                       vertical: 10,
                     ),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [Color(0xFFF5FFFC), Color(0xFFE7F8F4)],
-                      ),
+                      color: Color(0xFFF5FFFC),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(color: const Color(0xFFD7EEE8)),
                     ),

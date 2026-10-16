@@ -23,7 +23,7 @@ class AuthApiResult {
   final int? statusCode;
 
   factory AuthApiResult.fromResponse(http.Response response) {
-    Map<String, dynamic> body = {};
+    Map<String, dynamic>? body;
 
     try {
       final decoded = jsonDecode(response.body);
@@ -31,21 +31,31 @@ class AuthApiResult {
         body = decoded;
       }
     } catch (_) {
-      // Keep a clean fallback below.
+      // A tunnel/hosting error can be an HTML document rather than API JSON.
+    }
+
+    if (body == null) {
+      return AuthApiResult(
+        success: false,
+        status: 'unexpected_response',
+        message: response.statusCode >= 500
+            ? 'ShopHop is temporarily unavailable. Please try again later.'
+            : 'ShopHop returned a non-API response. Check your connection '
+                'and app server settings.',
+        statusCode: response.statusCode,
+      );
     }
 
     final rawErrors = body['errors'];
     final errors = rawErrors is Map
         ? Map<String, dynamic>.from(rawErrors)
         : <String, dynamic>{};
+    final isHttpSuccess = response.statusCode >= 200 && response.statusCode < 300;
 
     return AuthApiResult(
-      success: body['success'] == true ||
-          (response.statusCode >= 200 && response.statusCode < 300),
+      success: isHttpSuccess && body['success'] == true,
       status: body['status']?.toString() ??
-          (response.statusCode >= 200 && response.statusCode < 300
-              ? 'ok'
-              : 'error'),
+          (isHttpSuccess && body['success'] == true ? 'ok' : 'error'),
       message: body['message']?.toString() ??
           _firstValidationMessage(errors) ??
           'Something went wrong. Please try again.',
@@ -95,6 +105,8 @@ class AuthService {
     required String streetAddress,
     required PlatformFile validId,
     required String password,
+    String? regionCode,
+    String? regionName,
   }) async {
     try {
       final request = http.MultipartRequest(
@@ -110,6 +122,8 @@ class AuthService {
         'email': email.trim(),
         'contact_no': contactNo.trim(),
         'birthday': birthday.trim(),
+        if (regionCode != null) 'region_code': regionCode,
+        if (regionName != null) 'region_name': regionName,
         'province_code': provinceCode,
         'province_name': provinceName,
         'municipality_code': municipalityCode,
@@ -131,6 +145,77 @@ class AuthService {
         );
       }
 
+      return _sendMultipart(request);
+    } catch (_) {
+      return _networkError();
+    }
+  }
+
+  /// Seller mobile registration uses the same Laravel users/sellers tables and
+  /// private Admin-review document storage as Seller web registration.
+  static Future<AuthApiResult> registerSeller({
+    required String firstName,
+    required String lastName,
+    required String middleInitial,
+    required String sex,
+    required String email,
+    required String contactNo,
+    required String birthday,
+    required String provinceCode,
+    required String provinceName,
+    required String municipalityCode,
+    required String municipalityName,
+    required String barangayCode,
+    required String barangayName,
+    required String streetAddress,
+    required String businessName,
+    required String businessCategory,
+    required PlatformFile validId,
+    required PlatformFile businessPermit,
+    required String password,
+    String? regionCode,
+    String? regionName,
+  }) async {
+    try {
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('${ApiConfig.baseUrl}/seller/register'),
+      );
+      request.headers['Accept'] = 'application/json';
+      request.fields.addAll({
+        'first_name': firstName.trim(),
+        'last_name': lastName.trim(),
+        'middle_initial': middleInitial.trim(),
+        'sex': sex,
+        'email': email.trim().toLowerCase(),
+        'contact_no': contactNo.trim(),
+        'birthday': birthday.trim(),
+        if (regionCode != null) 'region_code': regionCode,
+        if (regionName != null) 'region_name': regionName,
+        'province_code': provinceCode,
+        'province_name': provinceName,
+        'municipality_code': municipalityCode,
+        'municipality_name': municipalityName,
+        'barangay_code': barangayCode,
+        'barangay_name': barangayName,
+        'street_address': streetAddress.trim(),
+        'business_name': businessName.trim(),
+        'business_category': businessCategory.trim(),
+        'password': password,
+        'password_confirmation': password,
+        'terms': '1',
+      });
+
+      final validIdAttached = await _attachFile(request, 'valid_id', validId);
+      final permitAttached =
+          await _attachFile(request, 'business_permit', businessPermit);
+      if (!validIdAttached || !permitAttached) {
+        return const AuthApiResult(
+          success: false,
+          status: 'file_error',
+          message: 'Unable to read one of the selected Seller documents.',
+        );
+      }
       return _sendMultipart(request);
     } catch (_) {
       return _networkError();
@@ -170,6 +255,8 @@ class AuthService {
     required PlatformFile orCr,
     required PlatformFile idOrLicense,
     required String password,
+    String? regionCode,
+    String? regionName,
   }) async {
     try {
       final request = http.MultipartRequest(
@@ -186,6 +273,8 @@ class AuthService {
         'email': email.trim(),
         'contact_no': contactNo.trim(),
         'birthday': birthday.trim(),
+        if (regionCode != null) 'region_code': regionCode,
+        if (regionName != null) 'region_name': regionName,
         'province_code': provinceCode,
         'province_name': provinceName,
         'municipality_code': municipalityCode,
@@ -289,6 +378,25 @@ class AuthService {
     );
   }
 
+  static Future<AuthApiResult> verifySellerEmail({
+    required String email,
+    required String code,
+  }) {
+    return _postJson(
+      '${ApiConfig.baseUrl}/seller/verify-email',
+      {'email': email.trim().toLowerCase(), 'code': code.trim()},
+    );
+  }
+
+  static Future<AuthApiResult> resendSellerVerification({
+    required String email,
+  }) {
+    return _postJson(
+      '${ApiConfig.baseUrl}/seller/verify-email/resend',
+      {'email': email.trim().toLowerCase()},
+    );
+  }
+
   static Future<AuthApiResult> verifyRiderEmail({
     required String email,
     required String code,
@@ -367,7 +475,7 @@ class AuthService {
       success: false,
       status: 'network_error',
       message:
-          'Unable to connect to ShopHop. Make sure the Laravel server is running and try again.',
+          'Unable to connect to ShopHop. Check your internet connection and try again.',
     );
   }
 }

@@ -215,6 +215,7 @@ class BuyerCartService {
     required int productId,
     int? variantId,
     int quantity = 1,
+    bool buyNow = false,
   }) async {
     final body = await _request(
       '/buyer/cart/add',
@@ -224,6 +225,7 @@ class BuyerCartService {
         'product_id': productId,
         if (variantId != null) 'variant_id': variantId,
         'qty': quantity,
+        if (buyNow) 'buy_now': true,
       },
     );
     return BuyerCartMutationData.fromJson(_requireDataMap(body, 'cart update'));

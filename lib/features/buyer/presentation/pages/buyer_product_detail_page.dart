@@ -227,9 +227,12 @@ class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
           IconButton(
             tooltip: 'Cart',
             onPressed: () => widget.onOpenCart(),
-            icon: const Icon(
-              Icons.shopping_cart_outlined,
+            icon: Image.asset(
+              'assets/images/icon_cart_shophop.png',
+              width: 24,
+              height: 24,
               color: AppColors.navy,
+              filterQuality: FilterQuality.high,
             ),
           ),
         ],
@@ -537,6 +540,7 @@ class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
         productId: detail.product.id,
         variantId: detail.product.hasVariants ? _selectedVariant?.id : null,
         quantity: _quantity,
+        buyNow: buyNow,
       );
 
       if (!mounted) return;
@@ -940,11 +944,7 @@ class _SellerSection extends StatelessWidget {
             width: 52,
             height: 52,
             decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFFDBF8F1), Color(0xFFAEEADB)],
-              ),
+              color: Color(0xFFDBF8F1),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -1261,13 +1261,15 @@ class _ProductActionBar extends StatelessWidget {
               child: InkWell(
                 onTap: onChat,
                 borderRadius: BorderRadius.circular(12),
-                child: const Column(
+                child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      Icons.chat_bubble_outline_rounded,
-                      color: AppColors.tealDark,
-                      size: 21,
+                    Image.asset(
+                      'assets/images/icon_message_shophop.png',
+                      width: 22,
+                      height: 22,
+                      color: const Color(0xFF087968),
+                      filterQuality: FilterQuality.high,
                     ),
                     SizedBox(height: 2),
                     Text(

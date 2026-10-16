@@ -363,7 +363,7 @@ class _BuyerCartPageState extends State<BuyerCartPage> {
       onRefresh: () => _loadCart(),
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(12, 12, 12, 110),
+        padding: const EdgeInsets.fromLTRB(14, 14, 14, 110),
         children: [
           _CartInfoCard(
             cartCount: cart.cartCount,
@@ -527,11 +527,7 @@ class _ShopCartCard extends StatelessWidget {
                   width: 34,
                   height: 34,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFFDCF7F1), Color(0xFFF3FCFA)],
-                    ),
+                    color: Color(0xFFDCF7F1),
                     borderRadius: BorderRadius.circular(11),
                   ),
                   child: const Icon(
@@ -1059,10 +1055,12 @@ class _EmptyCart extends StatelessWidget {
                 color: Color(0xFFE9F8F5),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.shopping_cart_outlined,
-                color: AppColors.tealDark,
-                size: 39,
+              child: Image.asset(
+                'assets/images/icon_cart_shophop.png',
+                width: 39,
+                height: 39,
+                color: const Color(0xFF087968),
+                filterQuality: FilterQuality.high,
               ),
             ),
             const SizedBox(height: 18),
@@ -1114,10 +1112,12 @@ class _CartErrorState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Icons.shopping_cart_outlined,
-              color: AppColors.tealDark,
-              size: 56,
+            Image.asset(
+              'assets/images/icon_cart_shophop.png',
+              width: 56,
+              height: 56,
+              color: const Color(0xFF087968),
+              filterQuality: FilterQuality.high,
             ),
             const SizedBox(height: 14),
             const Text(

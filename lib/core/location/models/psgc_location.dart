@@ -1,18 +1,13 @@
 class PsgcLocation {
-  const PsgcLocation({
-    required this.code,
-    required this.name,
-  });
-
+  const PsgcLocation({required this.code, required this.name, this.regionCode, this.regionLabel});
   final String code;
   final String name;
-
-  factory PsgcLocation.fromJson(
-    Map<String, dynamic> json,
-  ) {
-    return PsgcLocation(
-      code: json['code']?.toString() ?? '',
-      name: json['name']?.toString() ?? '',
-    );
-  }
+  final String? regionCode;
+  final String? regionLabel;
+  factory PsgcLocation.fromJson(Map<String, dynamic> json) => PsgcLocation(
+        code: json['code']?.toString() ?? '',
+        name: json['name']?.toString() ?? '',
+        regionCode: (json['regionCode'] ?? json['region_code'])?.toString(),
+        regionLabel: json['regionName']?.toString(),
+      );
 }

@@ -12,6 +12,7 @@ class AddressStep
     required this.provinceCode,
     required this.municipalityCode,
     required this.barangayCode,
+    this.onRegionChanged,
     required this.onProvinceChanged,
     required this.onMunicipalityChanged,
     required this.onBarangayChanged,
@@ -28,6 +29,8 @@ class AddressStep
 
   final String?
       barangayCode;
+
+  final void Function(String? code, String name)? onRegionChanged;
 
   final void Function(
     String? code,
@@ -55,6 +58,11 @@ class _AddressStepState
   final PsgcService
       _psgcService =
       PsgcService();
+
+  List<PsgcLocation> _regions = [];
+  String? _regionCode;
+  bool _loadingRegions = true;
+  bool _noProvince = false;
 
   List<PsgcLocation>
       _provinces = [];
@@ -102,120 +110,103 @@ class _AddressStepState
     _loadInitialData();
   }
 
-  Future<void>
-      _loadInitialData() async {
-    setState(() {
-      _loadingProvinces =
-          true;
-      _errorMessage =
-          null;
-    });
-
+  Future<void> _loadInitialData() async {
+    setState(() { _loadingRegions = true; _loadingProvinces = true; _errorMessage = null; });
     try {
-      final provinces =
-          await _psgcService
-              .getProvinces();
-
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        _provinces =
-            provinces;
-
-        _loadingProvinces =
-            false;
-      });
-
+      final regions = await _psgcService.getRegions();
+      String? previousRegion;
       if (_provinceCode != null) {
-        await _loadMunicipalities(
-          _provinceCode!,
-          preserveSelection:
-              true,
-        );
+        previousRegion = await _psgcService.getRegionForProvince(_provinceCode!);
+      }
+      if (!mounted) return;
+      setState(() {
+        _regions = regions;
+        _regionCode = previousRegion;
+        _loadingRegions = false;
+        _loadingProvinces = false;
+      });
+      if (previousRegion != null) {
+        final match = regions.where((item) => item.code == previousRegion);
+        widget.onRegionChanged?.call(previousRegion, match.isNotEmpty ? match.first.name : '');
+        await _loadProvinces(previousRegion, preserveSelection: true);
       }
     } catch (_) {
-      if (!mounted) {
-        return;
-      }
-
+      if (!mounted) return;
       setState(() {
-        _loadingProvinces =
-            false;
-
-        _errorMessage =
-            'Unable to load address information. Check your internet connection and try again.';
+        _loadingRegions = false; _loadingProvinces = false;
+        _errorMessage = 'Unable to load locations. Check your connection and tap Retry.';
       });
     }
   }
 
-  Future<void>
-      _loadMunicipalities(
-    String provinceCode, {
-    bool preserveSelection = false,
-  }) async {
+  Future<void> _loadProvinces(String regionCode, {bool preserveSelection = false}) async {
     setState(() {
-      _loadingMunicipalities =
-          true;
-
-      _municipalities =
-          [];
-
-      _barangays =
-          [];
-
-      _errorMessage =
-          null;
-
-      if (!preserveSelection) {
-        _municipalityCode =
-            null;
-
-        _barangayCode =
-            null;
-      }
+      _loadingProvinces = true; _errorMessage = null;
+      _provinces = []; _municipalities = []; _barangays = [];
+      if (!preserveSelection) { _provinceCode = null; _municipalityCode = null; _barangayCode = null; }
     });
-
     try {
-      final municipalities =
-          await _psgcService
-              .getMunicipalities(
-        provinceCode,
-      );
-
-      if (!mounted) {
-        return;
-      }
-
+      final provinces = await _psgcService.getProvincesByRegion(regionCode);
+      if (!mounted || regionCode != _regionCode) return;
       setState(() {
-        _municipalities =
-            municipalities;
-
-        _loadingMunicipalities =
-            false;
+        _provinces = provinces;
+        _noProvince = provinces.isEmpty;
+        _loadingProvinces = false;
       });
-
-      if (preserveSelection &&
-          _municipalityCode !=
-              null) {
-        await _loadBarangays(
-          _municipalityCode!,
-          preserveSelection:
-              true,
-        );
+      if (provinces.isEmpty) {
+        // Existing APIs require province_code; use the region as a legacy
+        // compatibility snapshot for NCR and any other province-less region.
+        final name = regionCode == PsgcService.ncrCode
+            ? PsgcService.ncrName
+            : _locationName(_regions, regionCode);
+        setState(() { _provinceCode = regionCode; });
+        widget.onProvinceChanged(regionCode, name);
+        await _loadMunicipalities(regionCode, preserveSelection: preserveSelection);
+      } else if (preserveSelection && _provinceCode != null) {
+        await _loadMunicipalities(_provinceCode!, preserveSelection: true);
       }
     } catch (_) {
-      if (!mounted) {
-        return;
-      }
-
+      if (!mounted) return;
       setState(() {
-        _loadingMunicipalities =
-            false;
+        _loadingProvinces = false;
+        _errorMessage = 'Unable to load provinces. Please retry.';
+      });
+    }
+  }
 
-        _errorMessage =
-            'Unable to load municipalities or cities.';
+  Future<void> _handleRegionChanged(String? region) async {
+    setState(() {
+      _regionCode = region; _noProvince = false;
+      _provinceCode = null; _municipalityCode = null; _barangayCode = null;
+      _provinces = []; _municipalities = []; _barangays = [];
+    });
+    widget.onRegionChanged?.call(region, region == null ? '' : _locationName(_regions, region));
+    widget.onProvinceChanged(null, '');
+    widget.onMunicipalityChanged(null, '');
+    widget.onBarangayChanged(null, '');
+    if (region != null) await _loadProvinces(region);
+  }
+
+  Future<void> _loadMunicipalities(String provinceCode, {bool preserveSelection = false}) async {
+    setState(() {
+      _loadingMunicipalities = true;
+      _municipalities = []; _barangays = []; _errorMessage = null;
+      if (!preserveSelection) { _municipalityCode = null; _barangayCode = null; }
+    });
+    try {
+      final municipalities = _noProvince
+          ? await _psgcService.getCitiesByRegion(_regionCode!)
+          : await _psgcService.getMunicipalities(provinceCode);
+      if (!mounted || provinceCode != _provinceCode) return;
+      setState(() { _municipalities = municipalities; _loadingMunicipalities = false; });
+      if (preserveSelection && _municipalityCode != null) {
+        await _loadBarangays(_municipalityCode!, preserveSelection: true);
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _loadingMunicipalities = false;
+        _errorMessage = 'Unable to load cities / municipalities.';
       });
     }
   }
@@ -225,6 +216,9 @@ class _AddressStepState
     String municipalityCode, {
     bool preserveSelection = false,
   }) async {
+    // An older request must not overwrite the barangays for a new city.
+    final requestRegion = _regionCode;
+    final requestProvince = _provinceCode;
     setState(() {
       _loadingBarangays =
           true;
@@ -248,7 +242,8 @@ class _AddressStepState
         municipalityCode,
       );
 
-      if (!mounted) {
+      if (!mounted || municipalityCode != _municipalityCode ||
+          requestRegion != _regionCode || requestProvince != _provinceCode) {
         return;
       }
 
@@ -260,7 +255,8 @@ class _AddressStepState
             false;
       });
     } catch (_) {
-      if (!mounted) {
+      if (!mounted || municipalityCode != _municipalityCode ||
+          requestRegion != _regionCode || requestProvince != _provinceCode) {
         return;
       }
 
@@ -440,7 +436,16 @@ class _AddressStepState
           height: 24,
         ),
 
-        _buildProvinceField(),
+        _buildRegionField(),
+        const SizedBox(height: 18),
+        if (!_noProvince) ...[
+          _buildProvinceField(),
+          const SizedBox(height: 18),
+        ] else ...[
+          const Text('NCR has no province. Choose your city or municipality below.',
+              style: TextStyle(fontSize: 12, color: AppColors.tealDark)),
+          const SizedBox(height: 18),
+        ],
 
         const SizedBox(
           height: 18,
@@ -625,6 +630,20 @@ class _AddressStepState
     );
   }
 
+  Widget _buildRegionField() {
+    final valid = _regionCode != null &&
+        _regions.any((region) => region.code == _regionCode);
+    return _buildDropdown(
+      label: 'Region',
+      hint: _loadingRegions ? 'Loading regions...' : 'Select region',
+      icon: Icons.public,
+      value: valid ? _regionCode : null,
+      items: _regions,
+      enabled: !_loadingRegions && _regions.isNotEmpty,
+      onChanged: _handleRegionChanged,
+    );
+  }
+
   Widget _buildProvinceField() {
     final valueExists =
         _provinceCode != null &&
@@ -672,7 +691,7 @@ class _AddressStepState
 
     if (_provinceCode == null) {
       hint =
-          'Select province first';
+          'Select region / province first';
     } else if (_loadingMunicipalities) {
       hint =
           'Loading municipalities...';
@@ -777,6 +796,9 @@ class _AddressStepState
 
         DropdownButtonFormField<
             String>(
+          // Re-create the form field when an upstream selection resets it.
+          // initialValue by itself is not a controlled value.
+          key: ValueKey<String>('$label|$value'),
           initialValue: 
               value,
           isExpanded:

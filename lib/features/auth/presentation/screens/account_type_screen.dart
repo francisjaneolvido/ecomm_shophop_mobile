@@ -1,414 +1,106 @@
 import 'package:flutter/material.dart';
-
 import 'package:shophop/core/theme/app_colors.dart';
 import 'package:shophop/features/buyer/registration/screens/buyer_registration_screen.dart';
+import 'package:shophop/features/auth/presentation/screens/login_screen.dart';
 import 'package:shophop/features/rider/registration/screens/rider_registration_screen.dart';
 import 'package:shophop/features/seller/registration/screens/seller_registration_screen.dart';
+import 'package:shophop/shared/widgets/shop_hop_brand.dart';
 
-enum AccountRole {
-  buyer,
-  rider,
-  seller,
-}
+enum AccountRole { buyer, rider, seller }
 
 class AccountTypeScreen extends StatefulWidget {
   const AccountTypeScreen({super.key});
 
   @override
-  State<AccountTypeScreen> createState() =>
-      _AccountTypeScreenState();
+  State<AccountTypeScreen> createState() => _AccountTypeScreenState();
 }
 
-class _AccountTypeScreenState
-    extends State<AccountTypeScreen> {
+class _AccountTypeScreenState extends State<AccountTypeScreen> {
   AccountRole? _selectedRole;
 
-  void _selectRole(AccountRole role) {
-    setState(() {
-      _selectedRole = role;
-    });
-  }
-
   void _continue() {
-    final role = _selectedRole;
-
-    if (role == null) {
-      return;
-    }
-
-    switch (role) {
+    switch (_selectedRole) {
       case AccountRole.buyer:
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) =>
-          const BuyerRegistrationScreen(),
-    ),
-  );
-  break;
-
+        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BuyerRegistrationScreen()));
+        return;
       case AccountRole.rider:
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) =>
-          const RiderRegistrationScreen(),
-    ),
-  );
-  break;
-
+        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const RiderRegistrationScreen()));
+        return;
       case AccountRole.seller:
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) =>
-          const SellerRegistrationScreen(),
-    ),
-  );
-  break;
+        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SellerRegistrationScreen()));
+        return;
+      case null:
+        return;
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
+    final compact = MediaQuery.sizeOf(context).height < 670;
     return Scaffold(
-      backgroundColor: AppColors.grayBg,
+      backgroundColor: Colors.white,
       body: SafeArea(
-        child: Column(
-          children: [
-            _buildTopBar(),
-
-            Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(
-                  22,
-                  10,
-                  22,
-                  24,
-                ),
-                child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
-                  children: [
-                    _buildHeader(),
-
-                    const SizedBox(height: 28),
-
-                    _buildRoleCard(
-                      role: AccountRole.buyer,
-                      icon: Icons.shopping_bag_outlined,
-                      title: 'Buyer',
-                      description:
-                          'Shop products, manage your orders, and track deliveries.',
-                    ),
-
-                    const SizedBox(height: 14),
-
-                    _buildRoleCard(
-                      role: AccountRole.rider,
-                      icon:
-                          Icons.delivery_dining_outlined,
-                      title: 'Rider / Courier',
-                      description:
-                          'Pick up parcels and complete assigned deliveries.',
-                    ),
-
-                    const SizedBox(height: 14),
-
-                    _buildRoleCard(
-                      role: AccountRole.seller,
-                      icon: Icons.storefront_outlined,
-                      title: 'Seller',
-                      description:
-                          'List products, manage orders, and grow your ShopHop store.',
-                    ),
-
-                    const SizedBox(height: 26),
-
-                    _buildInfoNotice(),
-                  ],
-                ),
-              ),
-            ),
-
-            _buildBottomAction(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTopBar() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        18,
-        12,
-        18,
-        0,
-      ),
-      child: Row(
-        children: [
-          Material(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            child: InkWell(
-              onTap: () {
-                Navigator.pop(context);
-              },
-              borderRadius:
-                  BorderRadius.circular(14),
-              child: Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  borderRadius:
-                      BorderRadius.circular(14),
-                  border: Border.all(
-                    color: AppColors.grayBorder,
-                  ),
-                ),
-                child: const Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  size: 18,
-                  color: AppColors.navy,
-                ),
-              ),
-            ),
-          ),
-
-          const Spacer(),
-
-          Row(
-            children: [
-              Image.asset(
-                'assets/images/logo.png',
-                width: 31,
-                height: 31,
-                fit: BoxFit.contain,
-              ),
-
-              const SizedBox(width: 8),
-
-              const Text(
-                'ShopHop',
-                style: TextStyle(
-                  color: AppColors.navy,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.2,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: AppColors.tealLight,
-            borderRadius:
-                BorderRadius.circular(15),
-          ),
-          child: const Icon(
-            Icons.group_outlined,
-            color: AppColors.tealDark,
-            size: 23,
-          ),
-        ),
-
-        const SizedBox(height: 20),
-
-        const Text(
-          'JOIN SHOPHOP',
-          style: TextStyle(
-            color: AppColors.tealDark,
-            fontSize: 10,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 1.3,
-          ),
-        ),
-
-        const SizedBox(height: 7),
-
-        const Text(
-          'How will you use\nShopHop?',
-          style: TextStyle(
-            color: AppColors.navy,
-            fontSize: 30,
-            height: 1.12,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.7,
-          ),
-        ),
-
-        const SizedBox(height: 12),
-
-        Text(
-          'Choose the account type that best matches what you want to do.',
-          style: TextStyle(
-            color: AppColors.navy.withValues(
-              alpha: 0.52,
-            ),
-            fontSize: 13,
-            height: 1.55,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRoleCard({
-    required AccountRole role,
-    required IconData icon,
-    required String title,
-    required String description,
-  }) {
-    final isSelected =
-        _selectedRole == role;
-
-    return Semantics(
-      button: true,
-      selected: isSelected,
-      label: '$title account',
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            _selectRole(role);
-          },
-          borderRadius:
-              BorderRadius.circular(20),
-          child: AnimatedContainer(
-            duration:
-                const Duration(milliseconds: 180),
-            curve: Curves.easeOut,
-            width: double.infinity,
-            padding: const EdgeInsets.all(17),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? AppColors.tealLight
-                      .withValues(alpha: 0.72)
-                  : Colors.white,
-              borderRadius:
-                  BorderRadius.circular(20),
-              border: Border.all(
-                color: isSelected
-                    ? AppColors.teal
-                    : AppColors.grayBorder,
-                width:
-                    isSelected ? 1.6 : 1,
-              ),
-              boxShadow: [
-                if (!isSelected)
-                  BoxShadow(
-                    color: AppColors.navy
-                        .withValues(
-                      alpha: 0.035,
-                    ),
-                    blurRadius: 18,
-                    offset:
-                        const Offset(0, 7),
-                  ),
-              ],
-            ),
-            child: Row(
-              crossAxisAlignment:
-                  CrossAxisAlignment.center,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 520),
+            child: Column(
               children: [
-                AnimatedContainer(
-                  duration: const Duration(
-                    milliseconds: 180,
-                  ),
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppColors.teal
-                        : AppColors.tealLight,
-                    borderRadius:
-                        BorderRadius.circular(15),
-                  ),
-                  child: Icon(
-                    icon,
-                    size: 23,
-                    color: isSelected
-                        ? Colors.white
-                        : AppColors.tealDark,
-                  ),
-                ),
-
-                const SizedBox(width: 15),
-
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          color: AppColors.navy,
-                          fontSize: 15,
-                          fontWeight:
-                              FontWeight.w700,
-                        ),
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.fromLTRB(18, compact ? 16 : 22, 18, 20),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      const ShopHopBrand(compact: true),
+                      SizedBox(height: compact ? 29 : 43),
+                      const Text('Create your account', style: TextStyle(color: AppColors.navy, fontSize: 29, letterSpacing: -.8, fontWeight: FontWeight.w800, height: 1.2)),
+                      const SizedBox(height: 9),
+                      Text('How would you like to use ShopHop? Select a role to get started.', style: TextStyle(fontSize: 12.5, height: 1.6, color: AppColors.navy.withValues(alpha: .58))),
+                      SizedBox(height: compact ? 23 : 32),
+                      _RoleOption(
+                        selected: _selectedRole == AccountRole.buyer,
+                        icon: Icons.shopping_bag_outlined,
+                        title: 'Buyer',
+                        subtitle: 'Discover products and track your purchases.',
+                        onTap: () => setState(() => _selectedRole = AccountRole.buyer),
                       ),
-
-                      const SizedBox(height: 5),
-
-                      Text(
-                        description,
-                        style: TextStyle(
-                          color: AppColors.navy
-                              .withValues(
-                            alpha: 0.48,
-                          ),
-                          fontSize: 11,
-                          height: 1.45,
-                        ),
+                      const SizedBox(height: 12),
+                      _RoleOption(
+                        selected: _selectedRole == AccountRole.seller,
+                        icon: Icons.storefront_outlined,
+                        title: 'Seller',
+                        subtitle: 'Register your shop and grow your business.',
+                        onTap: () => setState(() => _selectedRole = AccountRole.seller),
                       ),
-                    ],
+                      const SizedBox(height: 12),
+                      _RoleOption(
+                        selected: _selectedRole == AccountRole.rider,
+                        icon: Icons.local_shipping_outlined,
+                        title: 'Rider / Courier',
+                        subtitle: 'Join a logistics partner and deliver orders.',
+                        onTap: () => setState(() => _selectedRole = AccountRole.rider),
+                      ),
+                      SizedBox(height: compact ? 19 : 26),
+                      Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        const Icon(Icons.verified_user_outlined, color: AppColors.tealDark, size: 18),
+                        const SizedBox(width: 10),
+                        Expanded(child: Text('Registration requirements depend on your role. Accounts are verified before approval.', style: TextStyle(fontSize: 11, height: 1.6, color: AppColors.navy.withValues(alpha: .53)))),
+                      ]),
+                    ]),
                   ),
                 ),
-
-                const SizedBox(width: 12),
-
-                AnimatedContainer(
-                  duration: const Duration(
-                    milliseconds: 180,
-                  ),
-                  width: 26,
-                  height: 26,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isSelected
-                        ? AppColors.teal
-                        : Colors.transparent,
-                    border: Border.all(
-                      color: isSelected
-                          ? AppColors.teal
-                          : AppColors.grayBorder,
-                      width: 1.4,
+                Container(
+                  decoration: const BoxDecoration(color: Colors.white, border: Border(top: BorderSide(color: AppColors.grayBorder))),
+                  padding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
+                  child: SafeArea(top: false, child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    SizedBox(width: double.infinity, height: 52, child: FilledButton(
+                      onPressed: _selectedRole == null ? null : _continue,
+                      child: const Text('Continue'),
+                    )),
+                    const SizedBox(height: 5),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const LoginScreen())),
+                      child: const Text('Already have an account? Sign in'),
                     ),
-                  ),
-                  child: isSelected
-                      ? const Icon(
-                          Icons.check_rounded,
-                          size: 16,
-                          color: Colors.white,
-                        )
-                      : null,
+                  ])),
                 ),
               ],
             ),
@@ -417,179 +109,44 @@ class _AccountTypeScreenState
       ),
     );
   }
+}
 
-  Widget _buildInfoNotice() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius:
-            BorderRadius.circular(17),
-        border: Border.all(
-          color: AppColors.grayBorder,
+class _RoleOption extends StatelessWidget {
+  const _RoleOption({required this.selected, required this.icon, required this.title, required this.subtitle, required this.onTap});
+  final bool selected;
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    selected: selected,
+    child: Material(
+      color: selected ? AppColors.tealLight.withValues(alpha: .48) : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(color: selected ? AppColors.tealDark : AppColors.grayBorder, width: selected ? 1.6 : 1),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 17),
+          child: Row(children: [
+            Container(width: 45, height: 45, decoration: BoxDecoration(color: AppColors.tealLight, borderRadius: BorderRadius.circular(13)), child: Icon(icon, size: 22, color: AppColors.tealDark)),
+            const SizedBox(width: 13),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(title, style: const TextStyle(fontSize: 15, color: AppColors.navy, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 3),
+              Text(subtitle, style: TextStyle(fontSize: 11.5, height: 1.5, color: AppColors.navy.withValues(alpha: .55))),
+            ])),
+            const SizedBox(width: 10),
+            Icon(selected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded, size: 23, color: selected ? AppColors.tealDark : const Color(0xFFB9C6CE)),
+          ]),
         ),
       ),
-      child: Row(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              color: AppColors.tealLight,
-              borderRadius:
-                  BorderRadius.circular(10),
-            ),
-            child: const Icon(
-              Icons.info_outline_rounded,
-              size: 18,
-              color: AppColors.tealDark,
-            ),
-          ),
-
-          const SizedBox(width: 12),
-
-          Expanded(
-            child: Text(
-              'Your account type determines the registration requirements and the features available after approval.',
-              style: TextStyle(
-                color: AppColors.navy
-                    .withValues(
-                  alpha: 0.48,
-                ),
-                fontSize: 11,
-                height: 1.5,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomAction() {
-    final canContinue =
-        _selectedRole != null;
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(
-        22,
-        14,
-        22,
-        18,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          top: BorderSide(
-            color: AppColors.grayBorder
-                .withValues(alpha: 0.8),
-          ),
-        ),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: double.infinity,
-              height: 55,
-              child: ElevatedButton(
-                onPressed:
-                    canContinue ? _continue : null,
-                style: ElevatedButton.styleFrom(
-  elevation: 0,
-  backgroundColor: AppColors.teal,
-                  disabledBackgroundColor:
-                      AppColors.grayBorder,
-                  foregroundColor:
-                      Colors.white,
-                  disabledForegroundColor:
-                      AppColors.navy
-                          .withValues(
-                    alpha: 0.30,
-                  ),
-                  shape:
-                      RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(16),
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment:
-                      MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      'Continue',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight:
-                            FontWeight.w700,
-                      ),
-                    ),
-
-                    if (canContinue) ...[
-                      const SizedBox(width: 9),
-
-                      const Icon(
-                        Icons
-                            .arrow_forward_rounded,
-                        size: 19,
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 14),
-
-            Row(
-              mainAxisAlignment:
-                  MainAxisAlignment.center,
-              children: [
-                Text(
-                  'Already have an account? ',
-                  style: TextStyle(
-                    color: AppColors.navy
-                        .withValues(
-                      alpha: 0.46,
-                    ),
-                    fontSize: 11,
-                    fontWeight:
-                        FontWeight.w500,
-                  ),
-                ),
-
-                GestureDetector(
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                  child: const Padding(
-                    padding:
-                        EdgeInsets.symmetric(
-                      vertical: 5,
-                    ),
-                    child: Text(
-                      'Sign in',
-                      style: TextStyle(
-                        color:
-                            AppColors.tealDark,
-                        fontSize: 11,
-                        fontWeight:
-                            FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+    ),
+  );
 }

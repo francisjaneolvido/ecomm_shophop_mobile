@@ -43,7 +43,7 @@ class _SellerSecurityStepState
   bool get _hasNumber =>
       RegExp(r'[0-9]').hasMatch(_password);
   bool get _hasSpecial =>
-      RegExp(r'[!@#$%^&*]').hasMatch(_password);
+      RegExp(r'[^A-Za-z0-9]').hasMatch(_password);
 
   @override
   Widget build(BuildContext context) {
@@ -106,6 +106,10 @@ class _SellerSecurityStepState
 
             if (!RegExp(r'[0-9]').hasMatch(password)) {
               return 'Add at least 1 number.';
+            }
+
+            if (!RegExp(r'[^A-Za-z0-9]').hasMatch(password)) {
+              return 'Add at least 1 special character.';
             }
 
             return null;
@@ -234,9 +238,8 @@ class _SellerSecurityStepState
           ),
           _requirement('1 number (0–9)', _hasNumber),
           _requirement(
-            'Special character (! @ # \$ % ^ & *) — recommended',
+            '1 special character (e.g. ! @ # \$ % ^ & *)',
             _hasSpecial,
-            optional: true,
           ),
         ],
       ),

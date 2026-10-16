@@ -247,14 +247,12 @@ class _BuyerPaymentProofPageState extends State<BuyerPaymentProofPage> {
       onRefresh: _load,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(14, 14, 14, 28),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
         children: [
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF10264D), Color(0xFF16445A)],
-              ),
+              color: AppColors.navy,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Column(
@@ -355,6 +353,49 @@ class _BuyerPaymentProofPageState extends State<BuyerPaymentProofPage> {
           if (payment.canSubmit) ...[
             const SizedBox(height: 12),
             _SectionCard(
+              title: 'ShopHop Demo Payment QR',
+              icon: Icons.qr_code,
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text('DEMO ONLY. No real GCash or automatic transfer. Admin checks the proof manually.'),
+                const SizedBox(height: 8),
+                Text('Recipient: ${payment.recipientName}'),
+                if (payment.recipientIdentifier.isNotEmpty) Text('Label: ${payment.recipientIdentifier}'),
+                if (payment.qrUrl.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  Image.network(payment.qrUrl, width: 190, height: 190,
+                    errorBuilder: (_, __, ___) => const Text('QR image not available. Contact Admin.')),
+                ] else const Text('QR not configured by Admin yet.'),
+                if (payment.paymentInstructions.isNotEmpty) Text(payment.paymentInstructions),
+                const SizedBox(height: 10),
+                if (payment.demoReference.isEmpty)
+                  OutlinedButton(
+                    onPressed: _submitting ? null : () async {
+                      try {
+                        await BuyerCheckoutService.simulatePayment(
+                          token: widget.token, paymentId: widget.paymentId);
+                        if (!mounted) return;
+                        await _load();
+                      } on BuyerCheckoutException catch (error) {
+                        if (mounted) _showMessage(error.message);
+                      }
+                    },
+                    child: const Text('Generate DEMO payment receipt'),
+                  )
+                else Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(border: Border.all(color: AppColors.tealDark),
+                    borderRadius: BorderRadius.circular(12), color: Colors.white),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    const Text('DEMO RECEIPT — NOT REAL MONEY', style: TextStyle(fontWeight: FontWeight.bold)),
+                    SelectableText('Reference: ${payment.demoReference}'),
+                    Text('Amount: ${_price(payment.demoAmount)}'),
+                    const Text('Screenshot this demo receipt, then upload the image as proof for Admin review.'),
+                  ]),
+                ),
+              ]),
+            ),
+            const SizedBox(height: 12),
+            _SectionCard(
               title: payment.status == 'rejected'
                   ? 'Correct your payment proof'
                   : 'Payment proof',
@@ -363,7 +404,7 @@ class _BuyerPaymentProofPageState extends State<BuyerPaymentProofPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Complete your payment using the agreed external payment method, then submit the transaction reference and receipt for ShopHop Admin review.',
+                    'For this school demo, submit a simulated transaction reference and sample proof for Admin review. No real transfer is made.',
                     style: TextStyle(
                       color: Color(0xFF6D7781),
                       fontSize: 10.5,

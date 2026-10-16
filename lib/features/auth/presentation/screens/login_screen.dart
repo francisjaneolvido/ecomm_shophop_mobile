@@ -4,12 +4,14 @@ import 'package:flutter/services.dart';
 import 'package:shophop/features/auth/data/services/auth_service.dart';
 import 'package:shophop/core/session/auth_session_service.dart';
 import 'package:shophop/core/theme/app_colors.dart';
+import 'package:shophop/shared/widgets/shop_hop_brand.dart';
 import 'package:shophop/features/auth/presentation/screens/account_type_screen.dart';
 import 'package:shophop/features/auth/presentation/screens/email_verification_screen.dart';
 import 'package:shophop/features/auth/domain/registration_role.dart';
 import 'package:shophop/features/auth/presentation/widgets/account_status_toast.dart';
 import 'package:shophop/features/buyer/presentation/screens/buyer_home_screen.dart';
 import 'package:shophop/features/rider/presentation/screens/rider_home_screen.dart';
+import 'package:shophop/features/logistics/presentation/screens/logistics_scanner_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -181,7 +183,7 @@ class _LoginScreenState extends State<LoginScreen> {
           return;
         }
 
-        if (accountType != 'buyer' && accountType != 'rider') {
+        if (accountType != 'buyer' && accountType != 'rider' && accountType != 'logistics' && accountType != 'logistics_staff') {
           await AuthService.logout(token: token);
           _showMessage(
             'Approved $accountType mobile dashboard is not connected yet.',
@@ -213,7 +215,9 @@ class _LoginScreenState extends State<LoginScreen> {
           MaterialPageRoute(
             builder: (_) => accountType == 'rider'
                 ? const RiderHomeScreen()
-                : const BuyerHomeScreen(),
+                : (accountType == 'logistics' || accountType == 'logistics_staff')
+                    ? const LogisticsScannerScreen()
+                    : const BuyerHomeScreen(),
           ),
           (route) => false,
         );
@@ -279,13 +283,6 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    if (role == RegistrationRole.seller) {
-      _showMessage(
-        'Seller mobile email verification is not connected yet.',
-      );
-      return;
-    }
-
     final email = _emailController.text.trim();
 
     Navigator.push(
@@ -297,13 +294,17 @@ class _LoginScreenState extends State<LoginScreen> {
           onVerifyCode: (code) async {
             final result = role == RegistrationRole.rider
                 ? await AuthService.verifyRiderEmail(email: email, code: code)
-                : await AuthService.verifyBuyerEmail(email: email, code: code);
+                : role == RegistrationRole.seller
+                    ? await AuthService.verifySellerEmail(email: email, code: code)
+                    : await AuthService.verifyBuyerEmail(email: email, code: code);
             return result.success ? null : result.message;
           },
           onResendCode: () async {
             final result = role == RegistrationRole.rider
                 ? await AuthService.resendRiderVerification(email: email)
-                : await AuthService.resendBuyerVerification(email: email);
+                : role == RegistrationRole.seller
+                    ? await AuthService.resendSellerVerification(email: email)
+                    : await AuthService.resendBuyerVerification(email: email);
             return result.success ? null : result.message;
           },
           onVerified: () {
@@ -392,1001 +393,107 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final compact = MediaQuery.sizeOf(context).height < 680;
     return Scaffold(
       backgroundColor: Colors.white,
       resizeToAvoidBottomInset: true,
-      body: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () {
-          FocusScope.of(context).unfocus();
-        },
-        child: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              return SingleChildScrollView(
-                keyboardDismissBehavior:
-                    ScrollViewKeyboardDismissBehavior.onDrag,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minHeight: constraints.maxHeight,
-                  ),
-                  child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.stretch,
-                    children: [
-                      // ===============================
-                      // TOP BRAND / DECORATION
-                      // ===============================
-
-                      _buildHeaderDecoration(),
-
-                      // ===============================
-                      // LOGIN CONTENT
-                      // ===============================
-
-                      Padding(
-                        padding:
-                            const EdgeInsets.fromLTRB(
-                          24,
-                          0,
-                          24,
-                          28,
+      body: SafeArea(
+        child: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 480),
+              child: SingleChildScrollView(
+                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: EdgeInsets.fromLTRB(20, compact ? 16 : 22, 20, 28),
+                child: AutofillGroup(
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Align(alignment: Alignment.centerLeft, child: ShopHopBrand(compact: true)),
+                        SizedBox(height: compact ? 28 : 42),
+                        const Text('Welcome back', style: TextStyle(color: AppColors.navy, fontWeight: FontWeight.w800, fontSize: 29, letterSpacing: -.8)),
+                        const SizedBox(height: 7),
+                        Text('Sign in to continue shopping, selling or delivering with ShopHop.', style: TextStyle(color: AppColors.navy.withValues(alpha: .58), height: 1.6, fontSize: 12.5)),
+                        const SizedBox(height: 7),
+                        Text('Logistics scanner: sign in using the approved Logistics Web account. No mobile registration required.', style: TextStyle(color: AppColors.tealDark, fontSize: 11, height: 1.5)),
+                        SizedBox(height: compact ? 24 : 30),
+                        const Text('Email address', style: TextStyle(color: AppColors.navy, fontSize: 12, fontWeight: FontWeight.w700)),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _emailController,
+                          focusNode: _emailFocusNode,
+                          keyboardType: TextInputType.emailAddress,
+                          textInputAction: TextInputAction.next,
+                          autofillHints: const [AutofillHints.username, AutofillHints.email],
+                          validator: _validateEmail,
+                          decoration: const InputDecoration(hintText: 'you@example.com', prefixIcon: Icon(Icons.mail_outline_rounded, size: 20)),
                         ),
-                        child: AutofillGroup(
-                          child: Form(
-                            key: _formKey,
-                            child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
-                              children: [
-                                _buildTitle(),
-
-                                const SizedBox(height: 26),
-
-                                _buildGoogleButton(),
-
-                                const SizedBox(height: 22),
-
-                                _buildDivider(),
-
-                                const SizedBox(height: 24),
-
-                                _buildEmailField(),
-
-                                const SizedBox(height: 22),
-
-                                _buildPasswordField(),
-
-                                const SizedBox(height: 15),
-
-                                _buildRememberAndForgot(),
-
-                                const SizedBox(height: 30),
-
-                                _buildSignInButton(),
-
-                                const SizedBox(height: 18),
-
-                                _buildApprovalNote(),
-
-                                const SizedBox(height: 28),
-
-                                _buildSignUp(),
-
-                                const SizedBox(height: 12),
-                              ],
+                        const SizedBox(height: 19),
+                        const Text('Password', style: TextStyle(color: AppColors.navy, fontSize: 12, fontWeight: FontWeight.w700)),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _passwordController,
+                          focusNode: _passwordFocusNode,
+                          obscureText: _obscurePassword,
+                          textInputAction: TextInputAction.done,
+                          autofillHints: const [AutofillHints.password],
+                          validator: _validatePassword,
+                          onFieldSubmitted: (_) => _signIn(),
+                          decoration: InputDecoration(
+                            hintText: 'Enter your password',
+                            prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
+                            suffixIcon: IconButton(
+                              tooltip: _obscurePassword ? 'Show password' : 'Hide password',
+                              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                              icon: Icon(_obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined),
                             ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ============================================================
-  // HEADER
-  // ============================================================
-
-  Widget _buildHeaderDecoration() {
-    return SizedBox(
-      height: 220,
-      width: double.infinity,
-      child: ClipPath(
-        clipper: _LoginHeaderClipper(),
-        child: Container(
-          color: AppColors.tealLight,
-          child: Stack(
-            children: [
-              // Contour pattern
-              Positioned.fill(
-                child: CustomPaint(
-                  painter: _ContourPainter(),
-                ),
-              ),
-
-              // Subtle decorative circles
-              Positioned(
-                top: -35,
-                left: -30,
-                child: _decorativeCircle(120),
-              ),
-
-              Positioned(
-                right: -48,
-                bottom: 12,
-                child: _decorativeCircle(135),
-              ),
-
-              // Brand
-              Positioned(
-                top: 32,
-                left: 24,
-                right: 24,
-                child: Row(
-                  children: [
-                    Container(
-                      width: 58,
-                      height: 58,
-                      padding: const EdgeInsets.all(9),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius:
-                            BorderRadius.circular(18),
-                        border: Border.all(
-                          color: Colors.white,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.navy
-                                .withValues(
-                              alpha: 0.06,
-                            ),
-                            blurRadius: 20,
-                            offset: const Offset(
-                              0,
-                              7,
-                            ),
-                          ),
-                        ],
-                      ),
-                      child: Image.asset(
-                        'assets/images/logo.png',
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-
-                    const SizedBox(width: 12),
-
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'ShopHop',
-                            style: TextStyle(
-                              color: AppColors.navy,
-                              fontSize: 18,
-                              height: 1,
-                              fontWeight:
-                                  FontWeight.w800,
-                              letterSpacing: -0.3,
-                            ),
-                          ),
-
-                          const SizedBox(height: 5),
-
-                          Text(
-                            'HOP IN. SHOP MORE.',
-                            style: TextStyle(
-                              color: AppColors.navy
-                                  .withValues(
-                                alpha: 0.48,
-                              ),
-                              fontSize: 8,
-                              fontWeight:
-                                  FontWeight.w700,
-                              letterSpacing: 1,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _decorativeCircle(double size) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: Colors.white.withValues(
-            alpha: 0.38,
-          ),
-          width: 1.2,
-        ),
-      ),
-    );
-  }
-
-  // ============================================================
-  // TITLE
-  // ============================================================
-
-  Widget _buildTitle() {
-    return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Sign in',
-          style: TextStyle(
-            color: AppColors.navy,
-            fontSize: 32,
-            height: 1.05,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.8,
-          ),
-        ),
-
-        const SizedBox(height: 9),
-
-        Container(
-          width: 46,
-          height: 4,
-          decoration: BoxDecoration(
-            color: AppColors.teal,
-            borderRadius:
-                BorderRadius.circular(100),
-          ),
-        ),
-
-        const SizedBox(height: 14),
-
-        Text(
-          'Welcome back. Sign in to continue your ShopHop experience.',
-          style: TextStyle(
-            color: AppColors.navy.withValues(
-              alpha: 0.53,
-            ),
-            fontSize: 13,
-            height: 1.55,
-            fontWeight: FontWeight.w400,
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ============================================================
-  // GOOGLE
-  // ============================================================
-
-  Widget _buildGoogleButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 54,
-      child: OutlinedButton(
-        onPressed: _continueWithGoogle,
-        style: OutlinedButton.styleFrom(
-          elevation: 0,
-          backgroundColor: Colors.white,
-          foregroundColor: AppColors.navy,
-          side: const BorderSide(
-            color: AppColors.grayBorder,
-            width: 1,
-          ),
-          padding:
-              const EdgeInsets.symmetric(
-            horizontal: 18,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius:
-                BorderRadius.circular(15),
-          ),
-        ),
-        child: const Row(
-          mainAxisAlignment:
-              MainAxisAlignment.center,
-          children: [
-            _GoogleIcon(),
-
-            SizedBox(width: 12),
-
-            Text(
-              'Continue with Google',
-              style: TextStyle(
-                color: AppColors.navy,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ============================================================
-  // DIVIDER
-  // ============================================================
-
-  Widget _buildDivider() {
-    return Row(
-      children: [
-        const Expanded(
-          child: Divider(
-            height: 1,
-            thickness: 1,
-            color: AppColors.grayBorder,
-          ),
-        ),
-
-        Padding(
-          padding:
-              const EdgeInsets.symmetric(
-            horizontal: 13,
-          ),
-          child: Text(
-            'or sign in with email',
-            style: TextStyle(
-              color: AppColors.navy
-                  .withValues(
-                alpha: 0.34,
-              ),
-              fontSize: 10,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-
-        const Expanded(
-          child: Divider(
-            height: 1,
-            thickness: 1,
-            color: AppColors.grayBorder,
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ============================================================
-  // EMAIL
-  // ============================================================
-
-  Widget _buildEmailField() {
-    return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Email',
-          style: TextStyle(
-            color: AppColors.navy,
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-
-        TextFormField(
-          controller: _emailController,
-          focusNode: _emailFocusNode,
-          keyboardType:
-              TextInputType.emailAddress,
-          textInputAction:
-              TextInputAction.next,
-          validator: _validateEmail,
-          autofillHints: const [
-            AutofillHints.email,
-            AutofillHints.username,
-          ],
-          onFieldSubmitted: (_) {
-            _passwordFocusNode
-                .requestFocus();
-          },
-          style: const TextStyle(
-            color: AppColors.navy,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
-          decoration:
-              _inputDecoration(
-            hintText: 'you@example.com',
-            icon: Icons.mail_outline_rounded,
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ============================================================
-  // PASSWORD
-  // ============================================================
-
-  Widget _buildPasswordField() {
-    return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Password',
-          style: TextStyle(
-            color: AppColors.navy,
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-
-        TextFormField(
-          controller:
-              _passwordController,
-          focusNode:
-              _passwordFocusNode,
-          obscureText:
-              _obscurePassword,
-          textInputAction:
-              TextInputAction.done,
-          validator:
-              _validatePassword,
-          autofillHints: const [
-            AutofillHints.password,
-          ],
-          onFieldSubmitted: (_) {
-            _signIn();
-          },
-          style: const TextStyle(
-            color: AppColors.navy,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
-          decoration:
-              _inputDecoration(
-            hintText:
-                'Enter your password',
-            icon:
-                Icons.lock_outline_rounded,
-          ).copyWith(
-            suffixIcon: IconButton(
-              tooltip: _obscurePassword
-                  ? 'Show password'
-                  : 'Hide password',
-              onPressed: () {
-                setState(() {
-                  _obscurePassword =
-                      !_obscurePassword;
-                });
-              },
-              icon: Icon(
-                _obscurePassword
-                    ? Icons
-                        .visibility_outlined
-                    : Icons
-                        .visibility_off_outlined,
-                size: 20,
-                color: AppColors.navy
-                    .withValues(
-                  alpha: 0.34,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ============================================================
-  // INPUT DECORATION
-  // ============================================================
-
-  InputDecoration _inputDecoration({
-    required String hintText,
-    required IconData icon,
-  }) {
-    return InputDecoration(
-      hintText: hintText,
-
-      hintStyle: TextStyle(
-        color: AppColors.navy.withValues(
-          alpha: 0.28,
-        ),
-        fontSize: 13,
-      ),
-
-      prefixIcon: Icon(
-        icon,
-        size: 18,
-        color: AppColors.navy.withValues(
-          alpha: 0.35,
-        ),
-      ),
-
-      prefixIconConstraints:
-          const BoxConstraints(
-        minWidth: 32,
-        minHeight: 40,
-      ),
-
-      contentPadding:
-          const EdgeInsets.symmetric(
-        vertical: 14,
-      ),
-
-      enabledBorder:
-          UnderlineInputBorder(
-        borderSide: BorderSide(
-          color: AppColors.navy
-              .withValues(
-            alpha: 0.13,
-          ),
-          width: 1,
-        ),
-      ),
-
-      focusedBorder:
-          const UnderlineInputBorder(
-        borderSide: BorderSide(
-          color: AppColors.teal,
-          width: 1.7,
-        ),
-      ),
-
-      errorBorder:
-          const UnderlineInputBorder(
-        borderSide: BorderSide(
-          color: Color(0xFFDE5B5B),
-          width: 1.2,
-        ),
-      ),
-
-      focusedErrorBorder:
-          const UnderlineInputBorder(
-        borderSide: BorderSide(
-          color: Color(0xFFDE5B5B),
-          width: 1.7,
-        ),
-      ),
-
-      errorStyle: const TextStyle(
-        fontSize: 10,
-        height: 1.2,
-      ),
-    );
-  }
-
-  // ============================================================
-  // REMEMBER + FORGOT
-  // ============================================================
-
-  Widget _buildRememberAndForgot() {
-    return Row(
-      children: [
-        Expanded(
-          child: InkWell(
-            onTap: () {
-              setState(() {
-                _rememberMe =
-                    !_rememberMe;
-              });
-            },
-            borderRadius:
-                BorderRadius.circular(8),
-            child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(
-                vertical: 5,
-              ),
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: Checkbox(
-                      value:
-                          _rememberMe,
-                      onChanged: (value) {
-                        setState(() {
-                          _rememberMe =
-                              value ??
-                                  false;
-                        });
-                      },
-                      activeColor:
-                          AppColors.teal,
-                      checkColor:
-                          Colors.white,
-                      materialTapTargetSize:
-                          MaterialTapTargetSize
-                              .shrinkWrap,
-                      side: BorderSide(
-                        color: AppColors
-                            .navy
-                            .withValues(
-                          alpha: 0.18,
-                        ),
-                        width: 1.4,
-                      ),
-                      shape:
-                          RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius
-                                .circular(4),
-                      ),
+                        Row(children: [
+                          Checkbox(value: _rememberMe, onChanged: (value) => setState(() => _rememberMe = value ?? false)),
+                          const Text('Remember me', style: TextStyle(fontSize: 11.5, color: AppColors.navy)),
+                          const Spacer(),
+                          TextButton(onPressed: _forgotPassword, child: const Text('Forgot password?', style: TextStyle(fontSize: 11.5))),
+                        ]),
+                        const SizedBox(height: 13),
+                        SizedBox(height: 52, child: FilledButton(
+                          onPressed: _isSigningIn ? null : _signIn,
+                          child: _isSigningIn ? const SizedBox(width: 19, height: 19, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white)) : const Text('Sign in'),
+                        )),
+                        const SizedBox(height: 25),
+                        Row(children: [
+                          const Expanded(child: Divider(color: AppColors.grayBorder)),
+                          Padding(padding: const EdgeInsets.symmetric(horizontal: 12), child: Text('or continue with', style: TextStyle(color: AppColors.navy.withValues(alpha: .48), fontSize: 11))),
+                          const Expanded(child: Divider(color: AppColors.grayBorder)),
+                        ]),
+                        const SizedBox(height: 18),
+                        SizedBox(height: 52, child: OutlinedButton.icon(
+                          onPressed: _continueWithGoogle,
+                          icon: const _GoogleIcon(),
+                          label: const Text('Continue with Google'),
+                        )),
+                        const SizedBox(height: 11),
+                        Text('Google sign-in is not connected in this mobile build yet.', textAlign: TextAlign.center, style: TextStyle(color: AppColors.navy.withValues(alpha: .45), fontSize: 10.5, height: 1.5)),
+                        SizedBox(height: compact ? 22 : 32),
+                        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                          Text('New to ShopHop?', style: TextStyle(fontSize: 12, color: AppColors.navy.withValues(alpha: .6))),
+                          TextButton(onPressed: _signUp, child: const Text('Create an account')),
+                        ]),
+                      ],
                     ),
                   ),
-
-                  const SizedBox(
-                    width: 8,
-                  ),
-
-                  Text(
-                    'Remember me',
-                    style: TextStyle(
-                      color:
-                          AppColors.navy
-                              .withValues(
-                        alpha: 0.53,
-                      ),
-                      fontSize: 11,
-                      fontWeight:
-                          FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-
-        TextButton(
-          onPressed:
-              _forgotPassword,
-          style:
-              TextButton.styleFrom(
-            foregroundColor:
-                AppColors.tealDark,
-            padding:
-                const EdgeInsets.symmetric(
-              horizontal: 0,
-              vertical: 6,
-            ),
-            minimumSize:
-                Size.zero,
-            tapTargetSize:
-                MaterialTapTargetSize
-                    .shrinkWrap,
-          ),
-          child: const Text(
-            'Forgot Password?',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight:
-                  FontWeight.w700,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ============================================================
-  // SIGN IN BUTTON
-  // ============================================================
-
-  Widget _buildSignInButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 55,
-      child: ElevatedButton(
-        onPressed:
-            _isSigningIn
-                ? null
-                : _signIn,
-        style:
-            ElevatedButton.styleFrom(
-          elevation: 0,
-          backgroundColor:
-              AppColors.teal,
-          foregroundColor:
-              Colors.white,
-          disabledBackgroundColor:
-              AppColors.teal
-                  .withValues(
-            alpha: 0.55,
-          ),
-          disabledForegroundColor:
-              Colors.white,
-          shape:
-              RoundedRectangleBorder(
-            borderRadius:
-                BorderRadius.circular(15),
-          ),
-        ),
-        child: _isSigningIn
-            ? const SizedBox(
-                width: 21,
-                height: 21,
-                child:
-                    CircularProgressIndicator(
-                  strokeWidth: 2.2,
-                  color: Colors.white,
-                ),
-              )
-            : const Text(
-                'Sign in',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight:
-                      FontWeight.w700,
-                ),
-              ),
-      ),
-    );
-  }
-
-  // ============================================================
-  // APPROVAL NOTICE
-  // ============================================================
-
-  Widget _buildApprovalNote() {
-    return Row(
-      mainAxisAlignment:
-          MainAxisAlignment.center,
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
-      children: [
-        Icon(
-          Icons.info_outline_rounded,
-          size: 14,
-          color: AppColors.navy
-              .withValues(
-            alpha: 0.35,
-          ),
-        ),
-
-        const SizedBox(width: 6),
-
-        Flexible(
-          child: Text(
-            'New accounts require approval before sign in becomes available.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: AppColors.navy
-                  .withValues(
-                alpha: 0.38,
-              ),
-              fontSize: 10,
-              height: 1.4,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ============================================================
-  // SIGN UP
-  // ============================================================
-
-  Widget _buildSignUp() {
-    return Center(
-      child: Wrap(
-        crossAxisAlignment:
-            WrapCrossAlignment.center,
-        children: [
-          Text(
-            "Don't have an account? ",
-            style: TextStyle(
-              color: AppColors.navy
-                  .withValues(
-                alpha: 0.52,
-              ),
-              fontSize: 12,
-              fontWeight:
-                  FontWeight.w500,
-            ),
-          ),
-
-          GestureDetector(
-            behavior:
-                HitTestBehavior.opaque,
-            onTap: _signUp,
-            child: const Padding(
-              padding:
-                  EdgeInsets.symmetric(
-                vertical: 5,
-              ),
-              child: Text(
-                'Sign up',
-                style: TextStyle(
-                  color:
-                      AppColors.tealDark,
-                  fontSize: 12,
-                  fontWeight:
-                      FontWeight.w700,
                 ),
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }
 }
-
-// ============================================================
-// HEADER WAVE
-// ============================================================
-
-class _LoginHeaderClipper
-    extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    final path = Path();
-
-    path.lineTo(
-      0,
-      size.height * 0.76,
-    );
-
-    path.cubicTo(
-      size.width * 0.15,
-      size.height * 0.66,
-      size.width * 0.28,
-      size.height * 0.68,
-      size.width * 0.43,
-      size.height * 0.79,
-    );
-
-    path.cubicTo(
-      size.width * 0.66,
-      size.height * 0.97,
-      size.width * 0.83,
-      size.height * 0.97,
-      size.width,
-      size.height * 0.82,
-    );
-
-    path.lineTo(
-      size.width,
-      0,
-    );
-
-    path.close();
-
-    return path;
-  }
-
-  @override
-  bool shouldReclip(
-    covariant CustomClipper<Path>
-        oldClipper,
-  ) {
-    return false;
-  }
-}
-
-// ============================================================
-// CONTOUR DECORATION
-// ============================================================
-
-class _ContourPainter
-    extends CustomPainter {
-  @override
-  void paint(
-    Canvas canvas,
-    Size size,
-  ) {
-    final paint = Paint()
-      ..color =
-          AppColors.teal.withValues(
-        alpha: 0.17,
-      )
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-
-    _drawContour(
-      canvas,
-      paint,
-      Offset(
-        size.width * 0.19,
-        size.height * 0.26,
-      ),
-      115,
-      72,
-    );
-
-    _drawContour(
-      canvas,
-      paint,
-      Offset(
-        size.width * 0.67,
-        size.height * 0.19,
-      ),
-      150,
-      92,
-    );
-
-    _drawContour(
-      canvas,
-      paint,
-      Offset(
-        size.width * 0.48,
-        size.height * 0.58,
-      ),
-      175,
-      94,
-    );
-
-    _drawContour(
-      canvas,
-      paint,
-      Offset(
-        size.width * 0.90,
-        size.height * 0.60,
-      ),
-      112,
-      75,
-    );
-  }
-
-  void _drawContour(
-    Canvas canvas,
-    Paint paint,
-    Offset center,
-    double width,
-    double height,
-  ) {
-    for (int i = 0; i < 4; i++) {
-      final inset = i * 9.0;
-
-      final rect = Rect.fromCenter(
-        center: center,
-        width: width - inset * 2,
-        height: height - inset * 2,
-      );
-
-      if (rect.width <= 0 ||
-          rect.height <= 0) {
-        continue;
-      }
-
-      canvas.drawOval(
-        rect,
-        paint,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(
-    covariant CustomPainter
-        oldDelegate,
-  ) {
-    return false;
-  }
-}
-
-// ============================================================
-// SIMPLE GOOGLE MARK
-// ============================================================
 
 class _GoogleIcon
     extends StatelessWidget {

@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 
-import 'package:shophop/features/auth/data/services/auth_service.dart';
 import 'package:shophop/core/session/auth_session_service.dart';
 import 'package:shophop/core/theme/app_colors.dart';
+import 'package:shophop/features/auth/data/services/auth_service.dart';
 import 'package:shophop/features/auth/presentation/screens/login_screen.dart';
 import 'package:shophop/features/buyer/data/services/buyer_catalog_service.dart';
 import 'package:shophop/features/buyer/presentation/pages/buyer_account_page.dart';
-import 'package:shophop/features/buyer/presentation/pages/buyer_empty_feature_page.dart';
-import 'package:shophop/features/buyer/presentation/pages/buyer_catalog_page.dart';
 import 'package:shophop/features/buyer/presentation/pages/buyer_cart_page.dart';
+import 'package:shophop/features/buyer/presentation/pages/buyer_catalog_page.dart';
 import 'package:shophop/features/buyer/presentation/pages/buyer_checkout_page.dart';
+import 'package:shophop/features/buyer/presentation/pages/buyer_empty_feature_page.dart';
 import 'package:shophop/features/buyer/presentation/pages/buyer_home_page.dart';
 import 'package:shophop/features/buyer/presentation/pages/buyer_my_likes_page.dart';
+import 'package:shophop/features/buyer/presentation/pages/buyer_orders_page.dart';
 import 'package:shophop/features/buyer/presentation/pages/buyer_product_detail_page.dart';
 import 'package:shophop/features/buyer/presentation/widgets/buyer_bottom_navigation.dart';
 
@@ -28,6 +29,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
   int _currentIndex = 0;
   int _likesRefreshVersion = 0;
   int _homeRefreshVersion = 0;
+  int _ordersRefreshVersion = 0;
   String _token = '';
   String _email = '';
   String _displayName = 'Shopper';
@@ -40,13 +42,9 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
 
   Future<void> _loadSession() async {
     try {
-      final session = await AuthSessionService.readSession().timeout(
-        const Duration(seconds: 3),
-      );
+      final session = await AuthSessionService.readSession().timeout(const Duration(seconds: 3));
 
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
 
       if (session == null || session.accountType != 'buyer') {
         await AuthSessionService.clearSession();
@@ -63,10 +61,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
 
       _refreshProfile(session.token);
     } catch (_) {
-      if (!mounted) {
-        return;
-      }
-
+      if (!mounted) return;
       await AuthSessionService.clearSession();
       _returnToLogin();
     }
@@ -74,13 +69,8 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
 
   Future<void> _refreshProfile(String token) async {
     try {
-      final result = await AuthService.me(token: token).timeout(
-        const Duration(seconds: 8),
-      );
-
-      if (!mounted) {
-        return;
-      }
+      final result = await AuthService.me(token: token).timeout(const Duration(seconds: 8));
+      if (!mounted) return;
 
       if (!result.success) {
         if (result.statusCode == 401 || result.statusCode == 403) {
@@ -98,10 +88,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
       final firstName = result.data['first_name']?.toString().trim();
       final email = result.data['email']?.toString().trim();
 
-      if (!mounted) {
-        return;
-      }
-
+      if (!mounted) return;
       setState(() {
         if (email != null && email.isNotEmpty) {
           _email = email;
@@ -124,10 +111,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
 
   String _fallbackNameFromEmail(String email) {
     final localPart = email.split('@').first.trim();
-
-    if (localPart.isEmpty) {
-      return 'Shopper';
-    }
+    if (localPart.isEmpty) return 'Shopper';
 
     final normalized = localPart
         .replaceAll(RegExp(r'[._-]+'), ' ')
@@ -140,14 +124,9 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
   }
 
   Future<void> _logout() async {
-    if (_loggingOut) {
-      return;
-    }
+    if (_loggingOut) return;
 
-    setState(() {
-      _loggingOut = true;
-    });
-
+    setState(() => _loggingOut = true);
     final token = await AuthSessionService.readToken();
 
     if (token != null && token.isNotEmpty) {
@@ -155,19 +134,12 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
     }
 
     await AuthSessionService.clearSession();
-
-    if (!mounted) {
-      return;
-    }
-
+    if (!mounted) return;
     _returnToLogin();
   }
 
   void _returnToLogin() {
-    if (!mounted) {
-      return;
-    }
-
+    if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const LoginScreen()),
       (route) => false,
@@ -175,14 +147,14 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
   }
 
   void _openTab(int index) {
-    if (index == _currentIndex) {
-      return;
-    }
-
+    if (index == _currentIndex) return;
     setState(() {
       _currentIndex = index;
       if (index == 1) {
         _likesRefreshVersion++;
+      }
+      if (index == 2) {
+        _ordersRefreshVersion++;
       }
     });
   }
@@ -253,7 +225,6 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
 
   void _openCheckout(Map<String, int> items) {
     if (items.isEmpty) return;
-
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => BuyerCheckoutPage(
@@ -267,12 +238,28 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
     );
   }
 
+  void _openMessages() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context2) => BuyerEmptyFeaturePage(
+          title: 'Messages',
+          description:
+              'Seller chat, order concerns, and support conversations will connect here in the next mobile/backend pass.',
+          icon: Icons.chat_bubble_outline_rounded,
+          actionLabel: 'Close',
+          onAction: () => Navigator.of(context2).maybePop(),
+        ),
+      ),
+    );
+  }
+
   void _orderPlaced() {
     if (!mounted) return;
     Navigator.of(context).popUntil((route) => route.isFirst);
     setState(() {
       _currentIndex = 2;
       _homeRefreshVersion++;
+      _ordersRefreshVersion++;
     });
   }
 
@@ -281,25 +268,12 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
     setState(() => _homeRefreshVersion++);
   }
 
-  void _showComingSoon(String feature) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text('$feature will be connected to the ShopHop web backend next.'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-  }
-
   @override
   Widget build(BuildContext context) {
     if (_loading) {
       return const Scaffold(
         backgroundColor: AppColors.grayBg,
-        body: Center(
-          child: CircularProgressIndicator(color: AppColors.teal),
-        ),
+        body: Center(child: CircularProgressIndicator(color: AppColors.teal)),
       );
     }
 
@@ -313,7 +287,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
         onOpenProduct: _openProduct,
         onOpenCart: () => _openCart(),
         onOpenOrders: () => _openTab(2),
-        onOpenMessages: () => _showComingSoon('Chat/Messaging'),
+        onOpenMessages: _openMessages,
       ),
       BuyerMyLikesPage(
         key: ValueKey<int>(_likesRefreshVersion),
@@ -323,16 +297,14 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
         onOpenCart: () => _openCart(),
         onOpenProduct: _openProduct,
       ),
-      BuyerEmptyFeaturePage(
-        title: 'My Orders',
-        description:
-            'Track orders from seller confirmation through pickup, sorting, delivery, and receipt confirmation.',
-        icon: Icons.receipt_long_outlined,
-        actionLabel: 'Browse Products',
-        onAction: () => _openTab(0),
+      BuyerOrdersPage(
+        key: ValueKey<int>(_ordersRefreshVersion),
+        token: _token,
+        onSessionExpired: _expireSession,
+        onBrowseProducts: () => _openTab(0),
       ),
       BuyerEmptyFeaturePage(
-        title: 'Notifications',
+        title: 'Updates',
         description:
             'Order updates, seller confirmations, shipment events, and delivery alerts will appear here.',
         icon: Icons.notifications_none_rounded,
@@ -340,6 +312,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
         onAction: () => _openTab(0),
       ),
       BuyerAccountPage(
+        token: _token,
         displayName: _displayName,
         email: _email,
         loggingOut: _loggingOut,

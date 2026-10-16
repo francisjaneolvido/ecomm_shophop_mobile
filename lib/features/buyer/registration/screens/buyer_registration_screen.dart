@@ -76,6 +76,8 @@ class _BuyerRegistrationScreenState
   final _streetAddressController =
       TextEditingController();
 
+  String? _regionCode;
+  String? _regionName;
   String? _provinceCode;
   String? _provinceName;
 
@@ -500,6 +502,8 @@ class _BuyerRegistrationScreenState
           _contactController.text,
       birthday:
           _birthdayController.text,
+      regionCode: _regionCode,
+      regionName: _regionName,
       provinceCode:
           provinceCode,
       provinceName:
@@ -746,13 +750,7 @@ class _BuyerRegistrationScreenState
                 keyboardDismissBehavior:
                     ScrollViewKeyboardDismissBehavior
                         .onDrag,
-                padding:
-                    const EdgeInsets.fromLTRB(
-                  20,
-                  10,
-                  20,
-                  30,
-                ),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
                 child: Column(
                   crossAxisAlignment:
                       CrossAxisAlignment
@@ -1239,6 +1237,12 @@ class _BuyerRegistrationScreenState
           barangayCode:
               _barangayCode,
 
+          onRegionChanged: (code, name) {
+            setState(() {
+              _regionCode = code;
+              _regionName = name.isEmpty ? null : name;
+            });
+          },
           onProvinceChanged: (
             code,
             name,

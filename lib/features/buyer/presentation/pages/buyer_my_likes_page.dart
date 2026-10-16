@@ -357,9 +357,12 @@ class _BuyerMyLikesPageState extends State<BuyerMyLikesPage>
                 IconButton(
                   onPressed: widget.onOpenCart,
                   tooltip: 'Cart',
-                  icon: const Icon(
-                    Icons.shopping_cart_outlined,
+                  icon: Image.asset(
+                    'assets/images/icon_cart_shophop.png',
+                    width: 24,
+                    height: 24,
                     color: AppColors.navy,
+                    filterQuality: FilterQuality.high,
                   ),
                 ),
                 const SizedBox(width: 6),
@@ -468,7 +471,7 @@ class _BuyerMyLikesPageState extends State<BuyerMyLikesPage>
                         crossAxisCount: columns,
                         crossAxisSpacing: 10,
                         mainAxisSpacing: 10,
-                        childAspectRatio: width < 430 ? 0.62 : 0.67,
+                        childAspectRatio: width < 340 ? 0.50 : width < 430 ? 0.59 : 0.65,
                       ),
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {

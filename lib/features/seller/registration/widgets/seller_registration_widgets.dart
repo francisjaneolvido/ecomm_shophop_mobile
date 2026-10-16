@@ -28,7 +28,7 @@ class SellerRegistrationHeader
           'Start selling on ShopHop',
           style: SellerUi.text(
             color: AppColors.navy,
-            fontSize: 28,
+            fontSize: MediaQuery.sizeOf(context).width < 355 ? 24 : 27,
             fontWeight: FontWeight.w800,
             height: 1.1,
             letterSpacing: -0.6,
@@ -115,7 +115,7 @@ class SellerRegistrationProgress
                     child: Container(
                       height: 2,
                       color: lineStep < currentStep
-                          ? AppColors.teal
+                          ? const Color(0xFF087968)
                           : AppColors.grayBorder,
                     ),
                   );
@@ -132,11 +132,11 @@ class SellerRegistrationProgress
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: completed || active
-                        ? AppColors.teal
+                        ? const Color(0xFF087968)
                         : Colors.white,
                     border: Border.all(
                       color: completed || active
-                          ? AppColors.teal
+                          ? const Color(0xFF087968)
                           : AppColors.grayBorder,
                     ),
                   ),
@@ -183,7 +183,7 @@ class SellerRegistrationProgress
                           : AppColors.navy.withValues(
                               alpha: 0.27,
                             ),
-                      fontSize: 8.5,
+                      fontSize: 9.5,
                       fontWeight: reached
                           ? FontWeight.w600
                           : FontWeight.w500,

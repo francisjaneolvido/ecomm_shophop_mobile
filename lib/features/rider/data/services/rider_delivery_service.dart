@@ -28,6 +28,37 @@ class RiderDeliveryService {
     }
   }
 
+  static Future<AuthApiResult> codCollections({required String token}) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/rider/cod'),
+        headers: _headers(token),
+      ).timeout(_requestTimeout);
+      return AuthApiResult.fromResponse(response);
+    } on TimeoutException {
+      return _timeoutError();
+    } catch (_) {
+      return _networkError();
+    }
+  }
+
+  static Future<AuthApiResult> remitCod({
+    required String token,
+    required int deliveryId,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/rider/cod/$deliveryId/remit'),
+        headers: _headers(token),
+      ).timeout(_requestTimeout);
+      return AuthApiResult.fromResponse(response);
+    } on TimeoutException {
+      return _timeoutError();
+    } catch (_) {
+      return _networkError();
+    }
+  }
+
   static Future<AuthApiResult> acceptPickup({
     required String token,
     required int deliveryId,

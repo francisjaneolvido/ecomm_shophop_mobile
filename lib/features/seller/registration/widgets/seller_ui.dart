@@ -75,7 +75,7 @@ class SellerUi {
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: const BorderSide(
-          color: AppColors.teal,
+          color: Color(0xFF087968),
           width: 1.5,
         ),
       ),

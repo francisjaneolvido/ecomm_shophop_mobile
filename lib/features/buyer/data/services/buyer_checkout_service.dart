@@ -189,6 +189,8 @@ class BuyerCheckoutSummaryData {
     required this.shippingFee,
     required this.codFee,
     required this.voucherDiscount,
+    required this.platformDiscount,
+    required this.shippingDiscount,
     required this.grandTotal,
   });
 
@@ -196,6 +198,8 @@ class BuyerCheckoutSummaryData {
   final double shippingFee;
   final double codFee;
   final double voucherDiscount;
+  final double platformDiscount;
+  final double shippingDiscount;
   final double grandTotal;
 
   factory BuyerCheckoutSummaryData.fromJson(Map<String, dynamic> json) {
@@ -204,9 +208,24 @@ class BuyerCheckoutSummaryData {
       shippingFee: _asDouble(json['shipping_fee']),
       codFee: _asDouble(json['cod_fee']),
       voucherDiscount: _asDouble(json['voucher_discount']),
+      platformDiscount: _asDouble(json['platform_discount']),
+      shippingDiscount: _asDouble(json['shipping_discount']),
       grandTotal: _asDouble(json['grand_total']),
     );
   }
+}
+
+class BuyerCheckoutPlatformVoucherData {
+  const BuyerCheckoutPlatformVoucherData({required this.code, required this.name, required this.kind});
+  final String code;
+  final String name;
+  final String kind;
+  factory BuyerCheckoutPlatformVoucherData.fromJson(Map<String, dynamic> json) =>
+      BuyerCheckoutPlatformVoucherData(
+        code: json['code']?.toString() ?? '',
+        name: json['name']?.toString() ?? '',
+        kind: json['kind']?.toString() ?? '',
+      );
 }
 
 class BuyerCheckoutPreviewData {
@@ -215,6 +234,7 @@ class BuyerCheckoutPreviewData {
     required this.groups,
     required this.vouchers,
     required this.initialVoucherCode,
+    required this.availablePlatformVouchers,
     required this.itemCount,
     required this.quantityCount,
     required this.shopCount,
@@ -226,6 +246,7 @@ class BuyerCheckoutPreviewData {
   final List<BuyerCheckoutGroupData> groups;
   final List<BuyerCheckoutVoucherData> vouchers;
   final String initialVoucherCode;
+  final List<BuyerCheckoutPlatformVoucherData> availablePlatformVouchers;
   final int itemCount;
   final int quantityCount;
   final int shopCount;
@@ -248,6 +269,7 @@ class BuyerCheckoutPreviewData {
         BuyerCheckoutVoucherData.fromJson,
       ),
       initialVoucherCode: json['initial_voucher_code']?.toString() ?? '',
+      availablePlatformVouchers: _mapList(json['available_platform_vouchers'], BuyerCheckoutPlatformVoucherData.fromJson),
       itemCount: _asInt(json['item_count']),
       quantityCount: _asInt(json['quantity_count']),
       shopCount: _asInt(json['shop_count']),
@@ -336,6 +358,12 @@ class BuyerPaymentData {
     required this.closureReason,
     required this.canSubmit,
     required this.canCancel,
+    required this.qrUrl,
+    required this.recipientName,
+    required this.recipientIdentifier,
+    required this.paymentInstructions,
+    required this.demoReference,
+    required this.demoAmount,
     required this.orders,
   });
 
@@ -350,10 +378,28 @@ class BuyerPaymentData {
   final String closureReason;
   final bool canSubmit;
   final bool canCancel;
+  final String qrUrl;
+  final String recipientName;
+  final String recipientIdentifier;
+  final String paymentInstructions;
+  final String demoReference;
+  final double demoAmount;
   final List<BuyerPaymentOrderData> orders;
 
   factory BuyerPaymentData.fromJson(Map<String, dynamic> json) {
+    final settings = json['payment_instructions'] is Map
+        ? Map<String, dynamic>.from(json['payment_instructions'] as Map)
+        : <String, dynamic>{};
+    final demo = json['demo_transaction'] is Map
+        ? Map<String, dynamic>.from(json['demo_transaction'] as Map)
+        : <String, dynamic>{};
     return BuyerPaymentData(
+      demoReference: demo['reference']?.toString() ?? '',
+      demoAmount: _asDouble(demo['amount']),
+      qrUrl: settings['qr_url']?.toString() ?? '',
+      recipientName: settings['recipient_name']?.toString() ?? 'ShopHop Demo',
+      recipientIdentifier: settings['recipient_identifier']?.toString() ?? '',
+      paymentInstructions: settings['instructions']?.toString() ?? '',
       id: _asInt(json['id']),
       status: json['status']?.toString() ?? '',
       reference: json['reference']?.toString() ?? '',
@@ -379,6 +425,8 @@ class BuyerCheckoutService {
     Map<int, String> shippingMethods = const <int, String>{},
     String paymentMethod = 'cod',
     String voucherCode = '',
+    String merchandiseVoucherCode = '',
+    String shippingVoucherCode = '',
   }) async {
     final body = await _request(
       '/buyer/checkout/preview',
@@ -389,6 +437,8 @@ class BuyerCheckoutService {
         shippingMethods: shippingMethods,
         paymentMethod: paymentMethod,
         voucherCode: voucherCode,
+        merchandiseVoucherCode: merchandiseVoucherCode,
+        shippingVoucherCode: shippingVoucherCode,
       ),
     );
 
@@ -403,6 +453,8 @@ class BuyerCheckoutService {
     required Map<int, String> shippingMethods,
     required String paymentMethod,
     String voucherCode = '',
+    String merchandiseVoucherCode = '',
+    String shippingVoucherCode = '',
     Map<int, String> notes = const <int, String>{},
   }) async {
     final payload = _checkoutPayload(
@@ -410,6 +462,8 @@ class BuyerCheckoutService {
       shippingMethods: shippingMethods,
       paymentMethod: paymentMethod,
       voucherCode: voucherCode,
+      merchandiseVoucherCode: merchandiseVoucherCode,
+      shippingVoucherCode: shippingVoucherCode,
     );
     payload['groups'] = {
       for (final entry in notes.entries)
@@ -439,6 +493,10 @@ class BuyerCheckoutService {
       method: 'GET',
     );
     return BuyerPaymentData.fromJson(_requireDataMap(body, 'payment'));
+  }
+
+  static Future<void> simulatePayment({required String token, required int paymentId}) async {
+    await _request('/buyer/payments/$paymentId/simulate', token: token, method: 'POST');
   }
 
   static Future<void> submitPaymentProof({
@@ -499,6 +557,8 @@ class BuyerCheckoutService {
     required Map<int, String> shippingMethods,
     required String paymentMethod,
     required String voucherCode,
+    required String merchandiseVoucherCode,
+    required String shippingVoucherCode,
   }) {
     return <String, dynamic>{
       'items': {
@@ -511,6 +571,8 @@ class BuyerCheckoutService {
       },
       'payment_method': paymentMethod,
       'voucher_code': voucherCode.trim(),
+      'merchandise_voucher_code': merchandiseVoucherCode.trim().toUpperCase(),
+      'shipping_voucher_code': shippingVoucherCode.trim().toUpperCase(),
     };
   }
 

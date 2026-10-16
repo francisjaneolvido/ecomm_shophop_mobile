@@ -1,11 +1,9 @@
-// Path in your project: lib/main.dart
-
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:shophop/core/theme/app_colors.dart';
+import 'package:shophop/core/theme/app_theme.dart';
 import 'package:shophop/features/onboarding/presentation/screens/splash_screen.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const ShopHopApp());
 }
 
@@ -17,18 +15,7 @@ class ShopHopApp extends StatelessWidget {
     return MaterialApp(
       title: 'ShopHop',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        scaffoldBackgroundColor: Colors.white,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.teal,
-          primary: AppColors.teal,
-          secondary: AppColors.navy,
-        ),
-        // ShopHop uses Poppins throughout the web app too
-        textTheme: GoogleFonts.poppinsTextTheme(),
-        fontFamily: GoogleFonts.poppins().fontFamily,
-      ),
+      theme: AppTheme.light,
       home: const SplashScreen(),
     );
   }

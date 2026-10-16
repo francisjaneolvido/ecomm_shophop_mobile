@@ -1,43 +1,65 @@
+import 'package:shophop/features/buyer/presentation/pages/buyer_address_editor_page.dart';
 import 'package:flutter/material.dart';
-
 import 'package:shophop/core/theme/app_colors.dart';
+import 'package:shophop/shared/widgets/shop_hop_ui.dart';
 
 class BuyerAccountPage extends StatelessWidget {
   const BuyerAccountPage({
     super.key,
     required this.displayName,
+    required this.token,
     required this.email,
     required this.loggingOut,
     required this.onLogout,
   });
 
   final String displayName;
+  final String token;
   final String email;
   final bool loggingOut;
   final VoidCallback onLogout;
+
+  Future<void> _confirmLogout(BuildContext context) async {
+    if (loggingOut) return;
+    final confirmed = await showShopHopConfirmation(
+      context,
+      title: 'Sign out of ShopHop?',
+      message: 'You can sign back in anytime to continue shopping.',
+      confirmLabel: 'Sign out',
+    );
+    if (confirmed) onLogout();
+  }
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       bottom: false,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(18, 18, 18, 28),
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
         children: [
           const Text(
-            'My Account',
+            'My account',
             style: TextStyle(
               color: AppColors.navy,
-              fontSize: 24,
+              fontSize: 23,
+              letterSpacing: -.5,
               fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            'Profile and account preferences',
+            style: TextStyle(
+              fontSize: 12,
+              color: AppColors.navy.withValues(alpha: .57),
             ),
           ),
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: AppColors.grayBorder),
+              color: AppColors.navy,
+              borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
               children: [
@@ -54,7 +76,7 @@ class BuyerAccountPage extends StatelessWidget {
                     size: 30,
                   ),
                 ),
-                const SizedBox(width: 14),
+                const SizedBox(width: 13),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -64,18 +86,18 @@ class BuyerAccountPage extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          color: AppColors.navy,
+                          color: Colors.white,
                           fontSize: 17,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
-                      const SizedBox(height: 3),
+                      const SizedBox(height: 4),
                       Text(
                         email,
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: AppColors.navy.withValues(alpha: 0.48),
+                          color: Colors.white.withValues(alpha: .72),
                           fontSize: 11,
                         ),
                       ),
@@ -85,48 +107,50 @@ class BuyerAccountPage extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 16),
-          const _AccountTile(
+          const SizedBox(height: 22),
+          const ShopHopSectionHeading(
+            title: 'Manage your account',
+            subtitle: 'Additional self-service options are being connected.',
+          ),
+          const SizedBox(height: 12),
+          _AccountTile(
             icon: Icons.location_on_outlined,
-            title: 'Delivery Addresses',
-            subtitle: 'Manage your saved delivery address',
+            title: 'Delivery addresses',
+            subtitle: 'Edit the default address used for new orders',
+            onTap: () {
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => BuyerAddressEditorPage(token: token),
+              ));
+            },
           ),
           const _AccountTile(
             icon: Icons.chat_bubble_outline_rounded,
             title: 'Messages',
-            subtitle: 'Chat with sellers and support',
+            subtitle: 'Talk to shops and support',
           ),
           const _AccountTile(
             icon: Icons.help_outline_rounded,
-            title: 'Help & Support',
-            subtitle: 'Complaints, disputes, and assistance',
+            title: 'Help & support',
+            subtitle: 'Get help with your orders',
           ),
           const _AccountTile(
             icon: Icons.settings_outlined,
-            title: 'Account Settings',
-            subtitle: 'Manage your ShopHop profile',
+            title: 'Account settings',
+            subtitle: 'Your profile and preferences',
           ),
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed: loggingOut ? null : onLogout,
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.navy,
-              side: const BorderSide(color: AppColors.grayBorder),
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-            icon: loggingOut
-                ? const SizedBox(
-                    width: 17,
-                    height: 17,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.logout_rounded, size: 19),
-            label: const Text(
-              'Logout',
-              style: TextStyle(fontWeight: FontWeight.w800),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: loggingOut ? null : () => _confirmLogout(context),
+              icon: loggingOut
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.logout_rounded, size: 19),
+              label: const Text('Sign out'),
             ),
           ),
         ],
@@ -140,49 +164,78 @@ class _AccountTile extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.subtitle,
+    this.onTap,
   });
 
   final IconData icon;
   final String title;
   final String subtitle;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Material(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.grayBorder),
-      ),
-      child: ListTile(
-        leading: Icon(icon, color: AppColors.tealDark),
-        title: Text(
-          title,
-          style: const TextStyle(
-            color: AppColors.navy,
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap ?? () {
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                SnackBar(content: Text('$title is not connected in the mobile app yet.')),
+              );
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.grayBorder),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: AppColors.tealLight,
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                  child: Icon(icon, color: AppColors.tealDark, size: 21),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          color: AppColors.navy,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          color: AppColors.navy.withValues(alpha: .54),
+                          fontSize: 10.5,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Icon(Icons.chevron_right_rounded, size: 20, color: Color(0xFF526177)),
+              ],
+            ),
           ),
         ),
-        subtitle: Text(
-          subtitle,
-          style: TextStyle(
-            color: AppColors.navy.withValues(alpha: 0.45),
-            fontSize: 10,
-          ),
-        ),
-        trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.navy),
-        onTap: () {
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(
-              SnackBar(
-                content: Text('$title will be connected in the next Buyer module.'),
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-        },
       ),
     );
   }

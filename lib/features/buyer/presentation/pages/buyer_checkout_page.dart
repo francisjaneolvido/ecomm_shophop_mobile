@@ -31,6 +31,8 @@ class _BuyerCheckoutPageState extends State<BuyerCheckoutPage> {
   final Map<int, String> _notes = <int, String>{};
   String _paymentMethod = 'cod';
   String _voucherCode = '';
+  String _merchandiseVoucherCode = '';
+  String _shippingVoucherCode = '';
   bool _loading = true;
   bool _recalculating = false;
   bool _placingOrder = false;
@@ -82,6 +84,8 @@ class _BuyerCheckoutPageState extends State<BuyerCheckoutPage> {
     Map<int, String>? shippingMethods,
     String? paymentMethod,
     String? voucherCode,
+    String? merchandiseVoucherCode,
+    String? shippingVoucherCode,
     bool showBusy = true,
   }) async {
     if (showBusy && mounted) setState(() => _recalculating = true);
@@ -92,6 +96,8 @@ class _BuyerCheckoutPageState extends State<BuyerCheckoutPage> {
         shippingMethods: shippingMethods ?? _shippingMethods,
         paymentMethod: paymentMethod ?? _paymentMethod,
         voucherCode: voucherCode ?? _voucherCode,
+        merchandiseVoucherCode: merchandiseVoucherCode ?? _merchandiseVoucherCode,
+        shippingVoucherCode: shippingVoucherCode ?? _shippingVoucherCode,
       );
       if (!mounted) return null;
       setState(() {
@@ -157,6 +163,45 @@ class _BuyerCheckoutPageState extends State<BuyerCheckoutPage> {
     setState(() => _voucherCode = candidate);
   }
 
+  Future<void> _choosePlatformVouchers() async {
+    if (_recalculating || _placingOrder) return;
+    final merchandise = TextEditingController(text: _merchandiseVoucherCode);
+    final shipping = TextEditingController(text: _shippingVoucherCode);
+    final values = await showDialog<List<String>>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('ShopHop-funded vouchers'),
+        content: SingleChildScrollView(
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('Platform discounts are funded by ShopHop. Seller vouchers apply separately.'),
+            const SizedBox(height: 10),
+            TextField(controller: merchandise, textCapitalization: TextCapitalization.characters,
+              decoration: const InputDecoration(labelText: 'Platform merchandise code')),
+            const SizedBox(height: 10),
+            TextField(controller: shipping, textCapitalization: TextCapitalization.characters,
+              decoration: const InputDecoration(labelText: 'Free shipping code')),
+            const SizedBox(height: 8),
+            Text('Available: ${_preview?.availablePlatformVouchers.map((v) => '${v.code} (${v.kind})').join(', ') ?? 'None'}',
+              style: const TextStyle(fontSize: 11)),
+          ]),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(dialogContext, [
+            merchandise.text.trim().toUpperCase(), shipping.text.trim().toUpperCase()]),
+            child: const Text('Apply')),
+        ],
+      ),
+    );
+    // Controllers are no longer used after the dialog returns.
+    merchandise.dispose();
+    shipping.dispose();
+    if (!mounted || values == null) return;
+    final result = await _fetchPreview(merchandiseVoucherCode: values[0], shippingVoucherCode: values[1]);
+    if (!mounted || result == null) return;
+    setState(() { _merchandiseVoucherCode = values[0]; _shippingVoucherCode = values[1]; });
+  }
+
   Future<void> _placeOrder() async {
     final preview = _preview;
     if (preview == null || _placingOrder || _recalculating) return;
@@ -195,6 +240,8 @@ class _BuyerCheckoutPageState extends State<BuyerCheckoutPage> {
         shippingMethods: _shippingMethods,
         paymentMethod: _paymentMethod,
         voucherCode: _voucherCode,
+        merchandiseVoucherCode: _merchandiseVoucherCode,
+        shippingVoucherCode: _shippingVoucherCode,
         notes: _notes,
       );
       if (!mounted) return;
@@ -332,7 +379,7 @@ class _BuyerCheckoutPageState extends State<BuyerCheckoutPage> {
       },
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(12, 12, 12, 120),
+        padding: const EdgeInsets.fromLTRB(14, 14, 14, 120),
         children: [
           _SecureCheckoutHeader(
             itemCount: preview.quantityCount,
@@ -362,6 +409,17 @@ class _BuyerCheckoutPageState extends State<BuyerCheckoutPage> {
             onTap: _chooseVoucher,
           ),
           const SizedBox(height: 10),
+          _SurfaceCard(child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+            leading: const Icon(Icons.discount_outlined, color: AppColors.tealDark),
+            title: const Text('ShopHop & Free Shipping Vouchers'),
+            subtitle: Text(_merchandiseVoucherCode.isEmpty && _shippingVoucherCode.isEmpty
+                ? 'Enter Admin-funded voucher codes'
+                : 'Platform: ${_merchandiseVoucherCode.isEmpty ? 'None' : _merchandiseVoucherCode} · Shipping: ${_shippingVoucherCode.isEmpty ? 'None' : _shippingVoucherCode}'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: _recalculating || _placingOrder ? null : _choosePlatformVouchers,
+          )),
+          const SizedBox(height: 10),
           _PaymentCard(
             selected: _paymentMethod,
             disabled: _recalculating || _placingOrder,
@@ -386,9 +444,7 @@ class _SecureCheckoutHeader extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF10264D), Color(0xFF16445A)],
-        ),
+        color: Color(0xFF10264D),
         borderRadius: BorderRadius.circular(18),
       ),
       child: Row(
@@ -1055,13 +1111,17 @@ class _SummaryCard extends StatelessWidget {
           _SummaryRow('Merchandise Subtotal', summary.merchandiseSubtotal),
           _SummaryRow('Shipping Fee', summary.shippingFee),
           if (summary.codFee > 0) _SummaryRow('COD Fee', summary.codFee),
+          if (summary.platformDiscount > 0)
+            _SummaryRow('ShopHop Discount', -summary.platformDiscount, discount: true),
+          if (summary.shippingDiscount > 0)
+            _SummaryRow('Free Shipping Discount', -summary.shippingDiscount, discount: true),
           if (summary.voucherDiscount > 0)
             _SummaryRow(
               'Voucher Discount',
               -summary.voucherDiscount,
               discount: true,
             ),
-          const Divider(height: 20, color: Color(0xffecef1f1)),
+          const Divider(height: 20, color: Color(0xFFECEFF1)),
           Row(
             children: [
               const Expanded(

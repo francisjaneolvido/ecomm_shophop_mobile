@@ -1,948 +1,118 @@
 import 'package:flutter/material.dart';
 import 'package:shophop/core/theme/app_colors.dart';
 import 'package:shophop/features/auth/presentation/screens/login_screen.dart';
+import 'package:shophop/features/auth/presentation/screens/account_type_screen.dart';
+import 'package:shophop/shared/widgets/shop_hop_brand.dart';
 
+/// Clean, full-height ShopHop welcome screen. No floating cards or gradients.
+class LandingScreen extends StatelessWidget {
+  const LandingScreen({super.key});
 
+  void _openLogin(BuildContext context) => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+      );
 
-class LandingScreen extends StatefulWidget {
-
-  const LandingScreen({
-    super.key,
-  });
-
+  void _openRegistration(BuildContext context) => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const AccountTypeScreen()),
+      );
 
   @override
-  State<LandingScreen> createState() =>
-      _LandingScreenState();
-
+  Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final compact = size.height < 690 || size.width < 350;
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            padding: EdgeInsets.symmetric(
+              horizontal: size.width >= 600 ? 32 : 20,
+              vertical: compact ? 16 : 23,
+            ),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 440),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight - (compact ? 32 : 46)),
+                  child: IntrinsicHeight(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Align(alignment: Alignment.centerLeft, child: ShopHopBrand(compact: true)),
+                        SizedBox(height: compact ? 27 : 46),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+                            decoration: BoxDecoration(color: AppColors.tealLight, borderRadius: BorderRadius.circular(100)),
+                            child: const Text('SHOP   •   SELL   •   DELIVER', style: TextStyle(color: AppColors.tealDark, fontSize: 10, letterSpacing: 1.5, fontWeight: FontWeight.w800)),
+                          ),
+                        ),
+                        const SizedBox(height: 19),
+                        Text.rich(
+                          TextSpan(children: const [
+                            TextSpan(text: 'Everything you love,\n', style: TextStyle(color: AppColors.navy)),
+                            TextSpan(text: 'just a hop away.', style: TextStyle(color: AppColors.tealDark)),
+                          ]),
+                          style: TextStyle(fontSize: size.width < 370 ? 30 : 35, fontWeight: FontWeight.w800, height: 1.16, letterSpacing: -1.2),
+                        ),
+                        const SizedBox(height: 15),
+                        Text(
+                          'Discover everyday finds, connect with local shops, and follow each order from checkout to delivery.',
+                          style: TextStyle(color: AppColors.navy.withValues(alpha: .61), fontSize: 13, height: 1.65),
+                        ),
+                        SizedBox(height: compact ? 25 : 36),
+                        const Row(
+                          children: [
+                            Expanded(child: _Pillar(icon: Icons.shopping_bag_outlined, name: 'Shop')),
+                            SizedBox(width: 8),
+                            Expanded(child: _Pillar(icon: Icons.storefront_outlined, name: 'Sell')),
+                            SizedBox(width: 8),
+                            Expanded(child: _Pillar(icon: Icons.local_shipping_outlined, name: 'Deliver')),
+                          ],
+                        ),
+                        const Spacer(),
+                        SizedBox(height: compact ? 22 : 32),
+                        SizedBox(height: 52, child: FilledButton(
+                          onPressed: () => _openLogin(context),
+                          child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [Text('Sign in to ShopHop'), SizedBox(width: 10), Icon(Icons.arrow_forward_rounded, size: 18)]),
+                        )),
+                        const SizedBox(height: 11),
+                        SizedBox(height: 52, child: OutlinedButton(
+                          onPressed: () => _openRegistration(context),
+                          child: const Text('Create an account'),
+                        )),
+                        const SizedBox(height: 17),
+                        Text('Your marketplace, connected from checkout to delivery.', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: AppColors.navy.withValues(alpha: .46))),
+                        const SizedBox(height: 4),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-
-
-class _LandingScreenState extends State<LandingScreen>
-    with SingleTickerProviderStateMixin {
-
-
-  late AnimationController _controller;
-
-
-  late Animation<double> _fade;
-
-  late Animation<double> _slide;
-
-  late Animation<double> _scale;
-
-
-
+class _Pillar extends StatelessWidget {
+  const _Pillar({required this.icon, required this.name});
+  final IconData icon;
+  final String name;
 
   @override
-  void initState(){
-
-    super.initState();
-
-
-    _controller =
-        AnimationController(
-
-          vsync: this,
-
-          duration:
-              const Duration(
-                milliseconds: 1200,
-              ),
-
-        );
-
-
-
-    _fade =
-        CurvedAnimation(
-
-          parent:
-              _controller,
-
-
-          curve:
-              Curves.easeOut,
-
-        );
-
-
-
-
-    _slide =
-        Tween<double>(
-
-          begin:
-              40,
-
-          end:
-              0,
-
-        ).animate(
-
-          CurvedAnimation(
-
-            parent:
-                _controller,
-
-
-            curve:
-                Curves.easeOutCubic,
-
-          ),
-
-        );
-
-
-
-
-    _scale =
-        Tween<double>(
-
-          begin:
-              .8,
-
-          end:
-              1,
-
-        ).animate(
-
-          CurvedAnimation(
-
-            parent:
-                _controller,
-
-
-            curve:
-                Curves.elasticOut,
-
-          ),
-
-        );
-
-
-
-    _controller.forward();
-
-
-  }
-
-
-
-
-
-  @override
-  void dispose(){
-
-    _controller.dispose();
-
-    super.dispose();
-
-  }
-
-
-
-
-
-
-
-  @override
-  Widget build(BuildContext context){
-
-
-    return Scaffold(
-
-
-      body:
-
-
+  Widget build(BuildContext context) => Column(
+    children: [
       Container(
-
-
-        decoration:
-
-
-        BoxDecoration(
-
-
-          gradient:
-
-
-          LinearGradient(
-
-
-            begin:
-                Alignment.topCenter,
-
-
-            end:
-                Alignment.bottomCenter,
-
-
-
-            colors:[
-
-
-              Colors.white,
-
-
-              AppColors.tealLight
-                  .withValues(
-                    alpha:
-                        .35,
-                  ),
-
-
-            ],
-
-
-          ),
-
-
-        ),
-
-
-
-
-
-        child:
-
-
-        SafeArea(
-
-
-          child:
-
-
-          Padding(
-
-
-            padding:
-
-            const EdgeInsets.symmetric(
-
-              horizontal:
-                  28,
-
-            ),
-
-
-
-            child:
-
-
-            Column(
-
-
-              children:[
-
-
-
-
-
-                const Spacer(),
-
-
-
-
-
-
-
-
-                FadeTransition(
-
-                  opacity:
-                      _fade,
-
-
-                  child:
-
-
-                  ScaleTransition(
-
-                    scale:
-                        _scale,
-
-
-                    child:
-
-                    Image.asset(
-
-                      'assets/images/logo.png',
-
-                      width:
-                          120,
-
-                    ),
-
-
-                  ),
-
-
-                ),
-
-
-
-
-
-
-
-
-                const SizedBox(
-
-                  height:
-                      35,
-
-                ),
-
-
-
-
-
-
-
-
-                FadeTransition(
-
-                  opacity:
-                      _fade,
-
-
-                  child:
-
-                  Transform.translate(
-
-
-                    offset:
-
-                    Offset(
-
-                      0,
-
-                      _slide.value,
-
-                    ),
-
-
-
-                    child:
-
-
-                    Column(
-
-                      children:[
-
-
-
-
-                        Text(
-
-                          "Everything You Love,\nJust a Hop Away.",
-
-
-
-                          textAlign:
-                              TextAlign.center,
-
-
-                          style:
-
-
-                          TextStyle(
-
-
-                            color:
-                                AppColors.navy,
-
-
-                            fontSize:
-                                28,
-
-
-                            height:
-                                1.25,
-
-
-                            fontWeight:
-                                FontWeight.w800,
-
-
-                            letterSpacing:
-                                -.3,
-
-
-                          ),
-
-
-                        ),
-
-
-
-
-
-
-
-
-                        const SizedBox(
-
-                          height:
-                              16,
-
-                        ),
-
-
-
-
-
-
-
-
-                        Text(
-
-
-                          "Discover everyday essentials,\ntrending finds, and products you'll love\nall in one place.",
-
-
-
-                          textAlign:
-                              TextAlign.center,
-
-
-                          style:
-
-
-                          TextStyle(
-
-
-                            color:
-
-                            AppColors.navy
-                                .withValues(
-                                  alpha:
-                                      .6,
-                                ),
-
-
-                            fontSize:
-                                14,
-
-
-                            height:
-                                1.6,
-
-
-                          ),
-
-
-                        ),
-
-
-
-
-                      ],
-
-
-                    ),
-
-
-                  ),
-
-
-                ),
-
-
-
-
-
-
-
-
-
-                const SizedBox(
-
-                  height:
-                      45,
-
-                ),
-
-
-
-
-
-
-
-
-
-                // FEATURE CARDS
-
-
-                Row(
-
-
-                  mainAxisAlignment:
-                      MainAxisAlignment.center,
-
-
-                  children:[
-
-
-                    _miniCard(
-
-                      Icons.shopping_bag_outlined,
-
-                      "Shop",
-
-                    ),
-
-
-                    const SizedBox(
-                      width:
-                          12,
-                    ),
-
-
-                    _miniCard(
-
-                      Icons.local_shipping_outlined,
-
-                      "Fast",
-
-                    ),
-
-
-                    const SizedBox(
-                      width:
-                          12,
-                    ),
-
-
-                    _miniCard(
-
-                      Icons.favorite_border,
-
-                      "Loved",
-
-                    ),
-
-
-
-                  ],
-
-
-                ),
-
-
-
-
-
-
-
-                const Spacer(),
-
-
-
-
-
-
-
-                SizedBox(
-
-
-                  width:
-                      double.infinity,
-
-
-                  height:
-                      56,
-
-
-
-                  child:
-
-
-                  ElevatedButton(
-  onPressed: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const LoginScreen(),
+        width: 52, height: 52,
+        decoration: BoxDecoration(color: AppColors.grayBg, border: Border.all(color: AppColors.grayBorder), borderRadius: BorderRadius.circular(16)),
+        child: Icon(icon, size: 23, color: AppColors.navy),
       ),
-    );
-  },
-
-
-                    style:
-
-
-                    ElevatedButton.styleFrom(
-
-
-                      backgroundColor:
-                          AppColors.teal,
-
-
-                      foregroundColor:
-                          AppColors.navy,
-
-
-                      elevation:
-                          0,
-
-
-                      shape:
-
-
-                      RoundedRectangleBorder(
-
-
-                        borderRadius:
-
-                        BorderRadius.circular(
-                          18,
-                        ),
-
-
-                      ),
-
-
-                    ),
-
-
-
-                    child:
-
-
-                    const Text(
-
-
-                      "Get Started",
-
-
-
-                      style:
-
-
-                      TextStyle(
-
-
-                        fontSize:
-                            16,
-
-
-                        fontWeight:
-                            FontWeight.w700,
-
-
-                      ),
-
-
-                    ),
-
-
-                  ),
-
-
-                ),
-
-
-
-
-
-
-
-
-                const SizedBox(
-
-                  height:
-                      12,
-
-                ),
-
-
-
-
-
-
-
-                TextButton(
-
-
-                  onPressed:(){},
-
-
-                  child:
-
-
-                  RichText(
-
-
-                    text:
-
-
-                    TextSpan(
-
-
-                      text:
-                          "Already have an account? ",
-
-
-                      style:
-
-
-                      TextStyle(
-
-                        color:
-
-                        AppColors.navy
-                            .withValues(
-                              alpha:
-                                  .6,
-                            ),
-
-                        fontSize:
-                            13,
-
-                      ),
-
-
-
-
-                      children:[
-
-
-
-                        TextSpan(
-
-
-                          text:
-                              "Sign In",
-
-
-                          style:
-
-
-                          TextStyle(
-
-
-                            color:
-                                AppColors.tealDark,
-
-
-                            fontWeight:
-                                FontWeight.w700,
-
-
-                          ),
-
-
-                        ),
-
-
-
-                      ],
-
-
-                    ),
-
-
-                  ),
-
-
-                ),
-
-
-
-
-
-
-
-                const SizedBox(
-
-                  height:
-                      20,
-
-                ),
-
-
-
-
-
-              ],
-
-
-            ),
-
-
-          ),
-
-
-        ),
-
-
-      ),
-
-
-    );
-
-
-  }
-
-
-
-
-
-
-
-
-
-  Widget _miniCard(
-      IconData icon,
-      String text,
-  ){
-
-
-    return Container(
-
-
-      width:
-          75,
-
-
-      height:
-          70,
-
-
-
-      decoration:
-
-
-      BoxDecoration(
-
-
-        color:
-            Colors.white,
-
-
-        borderRadius:
-            BorderRadius.circular(
-              18,
-            ),
-
-
-
-        boxShadow:[
-
-
-          BoxShadow(
-
-
-            color:
-
-            Colors.black
-                .withValues(
-                  alpha:
-                      .05,
-                ),
-
-
-            blurRadius:
-                15,
-
-
-            offset:
-                const Offset(
-                  0,
-                  5,
-                ),
-
-
-          ),
-
-
-        ],
-
-
-      ),
-
-
-
-
-      child:
-
-
-      Column(
-
-        mainAxisAlignment:
-            MainAxisAlignment.center,
-
-
-        children:[
-
-
-
-          Icon(
-
-            icon,
-
-
-            color:
-                AppColors.teal,
-
-
-            size:
-                25,
-
-          ),
-
-
-
-
-          const SizedBox(
-
-            height:
-                6,
-
-          ),
-
-
-
-
-          Text(
-
-            text,
-
-
-            style:
-
-            TextStyle(
-
-              color:
-                  AppColors.navy,
-
-              fontSize:
-                  11,
-
-              fontWeight:
-                  FontWeight.w600,
-
-            ),
-
-          ),
-
-
-
-        ],
-
-
-      ),
-
-
-    );
-
-
-  }
-
-
-
+      const SizedBox(height: 8),
+      Text(name, style: const TextStyle(color: AppColors.navy, fontSize: 12, fontWeight: FontWeight.w700)),
+    ],
+  );
 }

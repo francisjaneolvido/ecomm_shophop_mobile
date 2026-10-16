@@ -2,6 +2,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import 'package:shophop/core/theme/app_colors.dart';
+import 'package:shophop/features/auth/data/services/auth_service.dart';
+import 'package:shophop/features/auth/presentation/screens/login_screen.dart';
 import 'package:shophop/features/auth/presentation/screens/email_verification_screen.dart';
 import 'package:shophop/features/auth/domain/registration_role.dart';
 import 'package:shophop/shared/registration/steps/address_step.dart';
@@ -52,16 +54,15 @@ class _SellerRegistrationScreenState
   String? _selectedSex;
   DateTime? _selectedBirthday;
 
+  String? _regionCode;
+  String? _regionName;
   String? _provinceCode;
-  // ignore: unused_field
   String? _provinceName;
 
   String? _municipalityCode;
-  // ignore: unused_field
   String? _municipalityName;
 
   String? _barangayCode;
-  // ignore: unused_field
   String? _barangayName;
 
   PlatformFile? _validIdFile;
@@ -69,6 +70,7 @@ class _SellerRegistrationScreenState
 
   bool _termsAccepted = false;
   int _currentStep = 1;
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -110,7 +112,7 @@ class _SellerRegistrationScreenState
       initialDate: initial,
       firstDate: DateTime(1900, 1, 1),
       lastDate: DateTime(
-        now.year,
+        now.year - 18,
         now.month,
         now.day,
       ),
@@ -132,6 +134,10 @@ class _SellerRegistrationScreenState
     );
 
     if (picked == null) {
+      return;
+    }
+    if (picked.isAfter(DateTime(now.year - 18, now.month, now.day))) {
+      _showMessage('Sellers must be at least 18 years old.');
       return;
     }
 
@@ -221,189 +227,132 @@ class _SellerRegistrationScreenState
     });
   }
 
-  void _createAccount() {
+  Future<void> _createAccount() async {
+    if (_isSubmitting) return;
     FocusScope.of(context).unfocus();
 
-    final valid =
-        _securityFormKey.currentState?.validate() ??
-            false;
-
-    if (!valid) {
-      _showMessage(
-        'Please complete the security requirements.',
-      );
+    if (!(_securityFormKey.currentState?.validate() ?? false)) {
+      _showMessage('Please complete the password and seller agreement.');
+      return;
+    }
+    if (_validIdFile == null || _businessPermitFile == null) {
+      _goToStep(4);
+      _showMessage('Please upload your valid ID and business permit.');
+      return;
+    }
+    if (_businessNameController.text.trim().isEmpty ||
+        _businessCategoryController.text.trim().isEmpty) {
+      _goToStep(3);
+      _showMessage('Please complete your business details.');
+      return;
+    }
+    if (_provinceCode == null || _provinceName == null ||
+        _municipalityCode == null || _municipalityName == null ||
+        _barangayCode == null || _barangayName == null ||
+        _streetAddressController.text.trim().isEmpty) {
+      _goToStep(2);
+      _showMessage('Please complete the delivery address.');
+      return;
+    }
+    if (_selectedSex == null || _birthdayController.text.isEmpty ||
+        _firstNameController.text.trim().isEmpty ||
+        _lastNameController.text.trim().isEmpty ||
+        _emailController.text.trim().isEmpty ||
+        _contactController.text.trim().isEmpty) {
+      _goToStep(1);
+      _showMessage('Please complete your personal details.');
       return;
     }
 
-    _showVerificationPreviewDialog();
-  }
-
-  Future<void> _showVerificationPreviewDialog() async {
-    final shouldPreview =
-        await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          backgroundColor:
-              Colors.white,
-          shape:
-              RoundedRectangleBorder(
-            borderRadius:
-                BorderRadius.circular(
-              22,
-            ),
-          ),
-          icon: Container(
-            width: 54,
-            height: 54,
-            decoration:
-                BoxDecoration(
-              color:
-                  AppColors.tealLight,
-              borderRadius:
-                  BorderRadius.circular(
-                17,
-              ),
-            ),
-            child: const Icon(
-              Icons
-                  .mark_email_unread_outlined,
-              color:
-                  AppColors.tealDark,
-              size: 27,
-            ),
-          ),
-          title: Text(
-            'Seller registration UI complete',
-            textAlign:
-                TextAlign.center,
-            style: SellerUi.text(
-              color:
-                  AppColors.navy,
-              fontSize: 18,
-              fontWeight:
-                  FontWeight.w700,
-            ),
-          ),
-          content: Text(
-            'The Laravel registration API is not connected yet, so no real '
-            'verification code will be sent. You can still preview the '
-            'seller email verification screen.',
-            textAlign:
-                TextAlign.center,
-            style: SellerUi.text(
-              color:
-                  AppColors.navy
-                      .withValues(
-                alpha: 0.52,
-              ),
-              fontSize: 12,
-              height: 1.5,
-            ),
-          ),
-          actionsAlignment:
-              MainAxisAlignment.center,
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(
-                  dialogContext,
-                  false,
-                );
-              },
-              child: Text(
-                'Not now',
-                style: SellerUi.text(
-                  color:
-                      AppColors.navy,
-                  fontSize: 12,
-                  fontWeight:
-                      FontWeight.w600,
-                ),
-              ),
-            ),
-            FilledButton(
-              onPressed: () {
-                Navigator.pop(
-                  dialogContext,
-                  true,
-                );
-              },
-              style:
-                  FilledButton.styleFrom(
-                backgroundColor:
-                    AppColors.teal,
-                foregroundColor:
-                    Colors.white,
-                shape:
-                    RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(
-                    13,
-                  ),
-                ),
-              ),
-              child: Text(
-                'Preview',
-                style: SellerUi.text(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight:
-                      FontWeight.w700,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
+    setState(() => _isSubmitting = true);
+    final result = await AuthService.registerSeller(
+      firstName: _firstNameController.text,
+      lastName: _lastNameController.text,
+      middleInitial: _middleInitialController.text,
+      sex: _selectedSex!,
+      email: _emailController.text,
+      contactNo: _contactController.text,
+      birthday: _birthdayController.text,
+      regionCode: _regionCode,
+      regionName: _regionName,
+      provinceCode: _provinceCode!,
+      provinceName: _provinceName!,
+      municipalityCode: _municipalityCode!,
+      municipalityName: _municipalityName!,
+      barangayCode: _barangayCode!,
+      barangayName: _barangayName!,
+      streetAddress: _streetAddressController.text,
+      businessName: _businessNameController.text,
+      businessCategory: _businessCategoryController.text,
+      validId: _validIdFile!,
+      businessPermit: _businessPermitFile!,
+      password: _passwordController.text,
     );
 
-    if (!mounted ||
-        shouldPreview != true) {
+    if (!mounted) return;
+    setState(() => _isSubmitting = false);
+    if (!result.success) {
+      _showMessage(result.message);
       return;
     }
 
-    _openEmailVerificationPreview();
+    if (result.data['otp_delivery'] == 'failed') {
+      _showMessage(result.message);
+    }
+    _openEmailVerification();
   }
 
-  void _openEmailVerificationPreview() {
+  void _openEmailVerification() {
+    final email = _emailController.text.trim().toLowerCase();
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) =>
-            EmailVerificationScreen(
-          email:
-              _emailController.text
-                  .trim(),
-          role:
-              RegistrationRole.seller,
-          onVerifyCode:
-              (code) async {
-            await Future<void>.delayed(
-              const Duration(
-                milliseconds: 550,
-              ),
+        builder: (_) => EmailVerificationScreen(
+          email: email,
+          role: RegistrationRole.seller,
+          onVerifyCode: (code) async {
+            final result = await AuthService.verifySellerEmail(
+              email: email,
+              code: code,
             );
-
-            return 'UI preview only — no verification code was sent because '
-                'the Laravel API is not connected yet.';
+            return result.success ? null : result.message;
           },
-          onResendCode:
-              () async {
-            await Future<void>.delayed(
-              const Duration(
-                milliseconds: 550,
-              ),
+          onResendCode: () async {
+            final result = await AuthService.resendSellerVerification(
+              email: email,
             );
-
-            return 'UI preview only — resend will work after the Laravel '
-                'verification API is connected.';
+            return result.success ? null : result.message;
           },
-          onVerified: () {
-            // Connect this after the real backend confirms the OTP.
-          },
+          onVerified: _showVerificationSuccess,
         ),
       ),
+    );
+  }
+
+  Future<void> _showVerificationSuccess() async {
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Seller email verified!'),
+        content: const Text(
+          'Your seller registration has been submitted. '
+          'Please wait for administrator approval before signing in. '
+          'The Seller mobile dashboard is not available yet.',
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Back to Login'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (route) => false,
     );
   }
 
@@ -456,12 +405,7 @@ class _SellerRegistrationScreenState
                 controller: _scrollController,
                 keyboardDismissBehavior:
                     ScrollViewKeyboardDismissBehavior.onDrag,
-                padding: const EdgeInsets.fromLTRB(
-                  20,
-                  10,
-                  20,
-                  30,
-                ),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -538,6 +482,12 @@ class _SellerRegistrationScreenState
           provinceCode: _provinceCode,
           municipalityCode: _municipalityCode,
           barangayCode: _barangayCode,
+          onRegionChanged: (code, name) {
+            setState(() {
+              _regionCode = code;
+              _regionName = name.isEmpty ? null : name;
+            });
+          },
           onProvinceChanged: (code, name) {
             setState(() {
               _provinceCode = code;
@@ -736,7 +686,7 @@ class _SellerRegistrationScreenState
               SizedBox(
                 height: 54,
                 child: OutlinedButton(
-                  onPressed: _previousStep,
+                  onPressed: _isSubmitting ? null : _previousStep,
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.navy,
                     side: const BorderSide(
@@ -775,9 +725,11 @@ class _SellerRegistrationScreenState
               child: SizedBox(
                 height: 54,
                 child: ElevatedButton(
-                  onPressed: isFinalStep
-                      ? _createAccount
-                      : _nextStep,
+                  onPressed: _isSubmitting
+                      ? null
+                      : isFinalStep
+                          ? _createAccount
+                          : _nextStep,
                   style: ElevatedButton.styleFrom(
                     elevation: 0,
                     backgroundColor: AppColors.teal,
@@ -787,7 +739,16 @@ class _SellerRegistrationScreenState
                           BorderRadius.circular(15),
                     ),
                   ),
-                  child: Row(
+                  child: _isSubmitting
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.4,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Row(
                     mainAxisAlignment:
                         MainAxisAlignment.center,
                     children: [

@@ -2,14 +2,6 @@ import 'package:flutter/material.dart';
 
 import 'package:shophop/core/theme/app_colors.dart';
 
-enum BuyerNavigationTab {
-  home,
-  likes,
-  orders,
-  notifications,
-  account,
-}
-
 class BuyerBottomNavigationBar extends StatelessWidget {
   const BuyerBottomNavigationBar({
     super.key,
@@ -28,7 +20,7 @@ class BuyerBottomNavigationBar extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(
-          top: BorderSide(color: AppColors.grayBorder.withValues(alpha: 0.75)),
+          top: BorderSide(color: AppColors.grayBorder.withValues(alpha: 0.8)),
         ),
         boxShadow: [
           BoxShadow(
@@ -45,15 +37,18 @@ class BuyerBottomNavigationBar extends StatelessWidget {
           onTap: onTap,
           type: BottomNavigationBarType.fixed,
           backgroundColor: Colors.white,
-          selectedItemColor: AppColors.tealDark,
-          unselectedItemColor: AppColors.navy.withValues(alpha: 0.45),
+          selectedItemColor: const Color(0xFF087968),
+          unselectedItemColor: const Color(0xFF526177),
           selectedFontSize: 11,
           unselectedFontSize: 11,
           selectedLabelStyle: const TextStyle(
             fontWeight: FontWeight.w800,
-            letterSpacing: -0.2,
+            color: Color(0xFF087968),
           ),
-          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500),
+          unselectedLabelStyle: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF526177),
+          ),
           elevation: 0,
           items: [
             BottomNavigationBarItem(
@@ -85,7 +80,7 @@ class BuyerBottomNavigationBar extends StatelessWidget {
                 count: notificationCount,
                 selected: currentIndex == 3,
               ),
-              label: 'Notifications',
+              label: 'Updates',
             ),
             BottomNavigationBarItem(
               icon: _NavIcon(
@@ -115,25 +110,23 @@ class _NavIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
+    // No pill, oval, or selected background: icon color communicates state.
+    return SizedBox(
       width: 38,
       height: 30,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: selected ? AppColors.tealLight.withValues(alpha: 0.7) : null,
-        borderRadius: BorderRadius.circular(12),
+      child: Center(
+        child: Icon(
+          selected ? activeIcon : icon,
+          size: 23,
+          color: selected ? const Color(0xFF087968) : const Color(0xFF526177),
+        ),
       ),
-      child: Icon(selected ? activeIcon : icon, size: 23),
     );
   }
 }
 
 class _NotificationIcon extends StatelessWidget {
-  const _NotificationIcon({
-    required this.count,
-    required this.selected,
-  });
+  const _NotificationIcon({required this.count, required this.selected});
 
   final int count;
   final bool selected;
