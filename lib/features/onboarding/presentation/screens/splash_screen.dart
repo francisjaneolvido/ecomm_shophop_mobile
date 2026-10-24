@@ -2,8 +2,12 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import 'package:shophop/core/session/auth_session_service.dart';
 import 'package:shophop/core/theme/app_colors.dart';
+import 'package:shophop/features/buyer/presentation/screens/buyer_home_screen.dart';
+import 'package:shophop/features/logistics/presentation/screens/logistics_scanner_screen.dart';
 import 'package:shophop/features/onboarding/presentation/screens/landing_screen.dart';
+import 'package:shophop/features/rider/presentation/screens/rider_home_screen.dart';
 
 
 
@@ -636,7 +640,7 @@ class _SplashScreenState extends State<SplashScreen>
 
       ),
 
-      _openLanding,
+      _openNextScreen,
 
     );
 
@@ -647,57 +651,41 @@ class _SplashScreenState extends State<SplashScreen>
 
 
 
-  void _openLanding(){
+  Future<void> _openNextScreen() async {
+    final rememberedSession = await AuthSessionService.readRememberedSession();
 
+    if (!mounted) return;
 
-    if(!mounted) return;
+    Widget nextScreen = const LandingScreen();
 
-
+    if (rememberedSession != null) {
+      switch (rememberedSession.accountType) {
+        case 'buyer':
+          nextScreen = const BuyerHomeScreen();
+          break;
+        case 'rider':
+          nextScreen = const RiderHomeScreen();
+          break;
+        case 'logistics':
+        case 'logistics_staff':
+          nextScreen = const LogisticsScannerScreen();
+          break;
+      }
+    }
 
     Navigator.pushReplacement(
-
       context,
-
-
       PageRouteBuilder(
-
-        transitionDuration:
-            const Duration(
-              milliseconds:
-                  700,
-            ),
-
-
-
-        pageBuilder:
-            (_, animation, __){
-
-
-              return FadeTransition(
-
-                opacity:
-                    animation,
-
-
-                child:
-                    const LandingScreen(),
-
-              );
-
-
-            },
-
-
+        transitionDuration: const Duration(milliseconds: 700),
+        pageBuilder: (_, animation, __) {
+          return FadeTransition(
+            opacity: animation,
+            child: nextScreen,
+          );
+        },
       ),
-
-
     );
-
-
   }
-
-
-
 
 
 
