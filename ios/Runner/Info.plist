@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>NSCameraUsageDescription</key>
-	<string>Scan ShopHop parcel QR labels at your Logistics branch.</string>
+	<string>Scan ShopHop parcel QR labels for Rider and Logistics custody handoffs.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>

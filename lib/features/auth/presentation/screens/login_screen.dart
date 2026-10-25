@@ -11,6 +11,7 @@ import 'package:shophop/features/auth/presentation/widgets/account_status_toast.
 import 'package:shophop/features/buyer/presentation/screens/buyer_home_screen.dart';
 import 'package:shophop/features/rider/presentation/screens/rider_home_screen.dart';
 import 'package:shophop/features/logistics/presentation/screens/logistics_scanner_screen.dart';
+import 'package:shophop/features/linehaul/presentation/screens/linehaul_driver_home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -182,7 +183,12 @@ class _LoginScreenState extends State<LoginScreen> {
           return;
         }
 
-        if (accountType != 'buyer' && accountType != 'rider' && accountType != 'logistics' && accountType != 'logistics_staff') {
+        if (accountType != 'buyer' &&
+            accountType != 'rider' &&
+            accountType != 'logistics' &&
+            accountType != 'logistics_staff' &&
+            accountType != 'branch' &&
+            accountType != 'linehaul_driver') {
           await AuthService.logout(token: token);
           _showMessage(
             'Approved $accountType mobile dashboard is not connected yet.',
@@ -215,9 +221,13 @@ class _LoginScreenState extends State<LoginScreen> {
           MaterialPageRoute(
             builder: (_) => accountType == 'rider'
                 ? const RiderHomeScreen()
-                : (accountType == 'logistics' || accountType == 'logistics_staff')
-                    ? const LogisticsScannerScreen()
-                    : const BuyerHomeScreen(),
+                : accountType == 'linehaul_driver'
+                    ? const LinehaulDriverHomeScreen()
+                    : (accountType == 'logistics' ||
+                            accountType == 'logistics_staff' ||
+                            accountType == 'branch')
+                        ? const LogisticsScannerScreen()
+                        : const BuyerHomeScreen(),
           ),
           (route) => false,
         );

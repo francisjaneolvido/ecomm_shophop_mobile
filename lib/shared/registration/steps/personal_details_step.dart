@@ -16,6 +16,7 @@ class PersonalDetailsStep extends StatelessWidget {
     required this.selectedSex,
     required this.onSexChanged,
     required this.onBirthdayTap,
+    this.minimumAge,
   });
 
   final TextEditingController
@@ -46,6 +47,11 @@ class PersonalDetailsStep extends StatelessWidget {
 
   final VoidCallback
       onBirthdayTap;
+
+  /// Optional age rule supplied by the registration flow. Buyer and Seller
+  /// use 18 to mirror the Laravel web validation contract, while Rider can
+  /// keep its own backend rule.
+  final int? minimumAge;
 
   @override
   Widget build(
@@ -485,6 +491,26 @@ class PersonalDetailsStep extends StatelessWidget {
                           .trim()
                           .isEmpty) {
                     return 'Birthday is required.';
+                  }
+
+                  final minimum = minimumAge;
+                  if (minimum != null) {
+                    final birthday = DateTime.tryParse(value.trim());
+                    if (birthday == null) {
+                      return 'Select a valid birthday.';
+                    }
+
+                    final today = DateTime.now();
+                    var age = today.year - birthday.year;
+                    final birthdayNotReached =
+                        today.month < birthday.month ||
+                            (today.month == birthday.month &&
+                                today.day < birthday.day);
+                    if (birthdayNotReached) age--;
+
+                    if (age < minimum) {
+                      return 'You must be at least $minimum years old.';
+                    }
                   }
 
                   return null;

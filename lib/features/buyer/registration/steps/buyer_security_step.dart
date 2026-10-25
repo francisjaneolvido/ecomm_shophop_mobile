@@ -36,10 +36,15 @@ class _BuyerSecurityStepState extends State<BuyerSecurityStep> {
 
   bool get _hasNumber => RegExp(r'[0-9]').hasMatch(widget.passwordController.text);
 
-  bool get _hasSpecial => RegExp(r'[!@#$%^&*]').hasMatch(widget.passwordController.text);
+  bool get _hasSpecial =>
+      RegExp(r'[^A-Za-z0-9]').hasMatch(widget.passwordController.text);
 
   bool get _requiredPasswordRulesPassed =>
-      _hasMinimumLength && _hasUppercase && _hasLowercase && _hasNumber;
+      _hasMinimumLength &&
+      _hasUppercase &&
+      _hasLowercase &&
+      _hasNumber &&
+      _hasSpecial;
 
   String? _validatePassword(String? value) {
     final password = value ?? '';
@@ -62,6 +67,10 @@ class _BuyerSecurityStepState extends State<BuyerSecurityStep> {
 
     if (!RegExp(r'[0-9]').hasMatch(password)) {
       return 'Add at least 1 number (0–9).';
+    }
+
+    if (!RegExp(r'[^A-Za-z0-9]').hasMatch(password)) {
+      return 'Add at least 1 special character.';
     }
 
     return null;
@@ -273,9 +282,8 @@ class _BuyerSecurityStepState extends State<BuyerSecurityStep> {
           _requirement('1 number (0–9)', _hasNumber),
           const SizedBox(height: 8),
           _requirement(
-            'Special character (! @ # \$ % ^ & *) — recommended',
+            '1 special character (e.g. ! @ # \$ % ^ & *)',
             _hasSpecial,
-            optional: true,
           ),
         ],
       ),

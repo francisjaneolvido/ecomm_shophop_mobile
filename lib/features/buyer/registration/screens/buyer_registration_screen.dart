@@ -1200,6 +1200,7 @@ class _BuyerRegistrationScreenState
               _ageController,
           selectedSex:
               _selectedSex,
+          minimumAge: 18,
           onSexChanged:
               (value) {
             setState(() {

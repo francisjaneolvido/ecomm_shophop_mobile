@@ -4,6 +4,7 @@ import 'package:shophop/core/session/auth_session_service.dart';
 import 'package:shophop/features/auth/data/services/auth_service.dart';
 import 'package:shophop/features/auth/presentation/screens/login_screen.dart';
 import 'package:shophop/features/logistics/data/logistics_scan_service.dart';
+import 'package:shophop/features/logistics/presentation/screens/manifest_loading_screen.dart';
 
 /// Logistics company and company-provisioned staff share one scanner backend.
 /// Staff can only scan at their assigned branch; no public Logistics registration.
@@ -49,12 +50,39 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
 
   int? _id(dynamic value) => int.tryParse(value?.toString() ?? '');
 
+  String _eventLabel(dynamic value) {
+    switch (value?.toString()) {
+      case 'seller_handoff':
+        return 'Seller → Pickup Rider';
+      case 'pickup_received':
+        return 'Pickup Rider → Branch received';
+      case 'manifest_loaded':
+        return 'Parcel loaded to Linehaul manifest';
+      case 'linehaul_departed':
+        return 'Linehaul departed';
+      case 'transit_rider_handoff':
+        return 'Legacy Center → Transit Rider';
+      case 'transfer_received':
+        return 'Linehaul → Center received';
+      case 'delivery_rider_handoff':
+        return 'Branch → Delivery Rider';
+      case 'hub_sorted':
+        return 'Sorted at Province Hub';
+      default:
+        final raw = value?.toString().replaceAll('_', ' ').trim() ?? '';
+        if (raw.isEmpty) return 'Parcel event';
+        return raw[0].toUpperCase() + raw.substring(1);
+    }
+  }
+
   Future<void> _load() async {
     final generation = ++_requestGeneration;
     final session = await AuthSessionService.readSession();
     if (!mounted || generation != _requestGeneration) return;
     if (session == null ||
-        (session.accountType != 'logistics' && session.accountType != 'logistics_staff')) {
+        (session.accountType != 'logistics' &&
+            session.accountType != 'logistics_staff' &&
+            session.accountType != 'branch')) {
       await _signOut();
       return;
     }
@@ -74,7 +102,8 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
 
     final branches = _rows(response.data['branches']);
     final locked = response.data['branch_locked'] == true ||
-        session.accountType == 'logistics_staff';
+        session.accountType == 'logistics_staff' ||
+        session.accountType == 'branch';
     int? next = _branchId;
     if (!branches.any((branch) => _id(branch['id']) == next)) {
       next = branches.isEmpty ? null : _id(branches.first['id']);
@@ -378,7 +407,7 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
 
   Widget _historyContent() => _surface(Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
     Row(children: [
-      const Expanded(child: Text('Recent scans at this branch', style: TextStyle(fontWeight: FontWeight.w800, color: _navy))),
+      const Expanded(child: Text('Recent custody events for this branch', style: TextStyle(fontWeight: FontWeight.w800, color: _navy))),
       IconButton(tooltip: 'Refresh scan history', onPressed: _branchId == null || _busy
         ? null : () => _loadHistory(_branchId!, _requestGeneration), icon: const Icon(Icons.refresh)),
     ]),
@@ -389,7 +418,7 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
       ListTile(contentPadding: EdgeInsets.zero,
         leading: const CircleAvatar(backgroundColor: Color(0xFFE5F6F2), child: Icon(Icons.qr_code, color: _teal)),
         title: Text(event['tracking_code']?.toString() ?? 'Parcel'),
-        subtitle: Text('${event['event']?.toString().replaceAll('_', ' ') ?? 'Received'}\n${event['scanned_at'] ?? ''}'),
+        subtitle: Text('${_eventLabel(event['event'])}\n${event['scanned_at'] ?? ''}'),
         isThreeLine: true,
       ),
       const Divider(height: 1),
@@ -416,6 +445,22 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
         Text(_operator.isEmpty ? 'Authorized logistics scanner' : 'Signed in as $_operator',
             style: const TextStyle(fontSize: 12, color: Color(0xFF65748A))),
         const SizedBox(height: 16),
+        if (_branchId != null) ...[
+          SizedBox(width: double.infinity, child: OutlinedButton.icon(
+            icon: const Icon(Icons.inventory_2_outlined),
+            label: const Text('Load outbound manifest'),
+            onPressed: _busy ? null : () async {
+              await _stopScanner();
+              final branch = _branches.where((b) => _id(b['id']) == _branchId).toList();
+              if (!mounted || _token == null || _branchId == null) return;
+              await Navigator.push(context, MaterialPageRoute(builder: (_) => ManifestLoadingScreen(
+                token: _token!, branchId: _branchId!, branchName: branch.isEmpty ? 'Current center' : (branch.first['name']?.toString() ?? 'Current center'),
+              )));
+              if (mounted) _load();
+            },
+          )),
+          const SizedBox(height: 12),
+        ],
         Row(children: [
           Expanded(child: ChoiceChip(label: const Center(child: Text('Receive Parcel')),
             selected: !_showHistory, onSelected: (_) { _stopScanner(); setState(() => _showHistory = false); })),
@@ -436,7 +481,7 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
         ],
         if (_showHistory) _historyContent() else _receiveContent(),
         const SizedBox(height: 18),
-        const Text('Only approved branch receipts update parcel tracking. Internet connection is required.',
+        const Text('Receiving scans update parcel tracking; Rider custody scans also appear in this history. Internet connection is required.',
           textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Color(0xFF65748A))),
       ])),
   );

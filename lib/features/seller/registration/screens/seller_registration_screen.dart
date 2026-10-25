@@ -461,6 +461,7 @@ class _SellerRegistrationScreenState
           birthdayController: _birthdayController,
           ageController: _ageController,
           selectedSex: _selectedSex,
+          minimumAge: 18,
           onSexChanged: (value) {
             setState(() {
               _selectedSex = value;

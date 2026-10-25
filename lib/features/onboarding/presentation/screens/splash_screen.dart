@@ -6,6 +6,7 @@ import 'package:shophop/core/session/auth_session_service.dart';
 import 'package:shophop/core/theme/app_colors.dart';
 import 'package:shophop/features/buyer/presentation/screens/buyer_home_screen.dart';
 import 'package:shophop/features/logistics/presentation/screens/logistics_scanner_screen.dart';
+import 'package:shophop/features/linehaul/presentation/screens/linehaul_driver_home_screen.dart';
 import 'package:shophop/features/onboarding/presentation/screens/landing_screen.dart';
 import 'package:shophop/features/rider/presentation/screens/rider_home_screen.dart';
 
@@ -666,8 +667,12 @@ class _SplashScreenState extends State<SplashScreen>
         case 'rider':
           nextScreen = const RiderHomeScreen();
           break;
+        case 'linehaul_driver':
+          nextScreen = const LinehaulDriverHomeScreen();
+          break;
         case 'logistics':
         case 'logistics_staff':
+        case 'branch':
           nextScreen = const LogisticsScannerScreen();
           break;
       }
