@@ -56,6 +56,7 @@ class BuyerCheckoutItemData {
     required this.name,
     required this.image,
     required this.price,
+    required this.weightKg,
     required this.originalPrice,
     required this.quantity,
     required this.stock,
@@ -68,6 +69,7 @@ class BuyerCheckoutItemData {
   final String name;
   final String image;
   final double price;
+  final double weightKg;
   final double? originalPrice;
   final int quantity;
   final int stock;
@@ -81,12 +83,27 @@ class BuyerCheckoutItemData {
       name: json['name']?.toString() ?? 'ShopHop Product',
       image: ApiConfig.resolveMediaUrl(json['image']?.toString()),
       price: _asDouble(json['price']),
+      weightKg: _asDouble(json['weight_kg']),
       originalPrice: json['original_price'] == null
           ? null
           : _asDouble(json['original_price']),
       quantity: _asInt(json['qty']),
       stock: _asInt(json['stock']),
       lineTotal: _asDouble(json['line_total']),
+    );
+  }
+}
+
+class BuyerCheckoutLogisticsOptionData {
+  const BuyerCheckoutLogisticsOptionData({required this.id, required this.name});
+
+  final int id;
+  final String name;
+
+  factory BuyerCheckoutLogisticsOptionData.fromJson(Map<String, dynamic> json) {
+    return BuyerCheckoutLogisticsOptionData(
+      id: _asInt(json['id']),
+      name: json['name']?.toString() ?? 'Logistics Partner',
     );
   }
 }
@@ -98,7 +115,15 @@ class BuyerCheckoutGroupData {
     required this.municipality,
     required this.shippingFeeStandard,
     required this.shippingFeeExpress,
+    required this.shippingRouteLabel,
+    required this.shippingWeightKg,
+    required this.shippingBaseFee,
+    required this.shippingDistanceFee,
+    required this.shippingWeightFee,
+    required this.shippingLinehaulFee,
     required this.selectedShippingMethod,
+    required this.logisticsOptions,
+    required this.selectedLogisticsPartnerId,
     required this.items,
     required this.merchandiseSubtotal,
     required this.shippingFee,
@@ -112,7 +137,15 @@ class BuyerCheckoutGroupData {
   final String municipality;
   final double shippingFeeStandard;
   final double shippingFeeExpress;
+  final String shippingRouteLabel;
+  final double shippingWeightKg;
+  final double shippingBaseFee;
+  final double shippingDistanceFee;
+  final double shippingWeightFee;
+  final double shippingLinehaulFee;
   final String selectedShippingMethod;
+  final List<BuyerCheckoutLogisticsOptionData> logisticsOptions;
+  final int? selectedLogisticsPartnerId;
   final List<BuyerCheckoutItemData> items;
   final double merchandiseSubtotal;
   final double shippingFee;
@@ -125,14 +158,31 @@ class BuyerCheckoutGroupData {
         ? Map<String, dynamic>.from(json['shop'] as Map)
         : <String, dynamic>{};
 
+    final quote = json['shipping_quote'] is Map
+        ? Map<String, dynamic>.from(json['shipping_quote'] as Map)
+        : <String, dynamic>{};
+
     return BuyerCheckoutGroupData(
       sellerId: _asInt(shop['id']),
       shopName: shop['name']?.toString() ?? 'ShopHop Seller',
       municipality: shop['municipality']?.toString() ?? '',
       shippingFeeStandard: _asDouble(json['shipping_fee_standard']),
       shippingFeeExpress: _asDouble(json['shipping_fee_express']),
+      shippingRouteLabel: quote['route_label']?.toString() ?? 'Route-based shipping',
+      shippingWeightKg: _asDouble(quote['weight_kg']),
+      shippingBaseFee: _asDouble(quote['base_fee']),
+      shippingDistanceFee: _asDouble(quote['distance_fee']),
+      shippingWeightFee: _asDouble(quote['weight_fee']),
+      shippingLinehaulFee: _asDouble(quote['linehaul_fee']),
       selectedShippingMethod:
           json['selected_shipping_method']?.toString() ?? 'standard',
+      logisticsOptions: _mapList(
+        json['logistics_options'],
+        BuyerCheckoutLogisticsOptionData.fromJson,
+      ),
+      selectedLogisticsPartnerId: json['selected_logistics_partner_id'] == null
+          ? null
+          : _asInt(json['selected_logistics_partner_id']),
       items: _mapList(json['items'], BuyerCheckoutItemData.fromJson),
       merchandiseSubtotal: _asDouble(json['merchandise_subtotal']),
       shippingFee: _asDouble(json['shipping_fee']),
@@ -148,6 +198,7 @@ class BuyerCheckoutVoucherData {
     required this.code,
     required this.title,
     required this.description,
+    required this.kind,
     required this.type,
     required this.value,
     required this.minSpend,
@@ -158,6 +209,7 @@ class BuyerCheckoutVoucherData {
   final String code;
   final String title;
   final String description;
+  final String kind;
   final String type;
   final double value;
   final double minSpend;
@@ -169,6 +221,7 @@ class BuyerCheckoutVoucherData {
       code: json['code']?.toString() ?? '',
       title: json['title']?.toString() ?? '',
       description: json['description']?.toString() ?? '',
+      kind: json['kind']?.toString() ?? 'merchandise',
       type: json['type']?.toString() ?? '',
       value: _asDouble(json['value']),
       minSpend: _asDouble(json['min_spend']),
@@ -189,6 +242,7 @@ class BuyerCheckoutSummaryData {
     required this.shippingFee,
     required this.codFee,
     required this.voucherDiscount,
+    required this.sellerShippingDiscount,
     required this.platformDiscount,
     required this.shippingDiscount,
     required this.grandTotal,
@@ -198,6 +252,7 @@ class BuyerCheckoutSummaryData {
   final double shippingFee;
   final double codFee;
   final double voucherDiscount;
+  final double sellerShippingDiscount;
   final double platformDiscount;
   final double shippingDiscount;
   final double grandTotal;
@@ -208,6 +263,7 @@ class BuyerCheckoutSummaryData {
       shippingFee: _asDouble(json['shipping_fee']),
       codFee: _asDouble(json['cod_fee']),
       voucherDiscount: _asDouble(json['voucher_discount']),
+      sellerShippingDiscount: _asDouble(json['seller_shipping_discount']),
       platformDiscount: _asDouble(json['platform_discount']),
       shippingDiscount: _asDouble(json['shipping_discount']),
       grandTotal: _asDouble(json['grand_total']),
@@ -423,6 +479,7 @@ class BuyerCheckoutService {
     required String token,
     required Map<String, int> items,
     Map<int, String> shippingMethods = const <int, String>{},
+    Map<int, int> logisticsPartners = const <int, int>{},
     String paymentMethod = 'cod',
     String voucherCode = '',
     String merchandiseVoucherCode = '',
@@ -435,6 +492,7 @@ class BuyerCheckoutService {
       body: _checkoutPayload(
         items: items,
         shippingMethods: shippingMethods,
+        logisticsPartners: logisticsPartners,
         paymentMethod: paymentMethod,
         voucherCode: voucherCode,
         merchandiseVoucherCode: merchandiseVoucherCode,
@@ -451,6 +509,7 @@ class BuyerCheckoutService {
     required String token,
     required Map<String, int> items,
     required Map<int, String> shippingMethods,
+    required Map<int, int> logisticsPartners,
     required String paymentMethod,
     String voucherCode = '',
     String merchandiseVoucherCode = '',
@@ -460,6 +519,7 @@ class BuyerCheckoutService {
     final payload = _checkoutPayload(
       items: items,
       shippingMethods: shippingMethods,
+      logisticsPartners: logisticsPartners,
       paymentMethod: paymentMethod,
       voucherCode: voucherCode,
       merchandiseVoucherCode: merchandiseVoucherCode,
@@ -555,6 +615,7 @@ class BuyerCheckoutService {
   static Map<String, dynamic> _checkoutPayload({
     required Map<String, int> items,
     required Map<int, String> shippingMethods,
+    required Map<int, int> logisticsPartners,
     required String paymentMethod,
     required String voucherCode,
     required String merchandiseVoucherCode,
@@ -567,6 +628,10 @@ class BuyerCheckoutService {
       },
       'shipping_method': {
         for (final entry in shippingMethods.entries)
+          entry.key.toString(): entry.value,
+      },
+      'logistics_partner': {
+        for (final entry in logisticsPartners.entries)
           entry.key.toString(): entry.value,
       },
       'payment_method': paymentMethod,

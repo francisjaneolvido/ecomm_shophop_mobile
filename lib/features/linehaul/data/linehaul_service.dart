@@ -8,6 +8,14 @@ class LinehaulService {
   const LinehaulService._();
   static Map<String, String> _headers(String token) => {'Accept': 'application/json', 'Authorization': 'Bearer $token'};
 
+  static Future<AuthApiResult> earnings(String token) async {
+    try {
+      final r = await http.get(Uri.parse('${ApiConfig.baseUrl}/linehaul/earnings'), headers: _headers(token)).timeout(const Duration(seconds: 20));
+      return AuthApiResult.fromResponse(r);
+    } on TimeoutException { return const AuthApiResult(success:false,status:'timeout',message:'Linehaul earnings timed out.'); }
+    catch (_) { return const AuthApiResult(success:false,status:'network_error',message:'Unable to load Linehaul earnings.'); }
+  }
+
   static Future<AuthApiResult> trips(String token) async {
     try {
       final r = await http.get(Uri.parse('${ApiConfig.baseUrl}/linehaul/trips'), headers: _headers(token)).timeout(const Duration(seconds: 20));

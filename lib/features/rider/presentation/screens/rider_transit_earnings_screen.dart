@@ -17,6 +17,7 @@ class _RiderTransitEarningsScreenState extends State<RiderTransitEarningsScreen>
   bool _busy = true;
   String? _message;
   double _pending = 0;
+  double _available = 0;
   double _paid = 0;
   List<Map<String, dynamic>> _entries = [];
 
@@ -51,6 +52,7 @@ class _RiderTransitEarningsScreenState extends State<RiderTransitEarningsScreen>
       _message = response.success ? null : response.message;
       if (response.success) {
         _pending = _amount(response.data['pending']);
+        _available = _amount(response.data['available']);
         _paid = _amount(response.data['paid']);
         _entries = _rows(response.data['entries']);
       }
@@ -84,13 +86,8 @@ class _RiderTransitEarningsScreenState extends State<RiderTransitEarningsScreen>
                 Text(_message!),
               ],
               const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(child: _moneyCard('Pending', _pending)),
-                  const SizedBox(width: 10),
-                  Expanded(child: _moneyCard('Paid', _paid)),
-                ],
-              ),
+              Row(children: [Expanded(child: _moneyCard('Pending', _pending)), const SizedBox(width: 8), Expanded(child: _moneyCard('Available', _available))]),
+              Row(children: [Expanded(child: _moneyCard('Paid', _paid)), const Expanded(child: SizedBox())]),
               const SizedBox(height: 18),
               if (_entries.isEmpty && !_busy)
                 const Card(child: Padding(padding: EdgeInsets.all(18), child: Text('No Rider earnings recorded yet.'))),
@@ -98,11 +95,14 @@ class _RiderTransitEarningsScreenState extends State<RiderTransitEarningsScreen>
                     child: ListTile(
                       leading: const CircleAvatar(child: Icon(Icons.payments_outlined)),
                       title: Text('Order #${entry['order_id'] ?? '—'}'),
-                      subtitle: Text((entry['kind'] ?? '').toString().replaceAll('_', ' ')),
-                      trailing: Text(
+                      subtitle: Text(
+                        '${(entry['kind'] ?? '').toString().replaceAll('_', ' ')}'
+                        '${entry['payment_reference'] != null ? '\nPaid ref: ${entry['payment_reference']}' : entry['distribution_reference'] != null ? '\nDistribution: ${entry['distribution_reference']}' : ''}',
+                      ),
+                      trailing: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.end, children: [Text(
                         '₱${_amount(entry['amount']).toStringAsFixed(2)}',
                         style: const TextStyle(fontWeight: FontWeight.w800, color: _navy),
-                      ),
+                      ), Text((entry['status'] ?? 'pending').toString().toUpperCase(), style: const TextStyle(fontSize: 10, color: Color(0xFF65748A))) ]),
                     ),
                   )),
             ],

@@ -5,6 +5,7 @@ import 'package:shophop/features/auth/data/services/auth_service.dart';
 import 'package:shophop/features/auth/presentation/screens/login_screen.dart';
 import 'package:shophop/features/logistics/data/logistics_scan_service.dart';
 import 'package:shophop/features/logistics/presentation/screens/manifest_loading_screen.dart';
+import 'package:shophop/features/logistics/presentation/screens/manifest_receiving_screen.dart';
 
 /// Logistics company and company-provisioned staff share one scanner backend.
 /// Staff can only scan at their assigned branch; no public Logistics registration.
@@ -57,9 +58,11 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
       case 'pickup_received':
         return 'Pickup Rider → Branch received';
       case 'manifest_loaded':
-        return 'Parcel loaded to Linehaul manifest';
+        return 'Included in confirmed Linehaul load';
       case 'linehaul_departed':
         return 'Linehaul departed';
+      case 'manifest_arrived':
+        return 'Destination acknowledged Manifest arrival';
       case 'transit_rider_handoff':
         return 'Legacy Center → Transit Rider';
       case 'transfer_received':
@@ -446,9 +449,23 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
             style: const TextStyle(fontSize: 12, color: Color(0xFF65748A))),
         const SizedBox(height: 16),
         if (_branchId != null) ...[
+          SizedBox(width: double.infinity, child: FilledButton.icon(
+            icon: const Icon(Icons.move_to_inbox_outlined),
+            label: const Text('Receive inbound manifest'),
+            onPressed: _busy ? null : () async {
+              await _stopScanner();
+              final branch = _branches.where((b) => _id(b['id']) == _branchId).toList();
+              if (!mounted || _token == null || _branchId == null) return;
+              await Navigator.push(context, MaterialPageRoute(builder: (_) => ManifestReceivingScreen(
+                token: _token!, branchId: _branchId!, branchName: branch.isEmpty ? 'Current center' : (branch.first['name']?.toString() ?? 'Current center'),
+              )));
+              if (mounted) _load();
+            },
+          )),
+          const SizedBox(height: 8),
           SizedBox(width: double.infinity, child: OutlinedButton.icon(
             icon: const Icon(Icons.inventory_2_outlined),
-            label: const Text('Load outbound manifest'),
+            label: const Text('Confirm outbound manifest load'),
             onPressed: _busy ? null : () async {
               await _stopScanner();
               final branch = _branches.where((b) => _id(b['id']) == _branchId).toList();
@@ -481,7 +498,7 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
         ],
         if (_showHistory) _historyContent() else _receiveContent(),
         const SizedBox(height: 18),
-        const Text('Receiving scans update parcel tracking; Rider custody scans also appear in this history. Internet connection is required.',
+        const Text('Manifest arrival/receipt and Parcel QR scans update the same custody history. Internet connection is required.',
           textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Color(0xFF65748A))),
       ])),
   );

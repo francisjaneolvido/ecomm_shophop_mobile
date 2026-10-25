@@ -12,6 +12,7 @@ import 'package:shophop/features/buyer/presentation/screens/buyer_home_screen.da
 import 'package:shophop/features/rider/presentation/screens/rider_home_screen.dart';
 import 'package:shophop/features/logistics/presentation/screens/logistics_scanner_screen.dart';
 import 'package:shophop/features/linehaul/presentation/screens/linehaul_driver_home_screen.dart';
+import 'package:shophop/features/seller/presentation/screens/seller_earnings_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -184,6 +185,7 @@ class _LoginScreenState extends State<LoginScreen> {
         }
 
         if (accountType != 'buyer' &&
+            accountType != 'seller' &&
             accountType != 'rider' &&
             accountType != 'logistics' &&
             accountType != 'logistics_staff' &&
@@ -219,7 +221,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
-            builder: (_) => accountType == 'rider'
+            builder: (_) => accountType == 'seller'
+                ? const SellerEarningsScreen()
+                : accountType == 'rider'
                 ? const RiderHomeScreen()
                 : accountType == 'linehaul_driver'
                     ? const LinehaulDriverHomeScreen()

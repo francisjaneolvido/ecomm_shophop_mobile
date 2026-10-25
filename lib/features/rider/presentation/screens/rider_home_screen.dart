@@ -74,6 +74,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
   String? _sortingCenterAddress;
   String? _coverageArea;
   double _pendingEarnings = 0;
+  double _availableEarnings = 0;
   double _paidEarnings = 0;
 
   @override
@@ -202,6 +203,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
             ..clear()
             ..addAll(_rows(earningsResult.data['entries']));
           _pendingEarnings = _number(earningsResult.data['pending']);
+          _availableEarnings = _number(earningsResult.data['available']);
           _paidEarnings = _number(earningsResult.data['paid']);
         }
         _error = syncErrors.isEmpty
@@ -661,7 +663,15 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
                 ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _tab,
-        onDestinationSelected: (value) => setState(() => _tab = value),
+        onDestinationSelected: (value) {
+          setState(() => _tab = value);
+          // Earnings can change after Admin distributes a settlement while the
+          // Rider app is already open. Refresh when Wallet is opened so
+          // Pending → Available → Paid is reflected without a full relaunch.
+          if (value == 1 && !_loading) {
+            _load(showLoader: false);
+          }
+        },
         destinations: [
           const NavigationDestination(
             icon: Icon(Icons.route_outlined),
@@ -1454,11 +1464,25 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
             const SizedBox(width: 10),
             Expanded(
               child: _moneySummary(
-                'Marked paid',
+                'Available',
+                _availableEarnings,
+                Icons.account_balance_wallet_rounded,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: _moneySummary(
+                'Paid',
                 _paidEarnings,
                 Icons.check_circle_outline_rounded,
               ),
             ),
+            const SizedBox(width: 10),
+            const Expanded(child: SizedBox()),
           ],
         ),
         const SizedBox(height: 12),

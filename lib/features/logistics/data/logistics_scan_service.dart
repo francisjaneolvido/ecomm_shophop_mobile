@@ -149,4 +149,95 @@ class LogisticsScanService {
     }
   }
 
+  static Future<AuthApiResult> batchLoad({
+    required String token,
+    required int branchId,
+    required int manifestId,
+    required int physicalCount,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/logistics/scanner/manifest/batch-load'),
+        headers: {..._headers(token), 'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'sorting_center_id': branchId,
+          'manifest_id': manifestId,
+          'physical_count': physicalCount,
+        }),
+      ).timeout(const Duration(seconds: 20));
+      return AuthApiResult.fromResponse(response);
+    } on TimeoutException {
+      return const AuthApiResult(success: false, status: 'timeout', message: 'Batch loading confirmation timed out. Refresh before retrying.');
+    } catch (_) {
+      return const AuthApiResult(success: false, status: 'network_error', message: 'Unable to confirm this manifest load.');
+    }
+  }
+
+  static Future<AuthApiResult> inboundManifestPreview({
+    required String token,
+    required int branchId,
+    required String manifestCode,
+  }) async {
+    try {
+      final uri = Uri.parse('${ApiConfig.baseUrl}/logistics/scanner/inbound-manifest/preview')
+          .replace(queryParameters: {
+        'sorting_center_id': branchId.toString(),
+        'manifest_code': manifestCode.trim().toUpperCase(),
+      });
+      final response = await http.get(uri, headers: _headers(token))
+          .timeout(const Duration(seconds: 20));
+      return AuthApiResult.fromResponse(response);
+    } on TimeoutException {
+      return const AuthApiResult(success: false, status: 'timeout', message: 'Inbound manifest verification timed out.');
+    } catch (_) {
+      return const AuthApiResult(success: false, status: 'network_error', message: 'Unable to verify inbound manifest.');
+    }
+  }
+
+  static Future<AuthApiResult> acknowledgeManifestArrival({
+    required String token,
+    required int branchId,
+    required String manifestCode,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/logistics/scanner/inbound-manifest/arrive'),
+        headers: {..._headers(token), 'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'sorting_center_id': branchId,
+          'manifest_code': manifestCode.trim().toUpperCase(),
+        }),
+      ).timeout(const Duration(seconds: 20));
+      return AuthApiResult.fromResponse(response);
+    } on TimeoutException {
+      return const AuthApiResult(success: false, status: 'timeout', message: 'Arrival confirmation timed out. Refresh before retrying.');
+    } catch (_) {
+      return const AuthApiResult(success: false, status: 'network_error', message: 'Unable to acknowledge manifest arrival.');
+    }
+  }
+
+  static Future<AuthApiResult> receiveManifestAll({
+    required String token,
+    required int branchId,
+    required String manifestCode,
+    required int physicalCount,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/logistics/scanner/inbound-manifest/receive-all'),
+        headers: {..._headers(token), 'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'sorting_center_id': branchId,
+          'manifest_code': manifestCode.trim().toUpperCase(),
+          'physical_count': physicalCount,
+        }),
+      ).timeout(const Duration(seconds: 30));
+      return AuthApiResult.fromResponse(response);
+    } on TimeoutException {
+      return const AuthApiResult(success: false, status: 'timeout', message: 'Manifest receiving timed out. Refresh before retrying.');
+    } catch (_) {
+      return const AuthApiResult(success: false, status: 'network_error', message: 'Unable to receive this manifest batch.');
+    }
+  }
+
 }
