@@ -8,6 +8,7 @@ import 'package:shophop/features/buyer/presentation/screens/buyer_home_screen.da
 import 'package:shophop/features/logistics/presentation/screens/logistics_scanner_screen.dart';
 import 'package:shophop/features/linehaul/presentation/screens/linehaul_driver_home_screen.dart';
 import 'package:shophop/features/onboarding/presentation/screens/landing_screen.dart';
+import 'package:shophop/features/seller/presentation/screens/seller_workspace_screen.dart';
 import 'package:shophop/features/rider/presentation/screens/rider_home_screen.dart';
 
 
@@ -663,6 +664,9 @@ class _SplashScreenState extends State<SplashScreen>
       switch (rememberedSession.accountType) {
         case 'buyer':
           nextScreen = const BuyerHomeScreen();
+          break;
+        case 'seller':
+          nextScreen = const SellerWorkspaceScreen();
           break;
         case 'rider':
           nextScreen = const RiderHomeScreen();

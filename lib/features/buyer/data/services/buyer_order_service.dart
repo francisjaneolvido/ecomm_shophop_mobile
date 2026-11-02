@@ -46,7 +46,6 @@ class BuyerOrderData {
     required this.statusNote,
     required this.totalAmount,
     required this.paymentMethod,
-    required this.paymentId,
     required this.deliveryAddress,
     required this.trackingCode,
     required this.failureReason,
@@ -62,7 +61,6 @@ class BuyerOrderData {
   final String statusNote;
   final double totalAmount;
   final String paymentMethod;
-  final int? paymentId;
   final String deliveryAddress;
   final String? trackingCode;
   final String? failureReason;
@@ -81,7 +79,6 @@ class BuyerOrderData {
       statusNote: json['status_note']?.toString() ?? '',
       totalAmount: double.tryParse(json['total_amount'].toString()) ?? 0,
       paymentMethod: json['payment_method']?.toString() ?? 'cod',
-      paymentId: json['payment_id'] == null ? null : int.tryParse(json['payment_id'].toString()),
       deliveryAddress: json['delivery_address']?.toString() ?? '',
       trackingCode: json['tracking_code']?.toString(),
       failureReason: json['failure_reason']?.toString(),

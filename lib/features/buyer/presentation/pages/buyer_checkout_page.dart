@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'package:shophop/features/buyer/data/services/buyer_checkout_service.dart';
+import 'package:shophop/features/buyer/presentation/pages/buyer_address_editor_page.dart';
 import 'package:shophop/core/theme/app_colors.dart';
-import 'package:shophop/features/buyer/presentation/pages/buyer_payment_proof_page.dart';
 
 class BuyerCheckoutPage extends StatefulWidget {
   const BuyerCheckoutPage({
@@ -27,7 +27,6 @@ class BuyerCheckoutPage extends StatefulWidget {
 class _BuyerCheckoutPageState extends State<BuyerCheckoutPage> {
   BuyerCheckoutPreviewData? _preview;
   BuyerCheckoutException? _error;
-  final Map<int, String> _shippingMethods = <int, String>{};
   final Map<int, int> _logisticsPartners = <int, int>{};
   final Map<int, String> _notes = <int, String>{};
   String _paymentMethod = 'cod';
@@ -56,16 +55,6 @@ class _BuyerCheckoutPageState extends State<BuyerCheckoutPage> {
         _error = null;
         _loading = false;
         _paymentMethod = preview.paymentMethod;
-        _shippingMethods
-          ..clear()
-          ..addEntries(
-            preview.groups.map(
-              (group) => MapEntry(
-                group.sellerId,
-                group.selectedShippingMethod,
-              ),
-            ),
-          );
         _logisticsPartners
           ..clear()
           ..addEntries(
@@ -92,7 +81,6 @@ class _BuyerCheckoutPageState extends State<BuyerCheckoutPage> {
   }
 
   Future<BuyerCheckoutPreviewData?> _fetchPreview({
-    Map<int, String>? shippingMethods,
     Map<int, int>? logisticsPartners,
     String? paymentMethod,
     String? voucherCode,
@@ -105,7 +93,7 @@ class _BuyerCheckoutPageState extends State<BuyerCheckoutPage> {
       final preview = await BuyerCheckoutService.preview(
         token: widget.token,
         items: widget.items,
-        shippingMethods: shippingMethods ?? _shippingMethods,
+        shippingMethods: {for (final group in (_preview?.groups ?? <BuyerCheckoutGroupData>[])) group.sellerId: 'standard'},
         logisticsPartners: logisticsPartners ?? _logisticsPartners,
         paymentMethod: paymentMethod ?? _paymentMethod,
         voucherCode: voucherCode ?? _voucherCode,
@@ -116,6 +104,13 @@ class _BuyerCheckoutPageState extends State<BuyerCheckoutPage> {
       setState(() {
         _preview = preview;
         _error = null;
+        // The backend may replace an invalid courier after an address change.
+        // Use only its newly eligible selected partners, never stale local IDs.
+        _logisticsPartners
+          ..clear()
+          ..addEntries(preview.groups
+              .where((group) => group.selectedLogisticsPartnerId != null)
+              .map((group) => MapEntry(group.sellerId, group.selectedLogisticsPartnerId!)));
       });
       return preview;
     } on BuyerCheckoutException catch (error) {
@@ -131,17 +126,14 @@ class _BuyerCheckoutPageState extends State<BuyerCheckoutPage> {
     }
   }
 
-  Future<void> _changeShipping(int sellerId, String method) async {
-    final previous = _shippingMethods[sellerId] ?? 'standard';
-    if (previous == method || _recalculating) return;
-
-    final next = Map<int, String>.from(_shippingMethods)..[sellerId] = method;
-    setState(() => _shippingMethods[sellerId] = method);
-    final preview = await _fetchPreview(shippingMethods: next);
+  Future<void> _editDeliveryAddress() async {
+    if (_placingOrder || _recalculating) return;
+    await Navigator.of(context).push(MaterialPageRoute<bool>(
+      builder: (_) => BuyerAddressEditorPage(token: widget.token),
+    ));
     if (!mounted) return;
-    if (preview == null) {
-      setState(() => _shippingMethods[sellerId] = previous);
-    }
+    _logisticsPartners.clear();
+    await _fetchPreview(logisticsPartners: const <int, int>{}, showBusy: true);
   }
 
   Future<void> _changeCourier(int sellerId, int partnerId) async {
@@ -245,7 +237,7 @@ class _BuyerCheckoutPageState extends State<BuyerCheckoutPage> {
     final missingCourier = preview.groups.any((group) =>
         group.logisticsOptions.isEmpty || _logisticsPartners[group.sellerId] == null);
     if (missingCourier) {
-      _showMessage('Choose an available courier for every shop before placing the order.');
+      _showMessage('A courier is required. Check the delivery address in your Account, then refresh checkout.');
       return;
     }
 
@@ -276,7 +268,7 @@ class _BuyerCheckoutPageState extends State<BuyerCheckoutPage> {
       final result = await BuyerCheckoutService.placeOrder(
         token: widget.token,
         items: widget.items,
-        shippingMethods: _shippingMethods,
+        shippingMethods: {for (final group in preview.groups) group.sellerId: 'standard'},
         logisticsPartners: _logisticsPartners,
         paymentMethod: _paymentMethod,
         voucherCode: _voucherCode,
@@ -287,20 +279,6 @@ class _BuyerCheckoutPageState extends State<BuyerCheckoutPage> {
       if (!mounted) return;
 
       widget.onCartCountChanged?.call(result.cartCount);
-
-      if (result.paymentMethod == 'online' && result.paymentId != null) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (_) => BuyerPaymentProofPage(
-              token: widget.token,
-              paymentId: result.paymentId!,
-              onSessionExpired: widget.onSessionExpired,
-              onGoToOrders: widget.onOrderPlaced,
-            ),
-          ),
-        );
-        return;
-      }
 
       await showDialog<void>(
         context: context,
@@ -434,16 +412,13 @@ class _BuyerCheckoutPageState extends State<BuyerCheckoutPage> {
           for (final group in preview.groups) ...[
             _CheckoutShopCard(
               group: group,
-              selectedShipping:
-                  _shippingMethods[group.sellerId] ?? group.selectedShippingMethod,
               selectedLogisticsPartnerId:
                   _logisticsPartners[group.sellerId] ?? group.selectedLogisticsPartnerId,
               note: _notes[group.sellerId] ?? '',
               disabled: _recalculating || _placingOrder,
-              onShippingChanged: (method) =>
-                  _changeShipping(group.sellerId, method),
               onLogisticsChanged: (partnerId) =>
                   _changeCourier(group.sellerId, partnerId),
+              onEditAddress: _editDeliveryAddress,
               onNoteChanged: (value) => _notes[group.sellerId] = value,
             ),
             const SizedBox(height: 10),
@@ -644,22 +619,20 @@ class _AddressCard extends StatelessWidget {
 class _CheckoutShopCard extends StatelessWidget {
   const _CheckoutShopCard({
     required this.group,
-    required this.selectedShipping,
     required this.selectedLogisticsPartnerId,
     required this.note,
     required this.disabled,
-    required this.onShippingChanged,
     required this.onLogisticsChanged,
+    required this.onEditAddress,
     required this.onNoteChanged,
   });
 
   final BuyerCheckoutGroupData group;
-  final String selectedShipping;
   final int? selectedLogisticsPartnerId;
   final String note;
   final bool disabled;
-  final ValueChanged<String> onShippingChanged;
   final ValueChanged<int> onLogisticsChanged;
+  final VoidCallback onEditAddress;
   final ValueChanged<String> onNoteChanged;
 
   @override
@@ -748,22 +721,24 @@ class _CheckoutShopCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
-                _ShippingOption(
-                  title: 'Standard Delivery',
-                  subtitle: '${group.shippingRouteLabel} · ${group.shippingWeightKg.toStringAsFixed(3)} kg',
-                  price: group.shippingFeeStandard,
-                  selected: selectedShipping == 'standard',
-                  enabled: !disabled,
-                  onTap: () => onShippingChanged('standard'),
-                ),
-                const SizedBox(height: 7),
-                _ShippingOption(
-                  title: 'Express Delivery',
-                  subtitle: 'Faster handling · route/weight pricing + express surcharge',
-                  price: group.shippingFeeExpress,
-                  selected: selectedShipping == 'express',
-                  enabled: !disabled,
-                  onTap: () => onShippingChanged('express'),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF0FBF8),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.tealDark),
+                  ),
+                  child: Row(children: [
+                    const Icon(Icons.local_shipping_outlined, color: AppColors.tealDark, size: 22),
+                    const SizedBox(width: 9),
+                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      const Text('Standard Delivery', style: TextStyle(color: AppColors.navy, fontWeight: FontWeight.w800, fontSize: 12)),
+                      Text('${group.shippingRouteLabel} · ${group.shippingWeightKg.toStringAsFixed(3)} kg',
+                        style: const TextStyle(color: Color(0xFF65717D), fontSize: 10)),
+                    ])),
+                    Text(_price(group.shippingFeeStandard), style: const TextStyle(color: AppColors.navy, fontWeight: FontWeight.w800)),
+                  ]),
                 ),
                 const SizedBox(height: 8),
                 Container(
@@ -798,14 +773,25 @@ class _CheckoutShopCard extends StatelessWidget {
                 if (group.logisticsOptions.isEmpty)
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(10),
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: const Color(0xFFFFF3E8),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Text(
-                      'No Logistics company currently covers both this Seller and your delivery address.',
-                      style: TextStyle(fontSize: 9.5, color: Color(0xFF8A4C00)),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Delivery unavailable. No approved courier serves both the seller pickup location and your selected delivery address. Shipping shown above is an estimate, not an available service.',
+                          style: TextStyle(fontSize: 10.5, color: Color(0xFF8A4C00)),
+                        ),
+                        const SizedBox(height: 9),
+                        OutlinedButton.icon(
+                          onPressed: disabled ? null : onEditAddress,
+                          icon: const Icon(Icons.edit_location_alt_outlined, size: 18),
+                          label: const Text('Change delivery address'),
+                        ),
+                      ],
                     ),
                   )
                 else
@@ -954,84 +940,6 @@ class _CheckoutItemTile extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _ShippingOption extends StatelessWidget {
-  const _ShippingOption({
-    required this.title,
-    required this.subtitle,
-    required this.price,
-    required this.selected,
-    required this.enabled,
-    required this.onTap,
-  });
-
-  final String title;
-  final String subtitle;
-  final double price;
-  final bool selected;
-  final bool enabled;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: enabled ? onTap : null,
-      borderRadius: BorderRadius.circular(12),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: selected ? const Color(0xFFF0FBF8) : const Color(0xFFF8FAFA),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: selected ? AppColors.tealDark : AppColors.grayBorder,
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              selected ? Icons.radio_button_checked : Icons.radio_button_off,
-              color: selected ? AppColors.tealDark : const Color(0xFFADB5BB),
-              size: 19,
-            ),
-            const SizedBox(width: 9),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      color: AppColors.navy,
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      color: Color(0xFF89939B),
-                      fontSize: 8.8,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Text(
-              _price(price),
-              style: const TextStyle(
-                color: AppColors.navy,
-                fontSize: 10.5,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

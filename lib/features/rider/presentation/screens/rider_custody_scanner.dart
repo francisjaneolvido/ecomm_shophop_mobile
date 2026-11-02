@@ -216,7 +216,7 @@ class _RiderCustodyScannerState extends State<RiderCustodyScanner> {
         children: [
           const Row(
             children: [
-              Icon(Icons.camera_alt_rounded, color: AppColors.tealDark),
+              Icon(Icons.qr_code_scanner_rounded, color: AppColors.tealDark),
               SizedBox(width: 8),
               Text(
                 'Custody camera',
@@ -309,7 +309,7 @@ class _RiderCustodyScannerState extends State<RiderCustodyScanner> {
                   ? null
                   : () => _scanning ? _stopCamera() : _startCamera(),
               icon: Icon(
-                _scanning ? Icons.stop_circle_outlined : Icons.camera_alt_rounded,
+                _scanning ? Icons.stop_circle_outlined : Icons.qr_code_scanner_rounded,
               ),
               label: Text(_scanning ? 'Pause camera' : 'Open camera'),
             ),

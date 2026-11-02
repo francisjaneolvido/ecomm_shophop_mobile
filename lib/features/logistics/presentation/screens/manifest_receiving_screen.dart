@@ -70,10 +70,12 @@ class _ManifestReceivingScreenState extends State<ManifestReceivingScreen> {
   Future<void> _scan(String raw) async {
     final code = raw.trim().toUpperCase();
     if (_busy || code.isEmpty || !code.startsWith('MF-')) {
-      if (mounted) setState(() {
-        _message = 'Scan a valid ShopHop Manifest QR (MF-...).';
-        _success = false;
-      });
+      if (mounted) {
+        setState(() {
+          _message = 'Scan a valid ShopHop Manifest QR (MF-...).';
+          _success = false;
+        });
+      }
       return;
     }
     setState(() {
@@ -110,8 +112,10 @@ class _ManifestReceivingScreenState extends State<ManifestReceivingScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Acknowledge Linehaul arrival?'),
-        content: Text('Confirm only if vehicle ${manifest['vehicle_code'] ?? ''} (${manifest['plate_number'] ?? ''}) and manifest $code are physically at ${widget.branchName} now.'),
+        title: Text(manifest['transport_mode'] == 'road' ? 'Acknowledge road arrival?' : 'Confirm carrier cargo arrival?'),
+        content: Text(manifest['transport_mode'] == 'road'
+          ? 'Confirm only after vehicle ${manifest['vehicle_code'] ?? ''} (${manifest['plate_number'] ?? ''}) and manifest $code physically arrive at ${widget.branchName}.'
+          : 'Confirm only after actual ${manifest['transport_mode']?.toString().toUpperCase()} carrier ${manifest['carrier_name'] ?? ''} has delivered booking ${manifest['booking_reference'] ?? ''} and manifest $code to ${widget.branchName}.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
           FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Confirm arrival')),
@@ -189,13 +193,13 @@ class _ManifestReceivingScreenState extends State<ManifestReceivingScreen> {
     final completed = m?['completed'] == true;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Receive Linehaul Manifest')),
+      appBar: AppBar(title: const Text('Receive Transport Manifest')), 
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Text(widget.branchName, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: _navy)),
           const SizedBox(height: 4),
-          const Text('Destination Branch/Hub owns the arrival scan. Driver cannot mark arrival. For a normal intact batch, scan one Manifest QR and verify the physical count.', style: TextStyle(color: Color(0xFF65748A))),
+          const Text('Destination Branch/Hub confirms physical arrival. Road drivers and sea/air carriers cannot self-confirm receipt. Scan Manifest QR then verify parcel count.', style: TextStyle(color: Color(0xFF65748A))),
           const SizedBox(height: 16),
           if (_message != null) ...[
             Container(
@@ -265,9 +269,21 @@ class _ManifestReceivingScreenState extends State<ManifestReceivingScreen> {
                     Text('${m['manifest_code']}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: _navy)),
                     Text('${m['from']} → ${m['to']}', style: const TextStyle(fontWeight: FontWeight.w700)),
                     const SizedBox(height: 8),
-                    Text('Trip: ${m['trip_code']} · ${m['trip_status']}'),
-                    Text('Vehicle: ${m['vehicle_code']} · ${m['plate_number']}'),
-                    Text('Driver: ${m['driver']}'),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                      decoration: BoxDecoration(color: const Color(0xFFE8F7F2), borderRadius: BorderRadius.circular(8)),
+                      child: Text('${(m['transport_mode'] ?? 'road').toString().toUpperCase()} · ${(m['trip_status'] ?? '').toString().replaceAll('_', ' ')}',
+                        style: const TextStyle(color: _teal, fontSize: 11, fontWeight: FontWeight.w800)),
+                    ),
+                    const SizedBox(height: 7),
+                    if (m['transport_mode'] != 'road') ...[
+                      Text('Carrier: ${m['carrier_name'] ?? '—'}'),
+                      Text('Booking: ${m['booking_reference'] ?? '—'}'),
+                    ] else ...[
+                      Text('Trip: ${m['trip_code']}'),
+                      Text('Vehicle: ${m['vehicle_code']} · ${m['plate_number']}'),
+                      Text('Driver: ${m['driver']}'),
+                    ],
                     Text('Expected: ${m['expected']} · Received: ${m['received']}'),
                   ],
                 ),
@@ -309,7 +325,7 @@ class _ManifestReceivingScreenState extends State<ManifestReceivingScreen> {
               const Text('If the physical count differs or a parcel is damaged/wrong, do not use Receive All. Use the normal Parcel Receiving scanner for individual exception reconciliation.', style: TextStyle(fontSize: 12, color: Color(0xFF65748A))),
             ],
             if (completed)
-              const Card(child: Padding(padding: EdgeInsets.all(16), child: Row(children: [Icon(Icons.check_circle, color: _teal), SizedBox(width: 8), Expanded(child: Text('Manifest completed. The vehicle is released and the Driver trip moves to History.'))]))),
+              const Card(child: Padding(padding: EdgeInsets.all(16), child: Row(children: [Icon(Icons.check_circle, color: _teal), SizedBox(width: 8), Expanded(child: Text('Transport manifest received and completed. Vehicle release applies only to road trips.'))]))),
           ],
         ],
       ),

@@ -1,171 +1,25 @@
 import 'package:flutter/material.dart';
-
-import 'package:shophop/core/theme/app_colors.dart';
+import 'package:shophop/shared/widgets/shop_hop_navigation.dart';
 
 class BuyerBottomNavigationBar extends StatelessWidget {
   const BuyerBottomNavigationBar({
-    super.key,
-    required this.currentIndex,
-    required this.onTap,
-    this.notificationCount = 0,
+    super.key, required this.currentIndex, required this.onTap, this.notificationCount = 0,
   });
-
   final int currentIndex;
   final ValueChanged<int> onTap;
   final int notificationCount;
 
   @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          top: BorderSide(color: AppColors.grayBorder.withValues(alpha: 0.8)),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.navy.withValues(alpha: 0.06),
-            blurRadius: 16,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: BottomNavigationBar(
-          currentIndex: currentIndex,
-          onTap: onTap,
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.white,
-          selectedItemColor: const Color(0xFF087968),
-          unselectedItemColor: const Color(0xFF526177),
-          selectedFontSize: 11,
-          unselectedFontSize: 11,
-          selectedLabelStyle: const TextStyle(
-            fontWeight: FontWeight.w800,
-            color: Color(0xFF087968),
-          ),
-          unselectedLabelStyle: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: const Color(0xFF526177),
-          ),
-          elevation: 0,
-          items: [
-            BottomNavigationBarItem(
-              icon: _NavIcon(
-                icon: Icons.home_outlined,
-                activeIcon: Icons.home_rounded,
-                selected: currentIndex == 0,
-              ),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: _NavIcon(
-                icon: Icons.favorite_border_rounded,
-                activeIcon: Icons.favorite_rounded,
-                selected: currentIndex == 1,
-              ),
-              label: 'Likes',
-            ),
-            BottomNavigationBarItem(
-              icon: _NavIcon(
-                icon: Icons.receipt_long_outlined,
-                activeIcon: Icons.receipt_long_rounded,
-                selected: currentIndex == 2,
-              ),
-              label: 'Orders',
-            ),
-            BottomNavigationBarItem(
-              icon: _NotificationIcon(
-                count: notificationCount,
-                selected: currentIndex == 3,
-              ),
-              label: 'Updates',
-            ),
-            BottomNavigationBarItem(
-              icon: _NavIcon(
-                icon: Icons.person_outline_rounded,
-                activeIcon: Icons.person_rounded,
-                selected: currentIndex == 4,
-              ),
-              label: 'Account',
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _NavIcon extends StatelessWidget {
-  const _NavIcon({
-    required this.icon,
-    required this.activeIcon,
-    required this.selected,
-  });
-
-  final IconData icon;
-  final IconData activeIcon;
-  final bool selected;
-
-  @override
-  Widget build(BuildContext context) {
-    // No pill, oval, or selected background: icon color communicates state.
-    return SizedBox(
-      width: 38,
-      height: 30,
-      child: Center(
-        child: Icon(
-          selected ? activeIcon : icon,
-          size: 23,
-          color: selected ? const Color(0xFF087968) : const Color(0xFF526177),
-        ),
-      ),
-    );
-  }
-}
-
-class _NotificationIcon extends StatelessWidget {
-  const _NotificationIcon({required this.count, required this.selected});
-
-  final int count;
-  final bool selected;
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        _NavIcon(
-          icon: Icons.notifications_none_rounded,
-          activeIcon: Icons.notifications_rounded,
-          selected: selected,
-        ),
-        if (count > 0)
-          Positioned(
-            right: -4,
-            top: -4,
-            child: Container(
-              constraints: const BoxConstraints(minWidth: 17, minHeight: 17),
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE94D57),
-                borderRadius: BorderRadius.circular(99),
-                border: Border.all(color: Colors.white, width: 1.5),
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                count > 99 ? '99+' : '$count',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 8,
-                  fontWeight: FontWeight.w900,
-                  height: 1,
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => ShopHopNavigation(
+    index: currentIndex,
+    onChanged: onTap,
+    badges: {3: notificationCount},
+    items: const [
+      ShopHopNavItem('Home', Icons.home_outlined, Icons.home_rounded),
+      ShopHopNavItem('Likes', Icons.favorite_outline_rounded, Icons.favorite_rounded),
+      ShopHopNavItem('Orders', Icons.receipt_long_outlined, Icons.receipt_long_rounded),
+      ShopHopNavItem('Updates', Icons.notifications_none_rounded, Icons.notifications_rounded),
+      ShopHopNavItem('Account', Icons.person_outline_rounded, Icons.person_rounded),
+    ],
+  );
 }

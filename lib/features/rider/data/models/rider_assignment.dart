@@ -23,6 +23,7 @@ class RiderAssignment {
     required this.sellerAddress,
     required this.items,
     required this.centerTransfers,
+    required this.isLocalBranchDelivery,
     this.destinationArea,
     this.failureReason,
     this.originSortingCenter,
@@ -55,6 +56,7 @@ class RiderAssignment {
   final String sellerAddress;
   final List<RiderAssignmentItem> items;
   final List<RiderCenterTransfer> centerTransfers;
+  final bool isLocalBranchDelivery;
   final String? destinationArea;
   final String? failureReason;
   final RiderSortingCenter? originSortingCenter;
@@ -121,6 +123,7 @@ class RiderAssignment {
           .map((value) =>
               RiderCenterTransfer.fromJson(Map<String, dynamic>.from(value)))
           .toList(),
+      isLocalBranchDelivery: json['is_local_branch_delivery'] == true,
       destinationArea: json['destination_area']?.toString(),
       failureReason: json['failure_reason']?.toString(),
       originSortingCenter: center('origin_sorting_center'),

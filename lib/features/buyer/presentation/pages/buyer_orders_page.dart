@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shophop/core/theme/app_colors.dart';
 import 'package:shophop/features/buyer/data/services/buyer_order_service.dart';
-import 'package:shophop/features/buyer/presentation/pages/buyer_payment_proof_page.dart';
 
 class BuyerOrdersPage extends StatefulWidget {
   const BuyerOrdersPage({
@@ -107,20 +106,6 @@ class _BuyerOrdersPageState extends State<BuyerOrdersPage> {
     } finally {
       if (mounted) setState(() => _busyOrderId = null);
     }
-  }
-
-  void _openPayment(int paymentId) {
-    Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => BuyerPaymentProofPage(
-        token: widget.token,
-        paymentId: paymentId,
-        onSessionExpired: widget.onSessionExpired,
-        onGoToOrders: () {
-          Navigator.of(context).pop();
-          _load();
-        },
-      ),
-    ));
   }
 
   String _peso(double value) => '₱${value.toStringAsFixed(2)}';
@@ -230,15 +215,6 @@ class _BuyerOrdersPageState extends State<BuyerOrdersPage> {
             subtitle: Text(event.at.replaceFirst('T', ' ').split('.').first),
           )).toList(),
         ),
-        if (order.paymentMethod == 'online' && order.paymentId != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: OutlinedButton.icon(
-              onPressed: () => _openPayment(order.paymentId!),
-              icon: const Icon(Icons.payment_rounded),
-              label: const Text('View payment status / proof'),
-            ),
-          ),
         if (order.canConfirmReceipt)
           Padding(
             padding: const EdgeInsets.only(top: 8),

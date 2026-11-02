@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:shophop/shared/widgets/shop_hop_navigation.dart';
+import 'package:shophop/shared/widgets/shop_hop_ui.dart';
+import 'package:shophop/shared/widgets/shop_hop_workflow.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:shophop/core/session/auth_session_service.dart';
 import 'package:shophop/features/auth/data/services/auth_service.dart';
@@ -23,6 +26,7 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
 
   final MobileScannerController _camera = MobileScannerController(autoStart: false);
   final TextEditingController _tracking = TextEditingController();
+  final TextEditingController _branchSearch = TextEditingController();
 
   List<Map<String, dynamic>> _branches = [];
   List<Map<String, dynamic>> _history = [];
@@ -30,6 +34,8 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
   String? _token;
   int? _branchId;
   String _company = 'ShopHop Logistics';
+  String _search = '';
+  bool _moreBranches = false;
   String _operator = '';
   String? _message;
   bool _messageSuccess = false;
@@ -96,7 +102,7 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
       _preview = null;
       _message = null;
     });
-    final response = await LogisticsScanService.branches(session.token);
+    final response = await LogisticsScanService.branches(session.token, search: _search);
     if (!mounted || generation != _requestGeneration) return;
     if (response.statusCode == 401 || response.statusCode == 403) {
       await _signOut();
@@ -114,6 +120,7 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
     setState(() {
       _busy = false;
       _branches = branches;
+      _moreBranches = response.data['more_branches'] == true;
       _branchLocked = locked;
       _branchId = next;
       _company = response.data['company']?.toString() ?? _company;
@@ -274,20 +281,13 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
   void dispose() {
     ++_requestGeneration;
     _tracking.dispose();
+    _branchSearch.dispose();
     _camera.dispose();
     super.dispose();
   }
 
-  Widget _surface(Widget child) => Container(
-    width: double.infinity,
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(18),
-      border: Border.all(color: const Color(0xFFE1E8EC)),
-    ),
-    child: child,
-  );
+  Widget _surface(Widget child) => ShopHopSurface(
+    padding: const EdgeInsets.all(14), child: child);
 
   Widget _notice(String text, {required bool success}) => Container(
     width: double.infinity,
@@ -306,12 +306,43 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
 
   Widget _receiveContent() => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
     _surface(Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Text('1  Select receiving branch', style: TextStyle(fontWeight: FontWeight.w800, color: _navy)),
+      const Text('1  Receiving location', style: TextStyle(fontWeight: FontWeight.w800, color: _navy)),
       const SizedBox(height: 6),
       Text(_branchLocked
           ? 'This branch is assigned to your staff account. Ask the company owner to change your assignment.'
           : 'Select the branch where the parcel is physically being handed over.',
         style: const TextStyle(fontSize: 12, color: Color(0xFF65748A))),
+      if (!_branchLocked) ...[
+        const SizedBox(height: 10),
+        TextField(
+          controller: _branchSearch,
+          enabled: !_busy && !_scanning,
+          textInputAction: TextInputAction.search,
+          onSubmitted: (term) {
+            final next = term.trim();
+            if (next == _search) return;
+            _search = next;
+            _load();
+          },
+          decoration: InputDecoration(
+            isDense: true,
+            labelText: 'Search city / branch',
+            hintText: 'e.g. Calamba or Pila',
+            prefixIcon: const Icon(Icons.search_rounded, size: 20),
+            suffixIcon: IconButton(
+              tooltip: 'Clear branch search',
+              onPressed: () { _branchSearch.clear(); _search = ''; _load(); },
+              icon: const Icon(Icons.close_rounded, size: 18),
+            ),
+            border: const OutlineInputBorder(),
+          ),
+        ),
+        if (_moreBranches) const Padding(
+          padding: EdgeInsets.only(top: 6),
+          child: Text('Showing first 80 branches. Search to select another location.',
+            style: TextStyle(fontSize: 11, color: Color(0xFF65748A))),
+        ),
+      ],
       const SizedBox(height: 12),
       if (_branches.isEmpty)
         const Text('No active branches assigned. Ask your Logistics administrator to activate and assign a branch.')
@@ -335,14 +366,14 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
     ])),
     const SizedBox(height: 12),
     _surface(Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Text('2  Scan and verify parcel', style: TextStyle(fontWeight: FontWeight.w800, color: _navy)),
+      const Text('2  Scan parcel · verify', style: TextStyle(fontWeight: FontWeight.w800, color: _navy)),
       const SizedBox(height: 6),
       const Text('The QR is checked first. Scanning alone will NOT mark the parcel as received.',
           style: TextStyle(fontSize: 12, color: Color(0xFF65748A))),
       const SizedBox(height: 14),
       if (_scanning) ...[
         ClipRRect(borderRadius: BorderRadius.circular(14), child: SizedBox(
-          height: 260,
+          height: 210,
           child: MobileScanner(
             controller: _camera,
             onDetect: (capture) {
@@ -361,11 +392,11 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
       ],
       SizedBox(width: double.infinity, child: OutlinedButton.icon(
         onPressed: _busy || _branchId == null ? null : () => _setScanner(!_scanning),
-        icon: Icon(_scanning ? Icons.stop_circle_outlined : Icons.qr_code_scanner),
-        label: Text(_scanning ? 'Stop camera' : 'Open QR scanner'),
+        icon: Icon(_scanning ? Icons.stop_circle_outlined : Icons.qr_code_scanner_rounded),
+        label: Text(_scanning ? 'Stop camera' : 'Scan parcel QR'),
       )),
       const SizedBox(height: 16),
-      const Text('Or type tracking code', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+      const Text('Manual tracking entry', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
       const SizedBox(height: 8),
       TextField(
         controller: _tracking,
@@ -389,7 +420,7 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
       const SizedBox(height: 12),
       _surface(Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         const Row(children: [Icon(Icons.fact_check_outlined, color: _teal), SizedBox(width: 8),
-          Text('3  Confirm physical receipt', style: TextStyle(fontWeight: FontWeight.w800, color: _navy))]),
+          Text('3  Review & confirm receipt', style: TextStyle(fontWeight: FontWeight.w800, color: _navy))]),
         const SizedBox(height: 12),
         Text('${_preview!['tracking_code']}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
         const SizedBox(height: 8),
@@ -397,6 +428,41 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
         const SizedBox(height: 4),
         Text('Receiving at: ${_preview!['branch']}'),
         Text('Current status: ${_preview!['delivery_status']}'),
+        if (_preview!['route'] is Map) ...[
+          const SizedBox(height: 10),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEAF8F5),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFB7E5DB)),
+            ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text('PARCEL ROUTE · PREVIEW',
+                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF087D6A))),
+              const SizedBox(height: 5),
+              Text('Type: ${(_preview!['route'] as Map)['route_type'] ?? 'Unknown'}',
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+              if (((_preview!['route'] as Map)['next_hop'] ?? '').toString().isNotEmpty)
+                Text('Next: ${(_preview!['route'] as Map)['next_hop']}',
+                  style: const TextStyle(fontSize: 12)),
+              if (((_preview!['route'] as Map)['next_leg'] ?? '').toString().isNotEmpty)
+                Text('Transfer: ${((_preview!['route'] as Map)['next_leg'] == 'verified_direct_station_road') ? 'Verified direct branch ROAD' : ((_preview!['route'] as Map)['next_leg'] == 'station_to_origin_hub' ? 'Origin Province Hub' : 'Manifest-controlled transfer')}',
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _navy)),
+              if ((_preview!['route'] as Map)['network_path'] is Map) ...[
+                const SizedBox(height: 7),
+                Text('VERIFIED NETWORK · ${(((_preview!['route'] as Map)['network_path'] as Map)['status'] ?? 'unavailable').toString().toUpperCase()}',
+                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF087D6A))),
+                Text('${(((_preview!['route'] as Map)['network_path'] as Map)['note'] ?? '')}',
+                  style: const TextStyle(fontSize: 10, color: Color(0xFF46625D))),
+              ],
+              const SizedBox(height: 4),
+              Text('${(_preview!['route'] as Map)['note'] ?? 'Follow the verified manifest workflow.'}',
+                style: const TextStyle(fontSize: 11, color: Color(0xFF46625D))),
+            ]),
+          ),
+        ],
         const SizedBox(height: 14),
         SizedBox(width: double.infinity, child: FilledButton.icon(
           style: FilledButton.styleFrom(backgroundColor: _teal),
@@ -433,7 +499,7 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
     backgroundColor: _background,
     appBar: AppBar(
       backgroundColor: Colors.white,
-      title: const Text('Parcel Receiving', style: TextStyle(fontWeight: FontWeight.w800, color: _navy)),
+      title: const Text('ShopHop Branch', style: TextStyle(fontWeight: FontWeight.w800, color: _navy)),
       actions: [
         IconButton(tooltip: 'Refresh branches and scans', onPressed: _busy ? null : _load,
           icon: const Icon(Icons.refresh)),
@@ -443,53 +509,52 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
     body: SafeArea(child: _busy && _branches.isEmpty
       ? const Center(child: CircularProgressIndicator())
       : ListView(padding: const EdgeInsets.fromLTRB(16, 18, 16, 40), children: [
-        Text(_company, style: const TextStyle(color: _navy, fontSize: 22, fontWeight: FontWeight.w800)),
-        const SizedBox(height: 4),
-        Text(_operator.isEmpty ? 'Authorized logistics scanner' : 'Signed in as $_operator',
-            style: const TextStyle(fontSize: 12, color: Color(0xFF65748A))),
-        const SizedBox(height: 16),
-        if (_branchId != null) ...[
-          SizedBox(width: double.infinity, child: FilledButton.icon(
-            icon: const Icon(Icons.move_to_inbox_outlined),
-            label: const Text('Receive inbound manifest'),
-            onPressed: _busy ? null : () async {
+        ShopHopWorkflowHeader(
+          title: _showHistory ? 'Scan history' : 'Branch parcel operations',
+          subtitle: _operator.isEmpty ? _company : '$_company · $_operator',
+          icon: _showHistory ? Icons.history_rounded : Icons.qr_code_scanner_rounded,
+          badge: _branchLocked ? 'Assigned branch only' : 'Authorized logistics operator',
+        ),
+        const SizedBox(height: 12),
+        if (!_showHistory && _branchId != null) ...[
+          ShopHopWorkflowAction(
+            title: 'Receive inbound manifest',
+            subtitle: 'Manifest QR · verify arrival and physical count',
+            icon: Icons.move_to_inbox_outlined,
+            active: !_busy,
+            onTap: () async {
               await _stopScanner();
               final branch = _branches.where((b) => _id(b['id']) == _branchId).toList();
-              if (!mounted || _token == null || _branchId == null) return;
+              if (!context.mounted || !mounted || _token == null || _branchId == null) return;
               await Navigator.push(context, MaterialPageRoute(builder: (_) => ManifestReceivingScreen(
-                token: _token!, branchId: _branchId!, branchName: branch.isEmpty ? 'Current center' : (branch.first['name']?.toString() ?? 'Current center'),
+                token: _token!, branchId: _branchId!, branchName: branch.isEmpty
+                  ? 'Current center' : (branch.first['name']?.toString() ?? 'Current center'),
               )));
               if (mounted) _load();
             },
-          )),
+          ),
           const SizedBox(height: 8),
-          SizedBox(width: double.infinity, child: OutlinedButton.icon(
-            icon: const Icon(Icons.inventory_2_outlined),
-            label: const Text('Confirm outbound manifest load'),
-            onPressed: _busy ? null : () async {
+          ShopHopWorkflowAction(
+            title: 'Confirm outbound manifest load',
+            subtitle: 'Scan parcel QR before linehaul takes custody',
+            icon: Icons.inventory_2_outlined,
+            active: !_busy,
+            onTap: () async {
               await _stopScanner();
               final branch = _branches.where((b) => _id(b['id']) == _branchId).toList();
-              if (!mounted || _token == null || _branchId == null) return;
+              if (!context.mounted || !mounted || _token == null || _branchId == null) return;
               await Navigator.push(context, MaterialPageRoute(builder: (_) => ManifestLoadingScreen(
-                token: _token!, branchId: _branchId!, branchName: branch.isEmpty ? 'Current center' : (branch.first['name']?.toString() ?? 'Current center'),
+                token: _token!, branchId: _branchId!, branchName: branch.isEmpty
+                  ? 'Current center' : (branch.first['name']?.toString() ?? 'Current center'),
               )));
               if (mounted) _load();
             },
-          )),
-          const SizedBox(height: 12),
+          ),
+          const SizedBox(height: 14),
+          const Text('Individual parcel exceptions',
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: _navy)),
+          const SizedBox(height: 8),
         ],
-        Row(children: [
-          Expanded(child: ChoiceChip(label: const Center(child: Text('Receive Parcel')),
-            selected: !_showHistory, onSelected: (_) { _stopScanner(); setState(() => _showHistory = false); })),
-          const SizedBox(width: 8),
-          Expanded(child: ChoiceChip(label: const Center(child: Text('Scan History')),
-            selected: _showHistory, onSelected: (_) {
-              _stopScanner();
-              setState(() => _showHistory = true);
-              if (_branchId != null) _loadHistory(_branchId!, _requestGeneration);
-            })),
-        ]),
-        const SizedBox(height: 16),
         if (_busy) const LinearProgressIndicator(minHeight: 3, color: _teal),
         if (_message != null) ...[
           const SizedBox(height: 10),
@@ -501,5 +566,18 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
         const Text('Manifest arrival/receipt and Parcel QR scans update the same custody history. Internet connection is required.',
           textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Color(0xFF65748A))),
       ])),
+    bottomNavigationBar: ShopHopNavigation(
+      index: _showHistory ? 1 : 0,
+      onChanged: (value) {
+        if (value == (_showHistory ? 1 : 0)) return;
+        _stopScanner();
+        setState(() => _showHistory = value == 1);
+        if (value == 1 && _branchId != null) _loadHistory(_branchId!, _requestGeneration);
+      },
+      items: const [
+        ShopHopNavItem('Scan', Icons.qr_code_scanner_rounded, Icons.qr_code_scanner_rounded),
+        ShopHopNavItem('History', Icons.history_outlined, Icons.history_rounded),
+      ],
+    ),
   );
 }

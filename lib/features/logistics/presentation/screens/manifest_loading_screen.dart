@@ -259,7 +259,7 @@ class _ManifestLoadingScreenState extends State<ManifestLoadingScreen> {
             const SizedBox(height: 12),
           ],
           DropdownButtonFormField<int>(
-            value: _manifestId,
+            initialValue: _manifestId,
             isExpanded: true,
             decoration: const InputDecoration(labelText: 'Outbound manifest', border: OutlineInputBorder()),
             items: _manifests.map((m) => DropdownMenuItem<int>(

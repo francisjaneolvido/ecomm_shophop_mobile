@@ -339,7 +339,6 @@ class BuyerCheckoutPlaceResult {
   const BuyerCheckoutPlaceResult({
     required this.checkoutGroupId,
     required this.orderIds,
-    required this.paymentId,
     required this.paymentMethod,
     required this.grandTotal,
     required this.cartCount,
@@ -348,7 +347,6 @@ class BuyerCheckoutPlaceResult {
 
   final String checkoutGroupId;
   final List<int> orderIds;
-  final int? paymentId;
   final String paymentMethod;
   final double grandTotal;
   final int cartCount;
@@ -366,108 +364,10 @@ class BuyerCheckoutPlaceResult {
               .where((id) => id > 0)
               .toList(growable: false)
           : const <int>[],
-      paymentId: json['payment_id'] == null ? null : _asInt(json['payment_id']),
       paymentMethod: json['payment_method']?.toString() ?? 'cod',
       grandTotal: _asDouble(json['grand_total']),
       cartCount: _asInt(json['cart_count']),
       message: message,
-    );
-  }
-}
-
-class BuyerPaymentOrderData {
-  const BuyerPaymentOrderData({
-    required this.id,
-    required this.sellerName,
-    required this.totalAmount,
-    required this.status,
-    required this.statusLabel,
-  });
-
-  final int id;
-  final String sellerName;
-  final double totalAmount;
-  final String status;
-  final String statusLabel;
-
-  factory BuyerPaymentOrderData.fromJson(Map<String, dynamic> json) {
-    return BuyerPaymentOrderData(
-      id: _asInt(json['id']),
-      sellerName: json['seller_name']?.toString() ?? 'ShopHop Seller',
-      totalAmount: _asDouble(json['total_amount']),
-      status: json['status']?.toString() ?? '',
-      statusLabel: json['status_label']?.toString() ?? '',
-    );
-  }
-}
-
-class BuyerPaymentData {
-  const BuyerPaymentData({
-    required this.id,
-    required this.status,
-    required this.reference,
-    required this.expectedAmount,
-    required this.expiresAt,
-    required this.submittedAt,
-    required this.reviewedAt,
-    required this.rejectionReason,
-    required this.closureReason,
-    required this.canSubmit,
-    required this.canCancel,
-    required this.qrUrl,
-    required this.recipientName,
-    required this.recipientIdentifier,
-    required this.paymentInstructions,
-    required this.demoReference,
-    required this.demoAmount,
-    required this.orders,
-  });
-
-  final int id;
-  final String status;
-  final String reference;
-  final double expectedAmount;
-  final DateTime? expiresAt;
-  final DateTime? submittedAt;
-  final DateTime? reviewedAt;
-  final String rejectionReason;
-  final String closureReason;
-  final bool canSubmit;
-  final bool canCancel;
-  final String qrUrl;
-  final String recipientName;
-  final String recipientIdentifier;
-  final String paymentInstructions;
-  final String demoReference;
-  final double demoAmount;
-  final List<BuyerPaymentOrderData> orders;
-
-  factory BuyerPaymentData.fromJson(Map<String, dynamic> json) {
-    final settings = json['payment_instructions'] is Map
-        ? Map<String, dynamic>.from(json['payment_instructions'] as Map)
-        : <String, dynamic>{};
-    final demo = json['demo_transaction'] is Map
-        ? Map<String, dynamic>.from(json['demo_transaction'] as Map)
-        : <String, dynamic>{};
-    return BuyerPaymentData(
-      demoReference: demo['reference']?.toString() ?? '',
-      demoAmount: _asDouble(demo['amount']),
-      qrUrl: settings['qr_url']?.toString() ?? '',
-      recipientName: settings['recipient_name']?.toString() ?? 'ShopHop Demo',
-      recipientIdentifier: settings['recipient_identifier']?.toString() ?? '',
-      paymentInstructions: settings['instructions']?.toString() ?? '',
-      id: _asInt(json['id']),
-      status: json['status']?.toString() ?? '',
-      reference: json['reference']?.toString() ?? '',
-      expectedAmount: _asDouble(json['expected_amount']),
-      expiresAt: _asDateTime(json['expires_at']),
-      submittedAt: _asDateTime(json['submitted_at']),
-      reviewedAt: _asDateTime(json['reviewed_at']),
-      rejectionReason: json['rejection_reason']?.toString() ?? '',
-      closureReason: json['closure_reason']?.toString() ?? '',
-      canSubmit: json['can_submit'] == true,
-      canCancel: json['can_cancel'] == true,
-      orders: _mapList(json['orders'], BuyerPaymentOrderData.fromJson),
     );
   }
 }
@@ -540,75 +440,6 @@ class BuyerCheckoutService {
     return BuyerCheckoutPlaceResult.fromJson(
       _requireDataMap(body, 'checkout result'),
       body['message']?.toString() ?? 'Order placed successfully.',
-    );
-  }
-
-  static Future<BuyerPaymentData> getPayment({
-    required String token,
-    required int paymentId,
-  }) async {
-    final body = await _request(
-      '/buyer/payments/$paymentId',
-      token: token,
-      method: 'GET',
-    );
-    return BuyerPaymentData.fromJson(_requireDataMap(body, 'payment'));
-  }
-
-  static Future<void> simulatePayment({required String token, required int paymentId}) async {
-    await _request('/buyer/payments/$paymentId/simulate', token: token, method: 'POST');
-  }
-
-  static Future<void> submitPaymentProof({
-    required String token,
-    required int paymentId,
-    required String reference,
-    required List<int> receiptBytes,
-    required String receiptFileName,
-  }) async {
-    final uri = Uri.parse('${ApiConfig.baseUrl}/buyer/payments/$paymentId/submit');
-    final request = http.MultipartRequest('POST', uri)
-      ..headers.addAll({
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      })
-      ..fields['reference'] = reference.trim()
-      ..files.add(
-        http.MultipartFile.fromBytes(
-          'receipt',
-          receiptBytes,
-          filename: receiptFileName,
-        ),
-      );
-
-    try {
-      final streamed = await request.send().timeout(const Duration(seconds: 30));
-      final response = await http.Response.fromStream(streamed);
-      final decoded = _decode(response.body);
-      final successful = response.statusCode >= 200 && response.statusCode < 300;
-      if (!successful || decoded['success'] == false) {
-        throw BuyerCheckoutException(
-          _messageFromResponse(decoded, response.statusCode),
-          statusCode: response.statusCode,
-        );
-      }
-    } on BuyerCheckoutException {
-      rethrow;
-    } catch (_) {
-      throw const BuyerCheckoutException(
-        'Unable to submit payment proof right now. Check your connection and Laravel server.',
-      );
-    }
-  }
-
-  static Future<void> cancelPayment({
-    required String token,
-    required int paymentId,
-  }) async {
-    await _request(
-      '/buyer/payments/$paymentId/cancel',
-      token: token,
-      method: 'POST',
     );
   }
 
@@ -772,8 +603,3 @@ double _asDouble(dynamic value) {
   return double.tryParse(value?.toString() ?? '') ?? 0;
 }
 
-DateTime? _asDateTime(dynamic value) {
-  final raw = value?.toString().trim() ?? '';
-  if (raw.isEmpty) return null;
-  return DateTime.tryParse(raw)?.toLocal();
-}

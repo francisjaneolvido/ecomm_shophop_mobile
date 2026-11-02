@@ -259,11 +259,26 @@ class BuyerPaginationData {
   }
 }
 
+class BuyerMediaItem {
+  const BuyerMediaItem({required this.type, required this.url});
+  final String type;
+  final String url;
+  bool get isVideo => type == 'video';
+
+  factory BuyerMediaItem.fromJson(Map<String, dynamic> json) => BuyerMediaItem(
+    type: json['type']?.toString() == 'video' ? 'video' : 'image',
+    url: ApiConfig.resolveMediaUrl(json['url']?.toString()),
+  );
+}
+
 class BuyerProductDetailData {
   const BuyerProductDetailData({
     required this.product,
     required this.description,
     required this.gallery,
+    required this.media,
+    required this.videoUrl,
+    required this.mediaFirst,
     required this.variants,
     required this.vouchers,
     required this.reviews,
@@ -275,6 +290,9 @@ class BuyerProductDetailData {
   final BuyerProductData product;
   final String description;
   final List<String> gallery;
+  final List<BuyerMediaItem> media;
+  final String videoUrl;
+  final String mediaFirst;
   final List<BuyerVariantData> variants;
   final List<BuyerVoucherData> vouchers;
   final List<BuyerReviewData> reviews;
@@ -298,6 +316,11 @@ class BuyerProductDetailData {
     return BuyerProductDetailData(
       product: BuyerProductData.fromJson(json),
       description: json['description']?.toString().trim() ?? '',
+      videoUrl: ApiConfig.resolveMediaUrl(json['video_url']?.toString()),
+      mediaFirst: json['media_first']?.toString() == 'video' ? 'video' : 'image',
+      media: _mapList(json['media'], BuyerMediaItem.fromJson)
+          .where((item) => item.url.isNotEmpty)
+          .toList(growable: false),
       gallery: _stringList(json['gallery'])
           .map(ApiConfig.resolveMediaUrl)
           .where((url) => url.isNotEmpty)

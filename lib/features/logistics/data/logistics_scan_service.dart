@@ -13,10 +13,11 @@ class LogisticsScanService {
         'Authorization': 'Bearer $token',
       };
 
-  static Future<AuthApiResult> branches(String token) async {
+  static Future<AuthApiResult> branches(String token, {String search = ''}) async {
     try {
       final response = await http
-          .get(Uri.parse('${ApiConfig.baseUrl}/logistics/scanner/branches'),
+          .get(Uri.parse('${ApiConfig.baseUrl}/logistics/scanner/branches')
+                  .replace(queryParameters: search.trim().isEmpty ? null : {'search': search.trim()}),
               headers: _headers(token))
           .timeout(const Duration(seconds: 20));
       return AuthApiResult.fromResponse(response);

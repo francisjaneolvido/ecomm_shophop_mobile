@@ -13,6 +13,7 @@ import 'package:shophop/features/rider/data/services/rider_return_service.dart';
 import 'package:shophop/features/rider/data/services/rider_transit_service.dart';
 import 'package:shophop/features/rider/presentation/screens/rider_custody_scanner.dart';
 import 'package:shophop/shared/widgets/shop_hop_ui.dart';
+import 'package:shophop/shared/widgets/shop_hop_navigation.dart';
 
 enum _RiderTaskKind { pickup, transfer, delivery, returnTask }
 
@@ -73,6 +74,8 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
   String? _sortingCenterCode;
   String? _sortingCenterAddress;
   String? _coverageArea;
+  String _operationalAreaSummary = '';
+  String _operationalAreaMode = 'legacy';
   double _pendingEarnings = 0;
   double _availableEarnings = 0;
   double _paidEarnings = 0;
@@ -149,6 +152,19 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
         _sortingCenterCode = me.data['sorting_center_code']?.toString();
         _sortingCenterAddress = me.data['sorting_center_address']?.toString();
         _coverageArea = me.data['coverage_area']?.toString();
+        _operationalAreaMode = me.data['operational_area_mode']?.toString() ?? 'legacy';
+        final areas = me.data['operational_service_areas'];
+        if (areas is List && areas.isNotEmpty) {
+          final labels = areas.whereType<Map>()
+              .map((item) => item['label']?.toString() ?? '')
+              .where((value) => value.trim().isNotEmpty).toList();
+          _operationalAreaSummary = labels.take(4).join(' · ');
+          if (labels.length > 4) {
+            _operationalAreaSummary += ' · +${labels.length - 4} more';
+          }
+        } else {
+          _operationalAreaSummary = '';
+        }
         _profileLoaded = true;
       });
 
@@ -465,11 +481,6 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
   List<RiderAssignment> get _deliveryHistory =>
       _assignments.where((assignment) => !assignment.isTask).toList();
 
-  List<Map<String, dynamic>> get _activeTransfers => _transfers.where((item) {
-        final received = item['received_at'];
-        return received == null || received.toString().trim().isEmpty;
-      }).toList();
-
   List<Map<String, dynamic>> get _completedTransfers => _transfers.where((item) {
         final received = item['received_at'];
         return received != null && received.toString().trim().isNotEmpty;
@@ -661,59 +672,18 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
                   onRefresh: () => _load(showLoader: false),
                   child: _pageForTab(),
                 ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _tab,
-        onDestinationSelected: (value) {
+      bottomNavigationBar: ShopHopNavigation(
+        index: _tab,
+        onChanged: (value) {
           setState(() => _tab = value);
-          // Earnings can change after Admin distributes a settlement while the
-          // Rider app is already open. Refresh when Wallet is opened so
-          // Pending → Available → Paid is reflected without a full relaunch.
-          if (value == 1 && !_loading) {
-            _load(showLoader: false);
-          }
+          if (value == 1 && !_loading) _load(showLoader: false);
         },
-        destinations: [
-          const NavigationDestination(
-            icon: Icon(Icons.route_outlined),
-            selectedIcon: Icon(Icons.route_rounded),
-            label: 'Today',
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.account_balance_wallet_outlined),
-            selectedIcon: Icon(Icons.account_balance_wallet_rounded),
-            label: 'Wallet',
-          ),
-          NavigationDestination(
-            icon: Container(
-              width: 44,
-              height: 44,
-              decoration: const BoxDecoration(
-                color: AppColors.tealDark,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.camera_alt_rounded, color: Colors.white),
-            ),
-            selectedIcon: Container(
-              width: 48,
-              height: 48,
-              decoration: const BoxDecoration(
-                color: AppColors.navy,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.camera_alt_rounded, color: Colors.white),
-            ),
-            label: 'Scan',
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.history_rounded),
-            selectedIcon: Icon(Icons.history_rounded),
-            label: 'History',
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.person_outline_rounded),
-            selectedIcon: Icon(Icons.person_rounded),
-            label: 'Account',
-          ),
+        items: const [
+          ShopHopNavItem('Today', Icons.route_outlined, Icons.route_rounded),
+          ShopHopNavItem('Wallet', Icons.account_balance_wallet_outlined, Icons.account_balance_wallet_rounded),
+          ShopHopNavItem('Scan', Icons.qr_code_scanner_rounded, Icons.qr_code_scanner_rounded),
+          ShopHopNavItem('History', Icons.history_rounded, Icons.history_rounded),
+          ShopHopNavItem('Account', Icons.person_outline_rounded, Icons.person_rounded),
         ],
       ),
     );
@@ -940,7 +910,9 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
           children: [
             if (_sortingCenterCode?.trim().isNotEmpty == true)
               _softChip(Icons.location_on_outlined, _sortingCenterCode!.trim()),
-            if (_coverageArea?.trim().isNotEmpty == true)
+            if (_operationalAreaSummary.isNotEmpty)
+              _softChip(Icons.map_outlined, _operationalAreaSummary)
+            else if (_coverageArea?.trim().isNotEmpty == true)
               _softChip(Icons.map_outlined, _coverageArea!.trim()),
           ],
         ),
@@ -1019,10 +991,10 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
     final color = _taskColor(task.kind);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: emphasized ? AppColors.tealDark : AppColors.grayBorder,
           width: emphasized ? 1.4 : 1,
@@ -1031,10 +1003,10 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
           onTap: () => _showTaskDetails(task),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -1156,7 +1128,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
       if (assignment.canStartDelivery) {
         return _primaryAction(
           label: 'Scan parcel at branch',
-          icon: Icons.camera_alt_rounded,
+          icon: Icons.qr_code_scanner_rounded,
           dark: true,
           onPressed: () => setState(() => _tab = 2),
         );
@@ -1282,6 +1254,8 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
             Icons.payments_outlined,
             'COD ₱${assignment.totalAmount}',
           ),
+        if (assignment.isLocalBranchDelivery)
+          _miniChip(Icons.location_on_outlined, 'Local · same branch'),
         if (assignment.deliveryAttempts > 0)
           _miniChip(
             Icons.replay_rounded,
@@ -1875,7 +1849,19 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
         ),
         const SizedBox(height: 14),
         _branchSummary(),
-        if (_coverageArea?.trim().isNotEmpty == true) ...[
+        if (_operationalAreaSummary.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _accountInfoCard(
+            Icons.delivery_dining_outlined,
+            'Assigned pickup / delivery service areas',
+            _operationalAreaSummary,
+          ),
+        ] else if (_operationalAreaMode == 'configured') ...[
+          const SizedBox(height: 12),
+          _accountInfoCard(Icons.warning_amber_rounded,
+            'Rider barangay assignment required',
+            'No operational barangays assigned. Contact your branch manager.'),
+        ] else if (_coverageArea?.trim().isNotEmpty == true) ...[
           const SizedBox(height: 12),
           _accountInfoCard(
             Icons.map_outlined,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:video_player/video_player.dart';
 
 import 'package:shophop/features/buyer/data/services/buyer_catalog_service.dart';
 import 'package:shophop/features/buyer/data/services/buyer_cart_service.dart';
@@ -262,22 +263,42 @@ class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
   Widget _buildProductBody() {
     final detail = _detail!;
     final product = detail.product;
-    final gallery = detail.gallery.isEmpty
-        ? <String>[product.image]
-        : detail.gallery;
+    // The API's ordered media list is the source of truth. Fall back to the
+    // legacy image gallery and optional video for older product records.
+    final List<BuyerMediaItem> gallery = detail.media.isNotEmpty
+        ? detail.media
+        : <BuyerMediaItem>[
+            if (detail.mediaFirst == 'video' && detail.videoUrl.isNotEmpty)
+              BuyerMediaItem(type: 'video', url: detail.videoUrl),
+            ...detail.gallery
+                .where((url) => url.isNotEmpty)
+                .map((url) => BuyerMediaItem(type: 'image', url: url)),
+            if (detail.gallery.isEmpty && product.image.isNotEmpty)
+              BuyerMediaItem(type: 'image', url: product.image),
+            if (detail.mediaFirst != 'video' && detail.videoUrl.isNotEmpty)
+              BuyerMediaItem(type: 'video', url: detail.videoUrl),
+            if (detail.gallery.isEmpty &&
+                product.image.isEmpty &&
+                detail.videoUrl.isEmpty)
+              const BuyerMediaItem(type: 'image', url: ''),
+          ];
 
     return RefreshIndicator(
       color: AppColors.teal,
       onRefresh: _loadProduct,
       child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.only(bottom: 24),
         children: [
           _GallerySection(
-            images: gallery,
+            media: gallery,
             controller: _galleryController,
             currentIndex: _galleryIndex,
             onPageChanged: (index) => setState(() => _galleryIndex = index),
+            onSelect: (index) {
+              _galleryController.animateToPage(index,
+                duration: const Duration(milliseconds: 230),
+                curve: Curves.easeOutCubic);
+              setState(() => _galleryIndex = index);
+            },
           ),
           Container(
             color: Colors.white,
@@ -597,72 +618,128 @@ class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
   }
 }
 
+/// A single swipeable gallery for photos and videos, with consistent thumbnails.
 class _GallerySection extends StatelessWidget {
-  const _GallerySection({
-    required this.images,
-    required this.controller,
-    required this.currentIndex,
-    required this.onPageChanged,
-  });
-
-  final List<String> images;
+  const _GallerySection({required this.media, required this.controller,
+    required this.currentIndex, required this.onPageChanged, required this.onSelect});
+  final List<BuyerMediaItem> media;
   final PageController controller;
   final int currentIndex;
   final ValueChanged<int> onPageChanged;
+  final ValueChanged<int> onSelect;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: Colors.white,
-      child: Column(
-        children: [
-          AspectRatio(
-            aspectRatio: 1.12,
-            child: PageView.builder(
-              controller: controller,
-              itemCount: images.length,
-              onPageChanged: onPageChanged,
-              itemBuilder: (context, index) {
-                final url = images[index];
-                if (url.isEmpty) return const _GalleryFallback();
-                return Image.network(
-                  url,
-                  fit: BoxFit.contain,
-                  loadingBuilder: (context, child, progress) {
-                    if (progress == null) return child;
-                    return const _GalleryFallback(showLoader: true);
-                  },
-                  errorBuilder: (_, __, ___) => const _GalleryFallback(),
-                );
-              },
-            ),
-          ),
-          if (images.length > 1)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(images.length, (index) {
-                  final active = index == currentIndex;
-                  return AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    width: active ? 18 : 6,
-                    height: 6,
-                    margin: const EdgeInsets.symmetric(horizontal: 3),
-                    decoration: BoxDecoration(
-                      color: active
-                          ? AppColors.tealDark
-                          : const Color(0xFFD2D8DE),
-                      borderRadius: BorderRadius.circular(99),
-                    ),
-                  );
-                }),
+  Widget build(BuildContext context) => Container(
+    color: Colors.white,
+    child: Column(children: [
+      AspectRatio(aspectRatio: 1.05, child: PageView.builder(
+        controller: controller,
+        itemCount: media.length,
+        onPageChanged: onPageChanged,
+        itemBuilder: (context, index) {
+          final item = media[index];
+          if (item.isVideo) {
+            return _GalleryVideoTile(
+              key: ValueKey(item.url),
+              url: item.url,
+              active: index == currentIndex,
+            );
+          }
+          if (item.url.isEmpty) {
+            return const _GalleryFallback();
+          }
+          return Image.network(item.url, fit: BoxFit.contain,
+            loadingBuilder: (context, child, progress) =>
+              progress == null ? child : const _GalleryFallback(showLoader: true),
+            errorBuilder: (_, __, ___) => const _GalleryFallback());
+        },
+      )),
+      if (media.length > 1)
+        SizedBox(height: 92, child: ListView.separated(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          scrollDirection: Axis.horizontal,
+          itemCount: media.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 8),
+          itemBuilder: (context, index) {
+            final item = media[index];
+            final active = index == currentIndex;
+            return InkWell(
+              onTap: () => onSelect(index),
+              borderRadius: BorderRadius.circular(10),
+              child: Container(width: 72, height: 72,
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: active ? AppColors.tealDark : const Color(0xFFDFE5E9), width: active ? 2.5 : 1)),
+                clipBehavior: Clip.antiAlias,
+                child: item.isVideo
+                  ? const ColoredBox(color: AppColors.navy,
+                      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                        Icon(Icons.play_circle_fill_rounded, color: Colors.white, size: 25),
+                        Text('VIDEO', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold))]))
+                  : Image.network(item.url, fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const Icon(Icons.image_not_supported_outlined)),
               ),
-            ),
-        ],
-      ),
-    );
+            );
+          },
+        )),
+    ]),
+  );
+}
+
+class _GalleryVideoTile extends StatefulWidget {
+  const _GalleryVideoTile({super.key, required this.url, required this.active});
+  final String url;
+  final bool active;
+  @override
+  State<_GalleryVideoTile> createState() => _GalleryVideoTileState();
+}
+
+class _GalleryVideoTileState extends State<_GalleryVideoTile> {
+  late final VideoPlayerController _controller;
+  bool _ready = false;
+  bool _failed = false;
+  @override
+  void initState() {
+    super.initState();
+    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.url));
+    _controller.initialize().then((_) async {
+      if (!mounted) return;
+      await _controller.setVolume(0);
+      await _controller.setLooping(true);
+      if (widget.active) await _controller.play();
+      if (mounted) setState(() => _ready = true);
+    }).catchError((Object _) { if (mounted) setState(() => _failed = true); });
   }
+  @override
+  void didUpdateWidget(covariant _GalleryVideoTile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_ready && oldWidget.active != widget.active) {
+      if (widget.active) { _controller.play(); } else { _controller.pause(); }
+    }
+  }
+  @override
+  void dispose() { _controller.dispose(); super.dispose(); }
+  @override
+  Widget build(BuildContext context) => Container(
+    color: AppColors.navy,
+    child: _failed ? const Center(child: Text('Video unavailable', style: TextStyle(color: Colors.white)))
+      : !_ready ? const Center(child: CircularProgressIndicator(color: AppColors.teal))
+      : Stack(children: [
+          Center(child: AspectRatio(aspectRatio: _controller.value.aspectRatio > 0
+            ? _controller.value.aspectRatio : 16 / 9, child: VideoPlayer(_controller))),
+          Positioned(bottom: 8, left: 12, right: 12, child: Row(children: [
+            IconButton(color: Colors.white,
+              tooltip: _controller.value.isPlaying ? 'Pause' : 'Play',
+              onPressed: () async { _controller.value.isPlaying
+                ? await _controller.pause() : await _controller.play(); if (mounted) setState(() {}); },
+              icon: Icon(_controller.value.isPlaying ? Icons.pause_circle : Icons.play_circle)),
+            const Spacer(),
+            IconButton(color: Colors.white, tooltip: 'Toggle sound',
+              onPressed: () async { await _controller.setVolume(_controller.value.volume == 0 ? 1 : 0);
+                if (mounted) setState(() {}); },
+              icon: Icon(_controller.value.volume == 0 ? Icons.volume_off : Icons.volume_up)),
+          ])),
+        ]),
+  );
 }
 
 class _GalleryFallback extends StatelessWidget {
