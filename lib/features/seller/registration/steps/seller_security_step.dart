@@ -210,7 +210,7 @@ class _SellerSecurityStepState
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.grayBg,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: AppColors.grayBorder,
         ),
@@ -305,7 +305,7 @@ class _SellerSecurityStepState
       padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
         color: AppColors.tealLight.withValues(alpha: 0.45),
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: AppColors.teal.withValues(alpha: 0.15),
         ),
@@ -354,7 +354,7 @@ class _SellerSecurityStepState
               padding: const EdgeInsets.all(13),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(15),
+                borderRadius: BorderRadius.circular(8),
                 border: Border.all(
                   color: field.hasError
                       ? const Color(0xFFDB5757)

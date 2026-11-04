@@ -67,7 +67,7 @@ class RiderRegistrationProgress extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(14, 15, 14, 13),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.grayBorder),
       ),
       child: Column(

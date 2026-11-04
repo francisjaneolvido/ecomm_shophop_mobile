@@ -53,7 +53,7 @@ class SellerVerificationStep extends StatelessWidget {
           padding: const EdgeInsets.all(13),
           decoration: BoxDecoration(
             color: AppColors.tealLight.withValues(alpha: 0.45),
-            borderRadius: BorderRadius.circular(15),
+            borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: AppColors.teal.withValues(alpha: 0.14),
             ),

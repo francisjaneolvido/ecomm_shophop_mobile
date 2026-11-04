@@ -467,7 +467,7 @@ class _SecureCheckoutHeader extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Color(0xFF10264D),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         children: [
@@ -477,7 +477,7 @@ class _SecureCheckoutHeader extends StatelessWidget {
             decoration: BoxDecoration(
               // ignore: deprecated_member_use
               color: Colors.white.withOpacity(.12),
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: const Icon(
               Icons.verified_user_outlined,
@@ -537,7 +537,7 @@ class _AddressCard extends StatelessWidget {
               padding: const EdgeInsets.all(11),
               decoration: BoxDecoration(
                 color: const Color(0xFFFFF2F2),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: const Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -726,7 +726,7 @@ class _CheckoutShopCard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF0FBF8),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: AppColors.tealDark),
                   ),
                   child: Row(children: [
@@ -776,7 +776,7 @@ class _CheckoutShopCard extends StatelessWidget {
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: const Color(0xFFFFF3E8),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -799,14 +799,14 @@ class _CheckoutShopCard extends StatelessWidget {
                         padding: const EdgeInsets.only(bottom: 7),
                         child: InkWell(
                           onTap: disabled ? null : () => onLogisticsChanged(partner.id),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(8),
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                             decoration: BoxDecoration(
                               color: selectedLogisticsPartnerId == partner.id
                                   ? const Color(0xFFF0FBF8)
                                   : const Color(0xFFF8FAFA),
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(8),
                               border: Border.all(
                                 color: selectedLogisticsPartnerId == partner.id
                                     ? AppColors.tealDark
@@ -871,7 +871,7 @@ class _CheckoutItemTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(11),
+            borderRadius: BorderRadius.circular(8),
             child: Container(
               width: 66,
               height: 66,
@@ -965,7 +965,7 @@ class _VoucherCard extends StatelessWidget {
     return _SurfaceCard(
       child: InkWell(
         onTap: enabled ? onTap : null,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 2),
           child: Row(
@@ -975,7 +975,7 @@ class _VoucherCard extends StatelessWidget {
                 height: 38,
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFF2E4),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
                   Icons.confirmation_number_outlined,
@@ -1076,13 +1076,13 @@ class _PaymentOption extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: enabled ? onTap : null,
-      borderRadius: BorderRadius.circular(13),
+      borderRadius: BorderRadius.circular(8),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.all(11),
         decoration: BoxDecoration(
           color: selected ? const Color(0xFFF0FBF8) : const Color(0xFFF8FAFA),
-          borderRadius: BorderRadius.circular(13),
+          borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: selected ? AppColors.tealDark : AppColors.grayBorder,
           ),
@@ -1333,12 +1333,12 @@ class _VoucherTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(8),
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: selected ? const Color(0xFFF0FBF8) : const Color(0xFFF9FAFB),
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: selected ? AppColors.tealDark : AppColors.grayBorder,
           ),
@@ -1350,7 +1350,7 @@ class _VoucherTile extends StatelessWidget {
               height: 38,
               decoration: BoxDecoration(
                 color: selected ? AppColors.tealLight : const Color(0xFFFFF2E4),
-                borderRadius: BorderRadius.circular(11),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
                 Icons.confirmation_number_outlined,
@@ -1447,7 +1447,7 @@ class _CheckoutBottomBar extends StatelessWidget {
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.tealDark,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                 ),
                 child: busy
@@ -1487,7 +1487,7 @@ class _SurfaceCard extends StatelessWidget {
       padding: padding,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(17),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.grayBorder),
       ),
       child: child,
@@ -1567,15 +1567,15 @@ InputDecoration _fieldDecoration(String label, String hint) {
     fillColor: const Color(0xFFF8FAFA),
     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
     border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(8),
       borderSide: const BorderSide(color: AppColors.grayBorder),
     ),
     enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(8),
       borderSide: const BorderSide(color: AppColors.grayBorder),
     ),
     focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(8),
       borderSide: const BorderSide(color: AppColors.tealDark, width: 1.2),
     ),
   );

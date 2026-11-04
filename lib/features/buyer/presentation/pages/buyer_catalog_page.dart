@@ -429,15 +429,15 @@ class _CatalogHeader extends StatelessWidget {
                   vertical: 13,
                 ),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide.none,
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(8),
                   borderSide: const BorderSide(color: Color(0xFFE7EEEC)),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(8),
                   borderSide: const BorderSide(
                     color: AppColors.teal,
                     width: 1.5,
@@ -464,7 +464,7 @@ class _CatalogHeader extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: Color(0xFFF5FFFC),
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: const Color(0xFFD7EEE8)),
                     ),
                     child: Center(
@@ -556,7 +556,7 @@ class _SortHeaderDelegate extends SliverPersistentHeaderDelegate {
                     fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
                   ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(11),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                 );
               },

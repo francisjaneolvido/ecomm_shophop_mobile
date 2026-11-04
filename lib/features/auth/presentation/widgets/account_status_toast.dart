@@ -260,7 +260,7 @@ class _AccountStatusToastCard
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius:
-                BorderRadius.circular(18),
+                BorderRadius.circular(8),
             border: Border.all(
               color: AppColors.grayBorder,
             ),

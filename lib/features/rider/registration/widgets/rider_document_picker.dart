@@ -48,7 +48,7 @@ class RiderDocumentPicker extends StatelessWidget {
             behavior: SnackBarBehavior.floating,
             margin: const EdgeInsets.all(16),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(8),
             ),
           ),
         );
@@ -87,13 +87,13 @@ class RiderDocumentPicker extends StatelessWidget {
               color: Colors.transparent,
               child: InkWell(
                 onTap: () => _pick(context, field),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(8),
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(15),
                   decoration: BoxDecoration(
                     color: AppColors.grayBg,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: field.hasError
                           ? const Color(0xFFDB5757)
@@ -109,7 +109,7 @@ class RiderDocumentPicker extends StatelessWidget {
                         height: 46,
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(13),
+                          borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: AppColors.grayBorder),
                         ),
                         child: Icon(
@@ -198,7 +198,7 @@ class RiderDocumentPicker extends StatelessWidget {
       width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(17),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.grayBorder),
       ),
       clipBehavior: Clip.antiAlias,
@@ -253,7 +253,7 @@ class RiderDocumentPicker extends StatelessWidget {
                       foregroundColor: AppColors.navy,
                       side: const BorderSide(color: AppColors.grayBorder),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                   ),
@@ -272,7 +272,7 @@ class RiderDocumentPicker extends StatelessWidget {
                       foregroundColor: const Color(0xFFC45252),
                       side: const BorderSide(color: Color(0xFFF0D0D0)),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                     child: const Icon(Icons.delete_outline_rounded, size: 18),
@@ -299,7 +299,7 @@ class RiderDocumentPicker extends StatelessWidget {
           constraints: const BoxConstraints(maxWidth: 650, maxHeight: 700),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(8),
           ),
           clipBehavior: Clip.antiAlias,
           child: Column(

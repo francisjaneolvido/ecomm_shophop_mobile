@@ -718,7 +718,7 @@ class _BuyerRegistrationScreenState
           behavior: SnackBarBehavior.floating,
           margin: const EdgeInsets.all(16),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(8),
           ),
         ),
       );
@@ -1382,7 +1382,7 @@ class _BuyerRegistrationScreenState
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius:
-            BorderRadius.circular(22),
+            BorderRadius.circular(8),
         border: Border.all(
           color:
               AppColors.grayBorder,
@@ -1444,7 +1444,7 @@ class _BuyerRegistrationScreenState
                       horizontal: 17,
                     ),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                   ),
                   child: const Row(
@@ -1481,7 +1481,7 @@ class _BuyerRegistrationScreenState
                     backgroundColor: AppColors.teal,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                   ),
                   child: _isSubmitting

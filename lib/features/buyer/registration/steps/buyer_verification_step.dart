@@ -152,7 +152,7 @@ class BuyerVerificationStep extends StatelessWidget {
           margin: const EdgeInsets.all(16),
           shape: RoundedRectangleBorder(
             borderRadius:
-                BorderRadius.circular(14),
+                BorderRadius.circular(8),
           ),
         ),
       );
@@ -225,7 +225,7 @@ class BuyerVerificationStep extends StatelessWidget {
             ),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(22),
+              borderRadius: BorderRadius.circular(8),
             ),
             clipBehavior: Clip.antiAlias,
             child: Column(
@@ -436,7 +436,7 @@ class BuyerVerificationStep extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppColors.tealLight,
             borderRadius:
-                BorderRadius.circular(14),
+                BorderRadius.circular(8),
           ),
           child: const Icon(
             Icons
@@ -499,7 +499,7 @@ class BuyerVerificationStep extends StatelessWidget {
           );
         },
         borderRadius:
-            BorderRadius.circular(17),
+            BorderRadius.circular(8),
         child: Container(
           width: double.infinity,
           padding:
@@ -510,7 +510,7 @@ class BuyerVerificationStep extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppColors.grayBg,
             borderRadius:
-                BorderRadius.circular(17),
+                BorderRadius.circular(8),
             border: Border.all(
               color: field.hasError
                   ? const Color(
@@ -621,7 +621,7 @@ class BuyerVerificationStep extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius:
-            BorderRadius.circular(18),
+            BorderRadius.circular(8),
         border: Border.all(
           color: AppColors.grayBorder,
         ),
@@ -891,7 +891,7 @@ class BuyerVerificationStep extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(12),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(13),
+              borderRadius: BorderRadius.circular(8),
               child: Image.memory(
                 bytes,
                 fit: BoxFit.contain,
@@ -932,7 +932,7 @@ class BuyerVerificationStep extends StatelessWidget {
                 ),
                 minimumSize: Size.zero,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(11),
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
               icon: const Icon(
@@ -971,7 +971,7 @@ class BuyerVerificationStep extends StatelessWidget {
             height: 62,
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(8),
               border: Border.all(
                 color: AppColors.grayBorder,
               ),
@@ -1023,7 +1023,7 @@ class BuyerVerificationStep extends StatelessWidget {
                   color: AppColors.grayBorder,
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(13),
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
             ),
@@ -1044,7 +1044,7 @@ class BuyerVerificationStep extends StatelessWidget {
           alpha: 0.50,
         ),
         borderRadius:
-            BorderRadius.circular(15),
+            BorderRadius.circular(8),
         border: Border.all(
           color: AppColors.teal
               .withValues(

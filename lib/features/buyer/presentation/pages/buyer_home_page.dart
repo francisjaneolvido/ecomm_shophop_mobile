@@ -549,10 +549,10 @@ class _SearchField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(compact ? 18 : 16),
+      borderRadius: BorderRadius.circular(6),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(compact ? 18 : 16),
+        borderRadius: BorderRadius.circular(6),
         child: Container(
           height: compact ? 38 : 46,
           padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 14),
@@ -755,7 +755,7 @@ class _HeroCarousel extends StatelessWidget {
                 padding: const EdgeInsets.only(right: 6),
                 child: Material(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(8),
                   clipBehavior: Clip.antiAlias,
                   child: InkWell(
                     onTap: () => onTap(item),
@@ -832,7 +832,7 @@ class _HeroCarousel extends StatelessWidget {
                                 height: 34,
                                 decoration: BoxDecoration(
                                   color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: const Icon(
                                   Icons.arrow_forward_rounded,
@@ -945,14 +945,14 @@ class _ShortcutTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(8),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(8),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(8),
             border: Border.all(color: const Color(0xFFE8ECF1)),
           ),
           child: Column(
@@ -962,7 +962,7 @@ class _ShortcutTile extends StatelessWidget {
                 height: 34,
                 decoration: BoxDecoration(
                   color: AppColors.tealLight,
-                  borderRadius: BorderRadius.circular(11),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Center(
                   child: actionType == null
@@ -1091,7 +1091,7 @@ class _EmptyCatalogCard extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: const Color(0xFFE8ECF1)),
       ),
       child: Column(
@@ -1102,7 +1102,7 @@ class _EmptyCatalogCard extends StatelessWidget {
             height: 52,
             decoration: BoxDecoration(
               color: AppColors.tealLight,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: const Icon(Icons.storefront_outlined, color: AppColors.tealDark),
           ),

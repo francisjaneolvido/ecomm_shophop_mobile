@@ -50,7 +50,7 @@ class VerificationCard extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.grayBorder),
         boxShadow: [
           BoxShadow(
@@ -126,7 +126,7 @@ class VerificationCard extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: AppColors.grayBg,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.grayBorder),
       ),
       child: Row(
@@ -191,7 +191,7 @@ class VerificationCard extends StatelessWidget {
           disabledForegroundColor:
               Colors.white.withValues(alpha: 0.85),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(8),
           ),
         ),
         child: isVerifying
@@ -270,7 +270,7 @@ class VerificationCard extends StatelessWidget {
       padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
         color: AppColors.tealLight.withValues(alpha: 0.42),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: AppColors.teal.withValues(alpha: 0.13),
         ),
@@ -338,7 +338,7 @@ class VerificationCard extends StatelessWidget {
         color: isError
             ? const Color(0xFFFFF4F4)
             : AppColors.tealLight.withValues(alpha: 0.48),
-        borderRadius: BorderRadius.circular(13),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isError
               ? const Color(0xFFF0CECE)

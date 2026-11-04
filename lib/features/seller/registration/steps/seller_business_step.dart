@@ -209,7 +209,7 @@ class SellerBusinessStep extends StatelessWidget {
           alpha: 0.45,
         ),
         borderRadius:
-            BorderRadius.circular(15),
+            BorderRadius.circular(8),
         border: Border.all(
           color: AppColors.teal
               .withValues(

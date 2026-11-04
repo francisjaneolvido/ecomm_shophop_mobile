@@ -119,7 +119,7 @@ class _BuyerSecurityStepState extends State<BuyerSecurityStep> {
           height: 44,
           decoration: BoxDecoration(
             color: AppColors.tealLight,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(8),
           ),
           child: const Icon(
             Icons.lock_outline_rounded,
@@ -254,7 +254,7 @@ class _BuyerSecurityStepState extends State<BuyerSecurityStep> {
         color: _requiredPasswordRulesPassed
             ? AppColors.tealLight.withValues(alpha: 0.42)
             : AppColors.grayBg,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: _requiredPasswordRulesPassed
               ? AppColors.teal.withValues(alpha: 0.18)
@@ -344,7 +344,7 @@ class _BuyerSecurityStepState extends State<BuyerSecurityStep> {
       color: AppColors.tealLight.withValues(
         alpha: 0.45,
       ),
-      borderRadius: BorderRadius.circular(15),
+      borderRadius: BorderRadius.circular(8),
       border: Border.all(
         color: AppColors.teal.withValues(
           alpha: 0.15,
@@ -403,13 +403,13 @@ class _BuyerSecurityStepState extends State<BuyerSecurityStep> {
                 field.didChange(next);
                 widget.onTermsChanged(next);
               },
-              borderRadius: BorderRadius.circular(15),
+              borderRadius: BorderRadius.circular(8),
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(13),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(15),
+                  borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: field.hasError
                         ? const Color(0xFFDB5757)
@@ -545,22 +545,22 @@ class _BuyerSecurityStepState extends State<BuyerSecurityStep> {
         vertical: 15,
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(8),
         borderSide: const BorderSide(color: AppColors.grayBorder),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(8),
         borderSide: const BorderSide(
           color: AppColors.teal,
           width: 1.5,
         ),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(8),
         borderSide: const BorderSide(color: Color(0xFFDB5757)),
       ),
       focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(8),
         borderSide: const BorderSide(
           color: Color(0xFFDB5757),
           width: 1.5,

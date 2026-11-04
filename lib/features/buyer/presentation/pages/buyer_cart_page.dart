@@ -412,7 +412,7 @@ class _CartInfoCard extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: const Color(0xFFE7ECEE)),
       ),
       child: Row(
@@ -422,7 +422,7 @@ class _CartInfoCard extends StatelessWidget {
             height: 40,
             decoration: BoxDecoration(
               color: const Color(0xFFE9F8F5),
-              borderRadius: BorderRadius.circular(13),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: const Icon(
               Icons.shopping_bag_outlined,
@@ -499,7 +499,7 @@ class _ShopCartCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(17),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: const Color(0xFFE5EAED)),
         boxShadow: const [
           BoxShadow(
@@ -528,7 +528,7 @@ class _ShopCartCard extends StatelessWidget {
                   height: 34,
                   decoration: BoxDecoration(
                     color: Color(0xFFDCF7F1),
-                    borderRadius: BorderRadius.circular(11),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(
                     Icons.storefront_rounded,
@@ -632,9 +632,9 @@ class _CartItemTile extends StatelessWidget {
           ),
           InkWell(
             onTap: onOpenProduct,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(8),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
               child: Container(
                 width: 82,
                 height: 82,
@@ -845,7 +845,7 @@ class _VoucherPreview extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(17),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: const Color(0xFFE5EAED)),
       ),
       child: Column(
@@ -878,7 +878,7 @@ class _VoucherPreview extends StatelessWidget {
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: const Color(0xFFFFF8F2),
-                      borderRadius: BorderRadius.circular(11),
+                      borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: const Color(0xFFFFDDC7)),
                     ),
                     child: Row(
@@ -1020,7 +1020,7 @@ class _CartSummaryBar extends StatelessWidget {
                 disabledBackgroundColor: const Color(0xFFD6DADD),
                 minimumSize: const Size(118, 48),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
               child: Text(

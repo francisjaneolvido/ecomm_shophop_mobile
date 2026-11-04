@@ -21,7 +21,7 @@ class VerificationHeader extends StatelessWidget {
           height: 72,
           decoration: BoxDecoration(
             color: AppColors.tealLight,
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: AppColors.teal.withValues(alpha: 0.13),
             ),

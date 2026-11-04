@@ -66,6 +66,8 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
   int? _busyCodDeliveryId;
   int _tab = 0;
   String _taskFilter = 'all';
+  bool _tasksCompleted = false;
+  bool _walletCod = true;
   String? _error;
   String? _token;
   String _name = 'Rider';
@@ -676,13 +678,13 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
         index: _tab,
         onChanged: (value) {
           setState(() => _tab = value);
-          if (value == 1 && !_loading) _load(showLoader: false);
+          if (value == 3 && !_loading) _load(showLoader: false);
         },
         items: const [
-          ShopHopNavItem('Today', Icons.route_outlined, Icons.route_rounded),
-          ShopHopNavItem('Wallet', Icons.account_balance_wallet_outlined, Icons.account_balance_wallet_rounded),
+          ShopHopNavItem('Today', Icons.home_outlined, Icons.home_rounded),
+          ShopHopNavItem('Tasks', Icons.assignment_outlined, Icons.assignment_rounded),
           ShopHopNavItem('Scan', Icons.qr_code_scanner_rounded, Icons.qr_code_scanner_rounded),
-          ShopHopNavItem('History', Icons.history_rounded, Icons.history_rounded),
+          ShopHopNavItem('Wallet', Icons.account_balance_wallet_outlined, Icons.account_balance_wallet_rounded),
           ShopHopNavItem('Account', Icons.person_outline_rounded, Icons.person_rounded),
         ],
       ),
@@ -692,7 +694,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
   Widget _pageForTab() {
     switch (_tab) {
       case 1:
-        return _walletPage();
+        return _tasksPage();
       case 2:
         final token = _token;
         if (token == null) {
@@ -703,7 +705,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
           onConfirmed: () => _load(showLoader: false),
         );
       case 3:
-        return _historyPage();
+        return _walletPage();
       case 4:
         return _accountPage();
       default:
@@ -714,90 +716,160 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
   Widget _todayPage() {
     final allTasks = _todayTasks;
     final nextTask = allTasks.isEmpty ? null : allTasks.first;
-    final filtered = allTasks.where((task) {
+    final pickup = allTasks.where((t) => t.kind == _RiderTaskKind.pickup).length;
+    final delivery = allTasks.where((t) => t.kind == _RiderTaskKind.delivery).length;
+    final returns = allTasks.where((t) => t.kind == _RiderTaskKind.returnTask).length;
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(14, 16, 14, 90),
+      children: [
+        _todayHeader(allTasks.length),
+        if (_error != null) ...[
+          const SizedBox(height: 12), _notice(_error!, Icons.sync_problem_rounded),
+        ],
+        if (_codToRemit.isNotEmpty) ...[
+          const SizedBox(height: 12), _codAlert(),
+        ],
+        const SizedBox(height: 16),
+        Row(children: [
+          Expanded(child: _taskSummary('Pickups', pickup, Icons.inventory_2_outlined)),
+          const SizedBox(width: 8),
+          Expanded(child: _taskSummary('Deliveries', delivery, Icons.local_shipping_outlined)),
+          const SizedBox(width: 8),
+          Expanded(child: _taskSummary('Returns', returns, Icons.keyboard_return_outlined)),
+        ]),
+        const SizedBox(height: 22),
+        _sectionHeader(title: 'Next action',
+          subtitle: 'Only the highest priority assigned task is shown here.'),
+        const SizedBox(height: 9),
+        if (nextTask == null)
+          _empty(icon: Icons.check_circle_outline_rounded,
+            title: 'No active assignments',
+            text: 'Pull down to refresh when new work is assigned.')
+        else _taskCard(nextTask, emphasized: true),
+        const SizedBox(height: 12),
+        SizedBox(width: double.infinity, child: OutlinedButton.icon(
+          onPressed: () => setState(() { _tasksCompleted = false; _tab = 1; }),
+          icon: const Icon(Icons.assignment_outlined),
+          label: Text('See all ${allTasks.length} active tasks'),
+        )),
+        const SizedBox(height: 10),
+        SizedBox(width: double.infinity, child: TextButton.icon(
+          onPressed: () => setState(() => _tab = 2),
+          icon: const Icon(Icons.qr_code_scanner_rounded),
+          label: const Text('Open QR scanner'),
+        )),
+      ],
+    );
+  }
+
+  Widget _taskSummary(String label, int value, IconData icon) => Container(
+    padding: const EdgeInsets.all(11),
+    decoration: BoxDecoration(color: Colors.white,
+      border: Border.all(color: AppColors.grayBorder),
+      borderRadius: BorderRadius.circular(8)),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Icon(icon, size: 18, color: AppColors.tealDark),
+      const SizedBox(height: 8),
+      Text('$value', style: const TextStyle(fontSize: 20,
+        fontWeight: FontWeight.w800, color: AppColors.navy)),
+      Text(label, style: const TextStyle(fontSize: 10.5,
+        color: Color(0xFF607084))),
+    ]),
+  );
+
+  Widget _tasksPage() {
+    if (_tasksCompleted) {
+      return ListView(physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(14, 16, 14, 90), children: [
+        _taskModeSwitch(),
+        const SizedBox(height: 12),
+        // Reuse the existing history renderer without duplicating its records.
+        _historyInline(),
+      ]);
+    }
+    final tasks = _todayTasks;
+    final filtered = tasks.where((task) {
       if (_taskFilter == 'pickup') return task.kind == _RiderTaskKind.pickup;
       if (_taskFilter == 'delivery') return task.kind == _RiderTaskKind.delivery;
       if (_taskFilter == 'return') return task.kind == _RiderTaskKind.returnTask;
       return true;
     }).toList();
-    final listTasks = nextTask == null
-        ? filtered
-        : filtered.where((task) => task.key != nextTask.key).toList();
-
-    final pickupCount =
-        allTasks.where((task) => task.kind == _RiderTaskKind.pickup).length;
-    final deliveryCount =
-        allTasks.where((task) => task.kind == _RiderTaskKind.delivery).length;
-    final returnCount =
-        allTasks.where((task) => task.kind == _RiderTaskKind.returnTask).length;
-
-    return ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 18, 16, 100),
-      children: [
-        _todayHeader(allTasks.length),
-        if (_error != null) ...[
-          const SizedBox(height: 12),
-          _notice(_error!, Icons.sync_problem_rounded),
-        ],
-        if (_codToRemit.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          _codAlert(),
-        ],
-        const SizedBox(height: 22),
-        _sectionHeader(
-          title: 'Next task',
-          subtitle: 'The most immediate Rider action based on current status.',
-        ),
-        const SizedBox(height: 10),
-        if (nextTask == null)
-          _empty(
-            icon: Icons.route_rounded,
-            title: 'You are clear for now',
-            text:
-                'New Seller pickup, Buyer delivery, and return assignments will appear here.',
-          )
-        else
-          _taskCard(nextTask, emphasized: true),
-        const SizedBox(height: 22),
-        _sectionHeader(
-          title: 'Today\'s work',
-          subtitle: '${allTasks.length} active task${allTasks.length == 1 ? '' : 's'} across your branch operations.',
-        ),
+    return ListView(physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(14, 16, 14, 90), children: [
+        _taskModeSwitch(),
         const SizedBox(height: 12),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              _taskFilterChip('All', 'all', allTasks.length),
-              const SizedBox(width: 8),
-              _taskFilterChip('Pickup', 'pickup', pickupCount),
-              const SizedBox(width: 8),
-              _taskFilterChip('Delivery', 'delivery', deliveryCount),
-              const SizedBox(width: 8),
-              _taskFilterChip('Return', 'return', returnCount),
-            ],
-          ),
-        ),
+        SingleChildScrollView(scrollDirection: Axis.horizontal,
+          child: Row(children: [
+            _taskFilterChip('All', 'all', tasks.length), const SizedBox(width: 6),
+            _taskFilterChip('Pickup', 'pickup', tasks.where((t) => t.kind == _RiderTaskKind.pickup).length),
+            const SizedBox(width: 6),
+            _taskFilterChip('Delivery', 'delivery', tasks.where((t) => t.kind == _RiderTaskKind.delivery).length),
+            const SizedBox(width: 6),
+            _taskFilterChip('Returns', 'return', tasks.where((t) => t.kind == _RiderTaskKind.returnTask).length),
+          ])),
         const SizedBox(height: 12),
-        if (filtered.isEmpty)
-          _empty(
-            icon: Icons.check_circle_outline_rounded,
-            title: 'No ${_taskFilter == 'all' ? 'active' : _taskFilter} tasks',
-            text: _taskFilter == 'all'
-                ? 'Pull down to refresh when your branch assigns new Rider work.'
-                : 'Choose another filter to view your other active assignments.',
-          )
-        else if (listTasks.isEmpty)
-          _notice(
-            'Your only matching task is already shown above as the next task.',
-            Icons.arrow_upward_rounded,
-          )
-        else
-          ...listTasks.map((task) => _taskCard(task)),
-      ],
-    );
+        if (filtered.isEmpty) _empty(icon: Icons.assignment_turned_in_outlined,
+          title: 'No matching tasks',
+          text: 'Choose another filter, or pull down to refresh.'),
+        for (final task in filtered) _taskCard(task),
+      ]);
   }
+
+  Widget _taskModeSwitch() => Column(
+    crossAxisAlignment: CrossAxisAlignment.start, children: [
+    Text(_tasksCompleted ? 'Completed / history' : 'Active tasks',
+      style: const TextStyle(fontSize: 18,
+        fontWeight: FontWeight.w800, color: AppColors.navy)),
+    const SizedBox(height: 10),
+    SegmentedButton<bool>(
+      segments: const [ButtonSegment(value: false, label: Text('Active')),
+        ButtonSegment(value: true, label: Text('History'))],
+      selected: {_tasksCompleted},
+      onSelectionChanged: (values) => setState(() => _tasksCompleted = values.first),
+      showSelectedIcon: false,
+      style: ButtonStyle(visualDensity: VisualDensity.compact,
+        textStyle: WidgetStateProperty.all(const TextStyle(fontSize: 11))),
+    ),
+  ]);
+
+  Widget _historyInline() => Column(
+    crossAxisAlignment: CrossAxisAlignment.start, children: [
+      if (_deliveryHistory.isEmpty && _completedReturns.isEmpty &&
+          _completedTransfers.isEmpty)
+        _empty(icon: Icons.history_toggle_off_rounded,
+          title: 'No completed records',
+          text: 'Your completed pickup, delivery and return records appear here.'),
+      if (_deliveryHistory.isNotEmpty) ...[
+        _sectionHeader(title: 'Pickup & delivery'),
+        const SizedBox(height: 8),
+        ..._deliveryHistory.map(_assignmentHistoryRow),
+        const SizedBox(height: 14),
+      ],
+      if (_completedTransfers.isNotEmpty) ...[
+        _sectionHeader(title: 'Transfers'),
+        const SizedBox(height: 8),
+        ..._completedTransfers.map((row) => _historyRow(
+          icon: Icons.transfer_within_a_station_outlined,
+          title: row['tracking_code']?.toString() ?? 'Transfer',
+          subtitle: '${row['from'] ?? 'Origin'} → ${row['to'] ?? 'Destination'}',
+          status: 'Received',
+        )),
+        const SizedBox(height: 14),
+      ],
+      if (_completedReturns.isNotEmpty) ...[
+        _sectionHeader(title: 'Returns'),
+        const SizedBox(height: 8),
+        ..._completedReturns.map((row) => _historyRow(
+          icon: Icons.assignment_return_outlined,
+          title: row['tracking_code']?.toString() ??
+            'Order #${row['order_id'] ?? '-'}',
+          subtitle: '${row['branch'] ?? 'Branch'} → ${row['seller'] ?? 'Seller'}',
+          status: 'Seller received',
+        )),
+      ],
+    ],
+  );
 
   Widget _todayHeader(int taskCount) {
     final branch = _sortingCenterName?.trim().isNotEmpty == true
@@ -830,7 +902,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(8),
             border: Border.all(color: AppColors.grayBorder),
           ),
           child: Row(
@@ -840,7 +912,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
                 height: 48,
                 decoration: BoxDecoration(
                   color: AppColors.tealLight,
-                  borderRadius: BorderRadius.circular(15),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
                   Icons.two_wheeler_rounded,
@@ -922,13 +994,13 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
 
   Widget _codAlert() {
     return InkWell(
-      borderRadius: BorderRadius.circular(16),
-      onTap: () => setState(() => _tab = 1),
+      borderRadius: BorderRadius.circular(8),
+      onTap: () => setState(() => _tab = 3),
       child: Ink(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: const Color(0xFFFFF7E8),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(8),
           border: Border.all(color: const Color(0xFFF3D8A5)),
         ),
         child: Row(
@@ -987,121 +1059,49 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
 
   Widget _taskCard(_RiderTask task, {bool emphasized = false}) {
     final busy = _isTaskBusy(task);
-    final icon = _taskIcon(task.kind);
     final color = _taskColor(task.kind);
-
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: emphasized ? AppColors.tealDark : AppColors.grayBorder,
-          width: emphasized ? 1.4 : 1,
-        ),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: () => _showTaskDetails(task),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 42,
-                      height: 42,
-                      decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.11),
-                        borderRadius: BorderRadius.circular(13),
-                      ),
-                      child: Icon(icon, color: color, size: 22),
-                    ),
-                    const SizedBox(width: 11),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            task.title.toUpperCase(),
-                            style: TextStyle(
-                              color: color,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 0.8,
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            task.trackingCode,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: AppColors.navy,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    _statusPill(task.status),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                _routeLine(task.from, task.to, color),
-                const SizedBox(height: 13),
-                Container(
-                  width: double.infinity,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF6F8FA),
-                    borderRadius: BorderRadius.circular(13),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(
-                        Icons.arrow_forward_rounded,
-                        size: 17,
-                        color: color,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          task.nextStep,
-                          style: const TextStyle(
-                            color: AppColors.navy,
-                            fontSize: 11.5,
-                            height: 1.4,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (task.assignment != null) ...[
-                  const SizedBox(height: 10),
-                  _assignmentMeta(task.assignment!),
-                ],
-                const SizedBox(height: 14),
-                if (busy)
-                  const LinearProgressIndicator(minHeight: 3)
-                else
-                  _taskActions(task),
-              ],
-            ),
-          ),
-        ),
-      ),
+      margin: const EdgeInsets.only(bottom: 9),
+      decoration: BoxDecoration(color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: emphasized ? AppColors.tealDark : AppColors.grayBorder,
+          width: emphasized ? 1.4 : 1)),
+      child: Padding(padding: const EdgeInsets.all(13), child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Icon(_taskIcon(task.kind), size: 20, color: color),
+            const SizedBox(width: 8),
+            Expanded(child: Text(task.title, style: const TextStyle(
+              fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.navy))),
+            _statusPill(task.status),
+          ]),
+          const SizedBox(height: 9),
+          Text(task.trackingCode, maxLines: 1, overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800,
+              color: AppColors.navy)),
+          const SizedBox(height: 5),
+          Row(children: [const Icon(Icons.route_outlined, size: 15,
+              color: Color(0xFF607084)),
+            const SizedBox(width: 6),
+            Expanded(child: Text('${task.from} → ${task.to}',
+              maxLines: 2, overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 11, color: Color(0xFF607084)))),
+          ]),
+          if (emphasized) ...[
+            const SizedBox(height: 10),
+            Text(task.nextStep, style: const TextStyle(color: AppColors.navy,
+              fontSize: 11.5, height: 1.4)),
+            const SizedBox(height: 10),
+            if (busy) const LinearProgressIndicator(minHeight: 3)
+            else _taskActions(task),
+          ],
+          const SizedBox(height: 6),
+          Align(alignment: Alignment.centerRight, child: TextButton.icon(
+            onPressed: busy ? null : () => _showTaskDetails(task),
+            icon: const Icon(Icons.open_in_new_rounded, size: 16),
+            label: const Text('Details & actions'),
+          )),
+        ])),
     );
   }
 
@@ -1236,35 +1236,6 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
     );
   }
 
-  Widget _assignmentMeta(RiderAssignment assignment) {
-    final totalUnits = assignment.items.fold<int>(
-      0,
-      (sum, item) => sum + item.quantity,
-    );
-    return Wrap(
-      spacing: 7,
-      runSpacing: 7,
-      children: [
-        _miniChip(
-          Icons.inventory_2_outlined,
-          '$totalUnits item${totalUnits == 1 ? '' : 's'}',
-        ),
-        if (assignment.isCod)
-          _miniChip(
-            Icons.payments_outlined,
-            'COD ₱${assignment.totalAmount}',
-          ),
-        if (assignment.isLocalBranchDelivery)
-          _miniChip(Icons.location_on_outlined, 'Local · same branch'),
-        if (assignment.deliveryAttempts > 0)
-          _miniChip(
-            Icons.replay_rounded,
-            '${assignment.deliveryAttempts} attempt${assignment.deliveryAttempts == 1 ? '' : 's'}',
-          ),
-      ],
-    );
-  }
-
   Widget _routeLine(String from, String to, Color color) {
     return Column(
       children: [
@@ -1338,13 +1309,26 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
             height: 1.45,
           ),
         ),
+        const SizedBox(height: 14),
+        SegmentedButton<bool>(
+          segments: const [
+            ButtonSegment(value: true, label: Text('COD cash'),
+              icon: Icon(Icons.payments_outlined)),
+            ButtonSegment(value: false, label: Text('My earnings'),
+              icon: Icon(Icons.account_balance_wallet_outlined)),
+          ],
+          selected: {_walletCod},
+          onSelectionChanged: (values) => setState(() => _walletCod = values.first),
+          showSelectedIcon: false,
+        ),
         const SizedBox(height: 16),
+        if (_walletCod) ...[
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             color: AppColors.navy,
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: BorderRadius.circular(8),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1356,7 +1340,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
                     height: 42,
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(13),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(
                       Icons.payments_outlined,
@@ -1420,7 +1404,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
           )
         else
           ..._codCollections.map(_codCollectionCard),
-        const SizedBox(height: 22),
+        ] else ...[
         _sectionHeader(
           title: 'My earnings',
           subtitle: 'Pickup and delivery fees recorded by Logistics.',
@@ -1473,6 +1457,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
           )
         else
           ..._earnings.map(_earningRow),
+        ],
       ],
     );
   }
@@ -1488,7 +1473,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(17),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.grayBorder),
       ),
       child: Column(
@@ -1542,7 +1527,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(17),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.grayBorder),
       ),
       child: Column(
@@ -1577,7 +1562,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.grayBorder),
       ),
       child: Row(
@@ -1587,7 +1572,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
             height: 38,
             decoration: BoxDecoration(
               color: AppColors.tealLight,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: const Icon(
               Icons.receipt_long_outlined,
@@ -1632,59 +1617,6 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
     );
   }
 
-  Widget _historyPage() {
-    return ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 18, 16, 100),
-      children: [
-        const Text(
-          'History',
-          style: TextStyle(
-            color: AppColors.navy,
-            fontSize: 22,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'Finished Rider activities across pickup, delivery, and return flows.',
-          style: TextStyle(
-            color: AppColors.navy.withValues(alpha: 0.55),
-            fontSize: 12,
-            height: 1.45,
-          ),
-        ),
-        const SizedBox(height: 18),
-        if (_deliveryHistory.isEmpty &&
-            _completedTransfers.isEmpty &&
-            _completedReturns.isEmpty)
-          _empty(
-            icon: Icons.history_toggle_off_rounded,
-            title: 'No history yet',
-            text: 'Completed and failed Rider activities will appear here.',
-          ),
-        if (_deliveryHistory.isNotEmpty) ...[
-          _sectionHeader(title: 'Pickup & delivery'),
-          const SizedBox(height: 10),
-          ..._deliveryHistory.map(_assignmentHistoryRow),
-          const SizedBox(height: 16),
-        ],
-        if (_completedReturns.isNotEmpty) ...[
-          _sectionHeader(title: 'Returns'),
-          const SizedBox(height: 10),
-          ..._completedReturns.map((row) => _historyRow(
-                icon: Icons.assignment_return_outlined,
-                title: row['tracking_code']?.toString() ??
-                    'Order #${row['order_id'] ?? '-'}',
-                subtitle:
-                    '${row['branch'] ?? 'Branch'} → ${row['seller'] ?? 'Seller'}',
-                status: 'Seller received',
-              )),
-        ],
-      ],
-    );
-  }
-
   Widget _assignmentHistoryRow(RiderAssignment assignment) {
     final pickup = assignment.assignmentType == 'pickup';
     final seller = assignment.sellerBusinessName.trim().isNotEmpty
@@ -1715,7 +1647,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
       padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.grayBorder),
       ),
       child: Row(
@@ -1725,7 +1657,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
             height: 40,
             decoration: BoxDecoration(
               color: AppColors.tealLight,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: AppColors.tealDark, size: 20),
           ),
@@ -1793,7 +1725,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(8),
             border: Border.all(color: AppColors.grayBorder),
           ),
           child: Row(
@@ -1803,7 +1735,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
                 height: 58,
                 decoration: BoxDecoration(
                   color: AppColors.tealLight,
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
                   Icons.two_wheeler_rounded,
@@ -1901,7 +1833,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.grayBorder),
       ),
       child: Row(
@@ -1938,19 +1870,29 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
     );
   }
 
+  Widget _taskSheetAction(String label, IconData icon,
+      VoidCallback action, BuildContext sheetContext) =>
+    SizedBox(width: double.infinity, child: FilledButton.icon(
+      onPressed: () {
+        Navigator.pop(sheetContext);
+        action();
+      },
+      icon: Icon(icon, size: 18), label: Text(label),
+    ));
+
   Future<void> _showTaskDetails(_RiderTask task) async {
     final assignment = task.assignment;
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (context) => SafeArea(
+      builder: (sheetContext) => SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(
             20,
             4,
             20,
-            20 + MediaQuery.of(context).viewInsets.bottom,
+            20 + MediaQuery.of(sheetContext).viewInsets.bottom,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -2005,6 +1947,27 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
                 const SizedBox(height: 12),
                 _detailLine('Return reason', task.raw!['reason'].toString()),
               ],
+              const SizedBox(height: 12),
+              if (assignment != null && (assignment.canAcceptPickup ||
+                  assignment.canConfirmPickup || assignment.canStartDelivery))
+                _taskSheetAction('Open QR scanner', Icons.qr_code_scanner_rounded,
+                  () => setState(() => _tab = 2), sheetContext),
+              if (assignment != null && assignment.canCompleteDelivery)
+                _taskSheetAction('Confirm delivery with proof', Icons.task_alt_rounded,
+                  () => _complete(assignment), sheetContext),
+              if (assignment != null && assignment.canFailDelivery)
+                SizedBox(width: double.infinity, child: OutlinedButton.icon(
+                  onPressed: () { Navigator.pop(sheetContext); _fail(assignment); },
+                  icon: const Icon(Icons.report_outlined),
+                  label: const Text('Report failed attempt'))),
+              if (task.kind == _RiderTaskKind.returnTask &&
+                  task.raw?['status'] == 'assigned')
+                _taskSheetAction('Confirm branch pickup', Icons.inventory_2_outlined,
+                  () => _collectReturn(task.raw!), sheetContext),
+              if (task.kind == _RiderTaskKind.returnTask &&
+                  task.raw?['status'] == 'in_transit')
+                _taskSheetAction('Submit Seller handover proof', Icons.add_a_photo_outlined,
+                  () => _handoverReturn(task.raw!), sheetContext),
             ],
           ),
         ),
@@ -2148,31 +2111,6 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
     );
   }
 
-  Widget _miniChip(IconData icon, String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF6F8FA),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 13, color: AppColors.navy.withValues(alpha: 0.62)),
-          const SizedBox(width: 5),
-          Text(
-            label,
-            style: TextStyle(
-              color: AppColors.navy.withValues(alpha: 0.68),
-              fontSize: 9.5,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _loadErrorPage() {
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -2185,7 +2123,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(22),
+                borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: AppColors.grayBorder),
               ),
               child: Column(
@@ -2236,7 +2174,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: const Color(0xFFF7FAFB),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.grayBorder),
       ),
       child: Row(
@@ -2268,7 +2206,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.grayBorder),
       ),
       child: Column(
@@ -2278,7 +2216,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
             height: 58,
             decoration: BoxDecoration(
               color: AppColors.tealLight,
-              borderRadius: BorderRadius.circular(17),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: AppColors.tealDark, size: 28),
           ),
@@ -2317,7 +2255,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(17),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.grayBorder),
       ),
       child: Column(

@@ -64,7 +64,7 @@ class _RiderSecurityStepState extends State<RiderSecurityStep> {
             height: 44,
             decoration: BoxDecoration(
               color: AppColors.tealLight,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: const Icon(
               Icons.lock_outline_rounded,
@@ -181,7 +181,7 @@ class _RiderSecurityStepState extends State<RiderSecurityStep> {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: AppColors.grayBg,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(8),
           border: Border.all(color: AppColors.grayBorder),
         ),
         child: Column(
@@ -250,7 +250,7 @@ class _RiderSecurityStepState extends State<RiderSecurityStep> {
         padding: const EdgeInsets.all(13),
         decoration: BoxDecoration(
           color: AppColors.tealLight.withValues(alpha: 0.45),
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: BorderRadius.circular(8),
           border:
               Border.all(color: AppColors.teal.withValues(alpha: 0.15)),
         ),
@@ -290,7 +290,7 @@ class _RiderSecurityStepState extends State<RiderSecurityStep> {
                 padding: const EdgeInsets.all(13),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(15),
+                  borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: field.hasError
                         ? const Color(0xFFDB5757)

@@ -167,7 +167,7 @@ class _BuyerOrdersPageState extends State<BuyerOrdersPage> {
   Widget _orderCard(BuyerOrderData order) => Card(
     color: Colors.white,
     margin: const EdgeInsets.only(bottom: 12),
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
     child: Padding(
       padding: const EdgeInsets.all(14),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

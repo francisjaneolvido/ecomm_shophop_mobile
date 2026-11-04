@@ -203,7 +203,7 @@ class _AccountStatusDialog extends StatelessWidget {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(26),
+                  borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: AppColors.grayBorder,
                   ),
@@ -256,7 +256,7 @@ class _AccountStatusDialog extends StatelessWidget {
                               height: 72,
                               decoration: BoxDecoration(
                                 color: AppColors.tealLight,
-                                borderRadius: BorderRadius.circular(22),
+                                borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
                                   color: AppColors.teal.withValues(alpha: 0.13),
                                 ),
@@ -317,7 +317,7 @@ class _AccountStatusDialog extends StatelessWidget {
                               ),
                               decoration: BoxDecoration(
                                 color: AppColors.grayBg,
-                                borderRadius: BorderRadius.circular(14),
+                                borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
                                   color: AppColors.grayBorder,
                                 ),
@@ -355,7 +355,7 @@ class _AccountStatusDialog extends StatelessWidget {
                               padding: const EdgeInsets.all(13),
                               decoration: BoxDecoration(
                                 color: const Color(0xFFFFF7F2),
-                                borderRadius: BorderRadius.circular(14),
+                                borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
                                   color: const Color(0xFFF2DED2),
                                 ),
@@ -402,7 +402,7 @@ class _AccountStatusDialog extends StatelessWidget {
                                 backgroundColor: AppColors.teal,
                                 foregroundColor: Colors.white,
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(14),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
                               child: Text(

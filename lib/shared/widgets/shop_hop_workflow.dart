@@ -15,7 +15,7 @@ class ShopHopWorkflowHeader extends StatelessWidget {
     padding: const EdgeInsets.all(14),
     child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Container(width: 42, height: 42,
-        decoration: BoxDecoration(color: AppColors.tealLight, borderRadius: BorderRadius.circular(12)),
+        decoration: BoxDecoration(color: AppColors.tealLight, borderRadius: BorderRadius.circular(8)),
         child: Icon(icon, color: AppColors.tealDark)),
       const SizedBox(width: 11),
       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

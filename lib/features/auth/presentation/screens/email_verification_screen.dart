@@ -283,17 +283,17 @@ class _EmailVerificationScreenState
           Material(
             color: Colors.white,
             borderRadius:
-                BorderRadius.circular(14),
+                BorderRadius.circular(8),
             child: InkWell(
               onTap: _back,
               borderRadius:
-                  BorderRadius.circular(14),
+                  BorderRadius.circular(8),
               child: Container(
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
                   borderRadius:
-                      BorderRadius.circular(14),
+                      BorderRadius.circular(8),
                   border: Border.all(
                     color: AppColors.grayBorder,
                   ),

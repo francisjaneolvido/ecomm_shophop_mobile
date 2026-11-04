@@ -372,7 +372,7 @@ class _LoginScreenState extends State<LoginScreen> {
           behavior: SnackBarBehavior.floating,
           backgroundColor: AppColors.navy,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(8),
           ),
           margin: const EdgeInsets.all(16),
         ),
@@ -471,7 +471,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           decoration: BoxDecoration(
                             color: AppColors.tealLight.withValues(alpha: .38),
-                            borderRadius: BorderRadius.circular(13),
+                            borderRadius: BorderRadius.circular(8),
                             border: Border.all(
                               color: AppColors.teal.withValues(alpha: .18),
                             ),
@@ -646,7 +646,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               elevation: 0,
                               shadowColor: Colors.transparent,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(15),
+                                borderRadius: BorderRadius.circular(8),
                               ),
                             ),
                             child: _isSigningIn
@@ -699,7 +699,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 color: AppColors.grayBorder,
                               ),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(15),
+                                borderRadius: BorderRadius.circular(8),
                               ),
                             ),
                             icon: const _GoogleIcon(),

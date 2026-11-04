@@ -385,7 +385,7 @@ class _SellerRegistrationScreenState
           behavior: SnackBarBehavior.floating,
           margin: const EdgeInsets.all(16),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(8),
           ),
         ),
       );
@@ -597,7 +597,7 @@ class _SellerRegistrationScreenState
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: AppColors.grayBorder,
         ),
@@ -621,15 +621,15 @@ class _SellerRegistrationScreenState
         children: [
           Material(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(8),
             child: InkWell(
               onTap: () => Navigator.pop(context),
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(8),
               child: Container(
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: AppColors.grayBorder,
                   ),
@@ -698,7 +698,7 @@ class _SellerRegistrationScreenState
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius:
-                          BorderRadius.circular(15),
+                          BorderRadius.circular(8),
                     ),
                   ),
                   child: Row(
@@ -737,7 +737,7 @@ class _SellerRegistrationScreenState
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius:
-                          BorderRadius.circular(15),
+                          BorderRadius.circular(8),
                     ),
                   ),
                   child: _isSubmitting

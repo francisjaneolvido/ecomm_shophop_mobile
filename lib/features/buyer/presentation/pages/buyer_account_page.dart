@@ -59,7 +59,7 @@ class BuyerAccountPage extends StatelessWidget {
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
               color: AppColors.navy,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
               children: [
@@ -68,7 +68,7 @@ class BuyerAccountPage extends StatelessWidget {
                   height: 58,
                   decoration: BoxDecoration(
                     color: AppColors.tealLight,
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(
                     Icons.person_rounded,
@@ -178,9 +178,9 @@ class _AccountTile extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 10),
       child: Material(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(8),
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(8),
           onTap: onTap ?? () {
             ScaffoldMessenger.of(context)
               ..hideCurrentSnackBar()
@@ -191,7 +191,7 @@ class _AccountTile extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(8),
               border: Border.all(color: AppColors.grayBorder),
             ),
             child: Row(
@@ -201,7 +201,7 @@ class _AccountTile extends StatelessWidget {
                   height: 42,
                   decoration: BoxDecoration(
                     color: AppColors.tealLight,
-                    borderRadius: BorderRadius.circular(13),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(icon, color: AppColors.tealDark, size: 21),
                 ),

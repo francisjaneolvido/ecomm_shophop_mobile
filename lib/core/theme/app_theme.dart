@@ -8,10 +8,12 @@ class AppTheme {
   AppTheme._();
 
   static const double screenPadding = 16;
-  static const double cardRadius = 18;
-  static const double inputRadius = 14;
-  static const double controlHeight = 50;
+  static const double cardRadius = 8;
+  static const double inputRadius = 6;
+  static const double controlHeight = 48;
   static const double touchTarget = 48;
+  static const double dialogRadius = 10;
+  static const double sectionRadius = 8;
 
   static ThemeData get light {
     final base = ThemeData.light(useMaterial3: true);
@@ -19,7 +21,7 @@ class AppTheme {
       bodyColor: AppColors.navy,
       displayColor: AppColors.navy,
     );
-    const selected = Color(0xFF087968);
+    const selected = AppColors.tealDark;
     const unselected = Color(0xFF526177);
     final inputBorder = OutlineInputBorder(
       borderRadius: BorderRadius.circular(inputRadius),
@@ -94,7 +96,7 @@ class AppTheme {
           minimumSize: const Size(0, controlHeight),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           textStyle: text.labelLarge?.copyWith(fontWeight: FontWeight.w700),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(inputRadius)),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
@@ -106,7 +108,7 @@ class AppTheme {
           minimumSize: const Size(0, controlHeight),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           textStyle: text.labelLarge?.copyWith(fontWeight: FontWeight.w700),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(inputRadius)),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -116,7 +118,7 @@ class AppTheme {
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
           side: const BorderSide(color: AppColors.grayBorder),
           textStyle: text.labelLarge?.copyWith(fontWeight: FontWeight.w600),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(inputRadius)),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
@@ -141,19 +143,19 @@ class AppTheme {
         iconColor: AppColors.tealDark,
         textColor: AppColors.navy,
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(inputRadius)),
       ),
       dividerTheme: const DividerThemeData(color: AppColors.grayBorder, thickness: 1),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         backgroundColor: AppColors.navy,
         contentTextStyle: text.bodySmall?.copyWith(color: Colors.white),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(cardRadius)),
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(dialogRadius)),
         titleTextStyle: text.titleMedium?.copyWith(
           fontWeight: FontWeight.w700,
           color: AppColors.navy,
@@ -165,7 +167,7 @@ class AppTheme {
         modalBackgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(dialogRadius)),
         ),
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(

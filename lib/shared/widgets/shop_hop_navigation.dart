@@ -86,7 +86,7 @@ class _IconBadge extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 3),
                   decoration: BoxDecoration(
                     color: const Color(0xFFE44D57),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: Colors.white, width: 1.3),
                   ),
                   alignment: Alignment.center,

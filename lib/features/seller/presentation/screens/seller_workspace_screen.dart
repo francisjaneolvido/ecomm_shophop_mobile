@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'package:shophop/core/session/auth_session_service.dart';
 import 'package:shophop/core/theme/app_colors.dart';
+import 'package:shophop/core/config/api_config.dart';
+import 'package:shophop/shared/widgets/shop_hop_product_media.dart';
 import 'package:shophop/features/auth/data/services/auth_service.dart';
 import 'package:shophop/features/auth/presentation/screens/login_screen.dart';
 import 'package:shophop/features/seller/data/services/seller_earnings_service.dart';
@@ -440,6 +442,21 @@ class _SellerWorkspaceScreenState extends State<SellerWorkspaceScreen> {
     if (result.success) await _load();
   }
 
+  String _productImageUrl(Map<String, dynamic> product) {
+    final primary = product['image_url']?.toString() ?? '';
+    if (primary.trim().isNotEmpty) return ApiConfig.resolveMediaUrl(primary);
+    final media = product['media'];
+    if (media is List) {
+      for (final row in media) {
+        if (row is Map && row['type']?.toString() == 'image' &&
+            (row['url']?.toString() ?? '').trim().isNotEmpty) {
+          return ApiConfig.resolveMediaUrl(row['url']?.toString());
+        }
+      }
+    }
+    return '';
+  }
+
   Widget _productsPage() {
     final rows = _products.where((p) =>
       '${p['name']} ${p['sku']} ${p['category']} ${p['subcategory']}'
@@ -456,13 +473,26 @@ class _SellerWorkspaceScreenState extends State<SellerWorkspaceScreen> {
       if (rows.isEmpty) _empty('No matching products', 'Add your first product above or try another keyword.', Icons.inventory_2_outlined),
       for (final p in rows) Padding(padding: const EdgeInsets.only(bottom: 10), child:
         ShopHopSurface(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Expanded(child: Text(_str(p['name']), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: AppColors.navy))),
-            ShopHopStatusPill(label: _str(p['compliance_status'])),
+          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            ShopHopProductThumbnail(
+              imageUrl: _productImageUrl(p),
+              videoUrl: p['video_url']?.toString(),
+              videoFirst: p['media_first'] == 'video',
+              width: 72, height: 72),
+            const SizedBox(width: 11),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(_str(p['name']), maxLines: 2, overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w800,
+                    fontSize: 13, color: AppColors.navy)),
+                const SizedBox(height: 4),
+                Text('${_str(p['sku'])} · ${_str(p['subcategory'], _str(p['category']))}',
+                  maxLines: 2, overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                const SizedBox(height: 6),
+                ShopHopStatusPill(label: _str(p['compliance_status'])),
+              ])),
           ]),
-          const SizedBox(height: 5),
-          Text('${_str(p['sku'])} · ${_str(p['subcategory'], _str(p['category']))}',
-            style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
           const SizedBox(height: 10),
           Row(children: [
             Expanded(child: Text(_money(p['price']), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16))),

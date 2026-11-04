@@ -73,7 +73,7 @@ class ShopHopSurface extends StatelessWidget {
         decoration: BoxDecoration(
           color: background,
           border: Border.all(color: AppColors.grayBorder),
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(8),
           boxShadow: [
             BoxShadow(
               color: AppColors.navy.withValues(alpha: .025),
@@ -160,7 +160,7 @@ class ShopHopEmptyState extends StatelessWidget {
                 height: 58,
                 decoration: BoxDecoration(
                   color: AppColors.tealLight,
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(icon, color: AppColors.tealDark, size: 29),
               ),

@@ -141,7 +141,7 @@ class _AccountTypeScreenState extends State<AccountTypeScreen> {
                           ),
                           decoration: BoxDecoration(
                             color: AppColors.tealLight.withValues(alpha: .38),
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(8),
                             border: Border.all(
                               color: AppColors.teal.withValues(alpha: .18),
                             ),
@@ -201,7 +201,7 @@ class _AccountTypeScreenState extends State<AccountTypeScreen> {
                               elevation: 0,
                               shadowColor: Colors.transparent,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(8),
                               ),
                             ),
                             child: const Text(
@@ -292,7 +292,7 @@ class _RoleOption extends StatelessWidget {
           color: selected
               ? AppColors.tealLight.withValues(alpha: .38)
               : Colors.white,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: selected ? AppColors.teal : AppColors.grayBorder,
             width: selected ? 1.6 : 1,
@@ -311,7 +311,7 @@ class _RoleOption extends StatelessWidget {
           color: Colors.transparent,
           child: InkWell(
             onTap: onTap,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(8),
             child: Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: 15,
@@ -327,7 +327,7 @@ class _RoleOption extends StatelessWidget {
                       color: selected
                           ? AppColors.teal.withValues(alpha: .16)
                           : AppColors.tealLight.withValues(alpha: .72),
-                      borderRadius: BorderRadius.circular(13),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
                       icon,

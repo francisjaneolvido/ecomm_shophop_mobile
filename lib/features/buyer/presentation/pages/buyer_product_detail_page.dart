@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:video_player/video_player.dart';
+import 'package:shophop/shared/widgets/shop_hop_product_media.dart';
 
 import 'package:shophop/features/buyer/data/services/buyer_catalog_service.dart';
 import 'package:shophop/features/buyer/data/services/buyer_cart_service.dart';
@@ -639,9 +639,8 @@ class _GallerySection extends StatelessWidget {
         itemBuilder: (context, index) {
           final item = media[index];
           if (item.isVideo) {
-            return _GalleryVideoTile(
-              key: ValueKey(item.url),
-              url: item.url,
+            return ShopHopVideoPlayer(
+              key: ValueKey(item.url), url: item.url,
               active: index == currentIndex,
             );
           }
@@ -682,63 +681,6 @@ class _GallerySection extends StatelessWidget {
           },
         )),
     ]),
-  );
-}
-
-class _GalleryVideoTile extends StatefulWidget {
-  const _GalleryVideoTile({super.key, required this.url, required this.active});
-  final String url;
-  final bool active;
-  @override
-  State<_GalleryVideoTile> createState() => _GalleryVideoTileState();
-}
-
-class _GalleryVideoTileState extends State<_GalleryVideoTile> {
-  late final VideoPlayerController _controller;
-  bool _ready = false;
-  bool _failed = false;
-  @override
-  void initState() {
-    super.initState();
-    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.url));
-    _controller.initialize().then((_) async {
-      if (!mounted) return;
-      await _controller.setVolume(0);
-      await _controller.setLooping(true);
-      if (widget.active) await _controller.play();
-      if (mounted) setState(() => _ready = true);
-    }).catchError((Object _) { if (mounted) setState(() => _failed = true); });
-  }
-  @override
-  void didUpdateWidget(covariant _GalleryVideoTile oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (_ready && oldWidget.active != widget.active) {
-      if (widget.active) { _controller.play(); } else { _controller.pause(); }
-    }
-  }
-  @override
-  void dispose() { _controller.dispose(); super.dispose(); }
-  @override
-  Widget build(BuildContext context) => Container(
-    color: AppColors.navy,
-    child: _failed ? const Center(child: Text('Video unavailable', style: TextStyle(color: Colors.white)))
-      : !_ready ? const Center(child: CircularProgressIndicator(color: AppColors.teal))
-      : Stack(children: [
-          Center(child: AspectRatio(aspectRatio: _controller.value.aspectRatio > 0
-            ? _controller.value.aspectRatio : 16 / 9, child: VideoPlayer(_controller))),
-          Positioned(bottom: 8, left: 12, right: 12, child: Row(children: [
-            IconButton(color: Colors.white,
-              tooltip: _controller.value.isPlaying ? 'Pause' : 'Play',
-              onPressed: () async { _controller.value.isPlaying
-                ? await _controller.pause() : await _controller.play(); if (mounted) setState(() {}); },
-              icon: Icon(_controller.value.isPlaying ? Icons.pause_circle : Icons.play_circle)),
-            const Spacer(),
-            IconButton(color: Colors.white, tooltip: 'Toggle sound',
-              onPressed: () async { await _controller.setVolume(_controller.value.volume == 0 ? 1 : 0);
-                if (mounted) setState(() {}); },
-              icon: Icon(_controller.value.volume == 0 ? Icons.volume_off : Icons.volume_up)),
-          ])),
-        ]),
   );
 }
 
@@ -872,7 +814,7 @@ class _VoucherCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
       decoration: BoxDecoration(
         color: const Color(0xFFFFF7F1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: const Color(0xFFFFD9C2)),
       ),
       child: Row(
@@ -1217,7 +1159,7 @@ class _ReviewCard extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: const Color(0xFFF8FAFA),
-        borderRadius: BorderRadius.circular(13),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: const Color(0xFFE8ECEE)),
       ),
       child: Column(
@@ -1337,7 +1279,7 @@ class _ProductActionBar extends StatelessWidget {
               width: 54,
               child: InkWell(
                 onTap: onChat,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(8),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -1370,7 +1312,7 @@ class _ProductActionBar extends StatelessWidget {
                   side: const BorderSide(color: AppColors.teal),
                   minimumSize: const Size.fromHeight(48),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                 ),
                 child: busy
@@ -1396,7 +1338,7 @@ class _ProductActionBar extends StatelessWidget {
                   backgroundColor: const Color(0xFFEC526A),
                   minimumSize: const Size.fromHeight(48),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                 ),
                 child: const Text(

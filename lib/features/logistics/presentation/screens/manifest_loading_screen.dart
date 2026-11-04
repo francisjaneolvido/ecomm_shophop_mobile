@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:shophop/core/theme/app_colors.dart';
+import 'package:shophop/shared/widgets/shop_hop_ui.dart';
+import 'package:shophop/shared/widgets/shop_hop_workflow.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:shophop/features/logistics/data/logistics_scan_service.dart';
 
@@ -19,8 +22,8 @@ class ManifestLoadingScreen extends StatefulWidget {
 }
 
 class _ManifestLoadingScreenState extends State<ManifestLoadingScreen> {
-  static const _navy = Color(0xFF172B4D);
-  static const _teal = Color(0xFF159E8B);
+  static const _navy = AppColors.navy;
+  static const _teal = AppColors.tealDark;
 
   List<Map<String, dynamic>> _manifests = [];
   int? _manifestId;
@@ -237,28 +240,37 @@ class _ManifestLoadingScreenState extends State<ManifestLoadingScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Load Linehaul Manifest'),
+        title: const Text('Outbound Manifest Loading'),
         actions: [IconButton(onPressed: _busy ? null : _loadManifests, icon: const Icon(Icons.refresh))],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text(widget.branchName, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: _navy)),
-          const SizedBox(height: 4),
-          const Text('Fast normal flow: verify the physical batch count once. Individual Parcel QR scans are reserved for count mismatches or exceptions.', style: TextStyle(color: Color(0xFF65748A))),
-          const SizedBox(height: 16),
+          ShopHopWorkflowHeader(title: 'Outbound manifest loading',
+            subtitle: widget.branchName, icon: Icons.outbox_outlined,
+            badge: 'Verify → count → confirm'),
+          const SizedBox(height: 10),
+          const ShopHopSurface(padding: EdgeInsets.all(12), child: Text(
+            'Normal flow: select a manifest, verify the physical count and confirm. '
+            'Use individual Parcel QR reconciliation only for mismatches or exceptions.',
+            style: TextStyle(fontSize: 12, color: Color(0xFF607084)))),
+          const SizedBox(height: 14),
           if (_message != null) ...[
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: _success ? const Color(0xFFE8F7F1) : const Color(0xFFFFF3E8),
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Text(_message!),
             ),
             const SizedBox(height: 12),
           ],
+          const Text('STEP 1  Select outbound manifest', style: TextStyle(
+            fontSize: 12, fontWeight: FontWeight.w800, color: _navy)),
+          const SizedBox(height: 8),
           DropdownButtonFormField<int>(
+            key: ValueKey(_manifestId),
             initialValue: _manifestId,
             isExpanded: true,
             decoration: const InputDecoration(labelText: 'Outbound manifest', border: OutlineInputBorder()),
@@ -279,10 +291,9 @@ class _ManifestLoadingScreenState extends State<ManifestLoadingScreen> {
           ),
           const SizedBox(height: 16),
           if (selected != null) ...[
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
+            ShopHopSurface(
+              padding: const EdgeInsets.all(14),
+              child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('${selected['code']}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: _navy)),
@@ -291,11 +302,18 @@ class _ManifestLoadingScreenState extends State<ManifestLoadingScreen> {
                     Text('Expected: $expected parcels'),
                     Text('Already marked loaded: $loaded'),
                     Text('Status: ${selected['status']}'),
+                    const SizedBox(height: 10),
+                    LinearProgressIndicator(value: expected <= 0 ? 0 :
+                      (loaded / expected).clamp(0.0, 1.0),
+                      backgroundColor: AppColors.grayBg,
+                      color: _teal, minHeight: 5),
                   ],
                 ),
-              ),
             ),
             const SizedBox(height: 12),
+            const Text('STEP 2  Match physical parcel count',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: _navy)),
+            const SizedBox(height: 8),
             TextField(
               controller: _count,
               keyboardType: TextInputType.number,
@@ -313,7 +331,7 @@ class _ManifestLoadingScreenState extends State<ManifestLoadingScreen> {
                 style: FilledButton.styleFrom(backgroundColor: _teal),
                 onPressed: _busy || selected['status'] == 'ready' ? null : _confirmBatch,
                 icon: const Icon(Icons.inventory_2_outlined),
-                label: Text(selected['status'] == 'ready' ? 'Manifest already ready' : 'Confirm complete batch loaded'),
+                label: Text(selected['status'] == 'ready' ? 'Manifest already ready' : 'STEP 3  Confirm complete load'),
               ),
             ),
             if (selected['status'] != 'ready') ...[
@@ -340,7 +358,7 @@ class _ManifestLoadingScreenState extends State<ManifestLoadingScreen> {
               if (_exceptionMode) ...[
                 if (_scanning) ...[
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(8),
                     child: SizedBox(
                       height: 260,
                       child: MobileScanner(

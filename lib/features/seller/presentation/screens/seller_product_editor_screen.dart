@@ -7,6 +7,7 @@ import 'package:shophop/core/config/api_config.dart';
 import 'package:shophop/features/seller/data/services/seller_workspace_service.dart';
 import 'package:shophop/shared/widgets/shop_hop_navigation.dart';
 import 'package:shophop/shared/widgets/shop_hop_ui.dart';
+import 'package:shophop/shared/widgets/shop_hop_product_media.dart';
 
 /// Mobile version of the Seller Web's simple-product workflow.
 /// Variant matrices, image deletion and vouchers remain Web-only.
@@ -279,15 +280,22 @@ class _SellerProductEditorScreenState extends State<SellerProductEditorScreen> {
                   dense: true,
                   leading: ClipRRect(borderRadius: BorderRadius.circular(8), child: SizedBox(
                     width: 48, height: 48,
-                    child: isVideo ? const ColoredBox(color: AppColors.navy,
-                      child: Icon(Icons.play_circle_outline, color: Colors.white))
+                    child: isVideo ? ShopHopProductThumbnail(
+                      imageUrl: widget.product?['image_url']?.toString(),
+                      videoUrl: _video == null
+                        ? (oldItem?['url']?.toString() ?? widget.product?['video_url']?.toString())
+                        : null,
+                      videoFirst: true, width: 48, height: 48)
                       : photo?.bytes != null ? Image.memory(photo!.bytes!, fit: BoxFit.cover)
                       : oldItem != null ? Image.network(ApiConfig.resolveMediaUrl(oldItem['url']?.toString()),
                         fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.image_outlined))
                       : const Icon(Icons.image_outlined))),
                   title: Text(isVideo ? 'Product video' : (photo?.name ?? 'Product photo'),
                     maxLines: 1, overflow: TextOverflow.ellipsis),
-                  subtitle: Text(index == 0 ? '★ Featured · appears first' : 'Position ${index + 1}'),
+                  subtitle: Text(isVideo && _video != null
+                    ? '${_video!.name} · Preview available after saving'
+                    : index == 0 ? '★ Featured · appears first' : 'Position ${index + 1}',
+                    maxLines: 2, overflow: TextOverflow.ellipsis),
                   trailing: PopupMenuButton<String>(
                     tooltip: 'Media options',
                     icon: const Icon(Icons.more_vert),

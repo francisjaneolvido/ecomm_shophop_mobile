@@ -88,6 +88,27 @@ class BuyerCategoryData {
   }
 }
 
+/// Accept both mobile catalog `image` and seller/media-style image URLs.
+/// Never pass video URLs to Image.network; video playback is in the detail gallery.
+String _productImageUrl(Map<String, dynamic> json) {
+  for (final key in ['image', 'image_url', 'thumbnail_url']) {
+    final raw = json[key]?.toString().trim() ?? '';
+    if (raw.isNotEmpty && raw.toLowerCase() != 'null') {
+      return ApiConfig.resolveMediaUrl(raw);
+    }
+  }
+  final media = json['media'];
+  if (media is List) {
+    for (final item in media) {
+      if (item is Map && (item['type']?.toString() ?? 'image') == 'image') {
+        final url = item['url']?.toString().trim() ?? '';
+        if (url.isNotEmpty) return ApiConfig.resolveMediaUrl(url);
+      }
+    }
+  }
+  return '';
+}
+
 class BuyerProductData {
   const BuyerProductData({
     required this.id,
@@ -138,7 +159,7 @@ class BuyerProductData {
           : _asDouble(json['original_price']),
       discountPercent: _asInt(json['discount_percent']),
       stock: _asInt(json['stock']),
-      image: ApiConfig.resolveMediaUrl(json['image']?.toString()),
+      image: _productImageUrl(json),
       rating: _asDouble(json['rating']),
       reviews: _asInt(json['reviews']),
       sold: _asInt(json['sold']),
@@ -427,7 +448,7 @@ class BuyerReviewData {
       variant: json['variant']?.toString() ?? '—',
       date: json['date']?.toString() ?? '',
       comment: json['comment']?.toString().trim() ?? '',
-      image: ApiConfig.resolveMediaUrl(json['image']?.toString()),
+      image: _productImageUrl(json),
       helpful: _asInt(json['helpful']),
     );
   }

@@ -104,7 +104,7 @@ class SellerDocumentPicker extends StatelessWidget {
           behavior: SnackBarBehavior.floating,
           margin: const EdgeInsets.all(16),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(8),
           ),
         ),
       );
@@ -154,13 +154,13 @@ class SellerDocumentPicker extends StatelessWidget {
               color: Colors.transparent,
               child: InkWell(
                 onTap: () => _pick(context, field),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(8),
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(15),
                   decoration: BoxDecoration(
                     color: AppColors.grayBg,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: field.hasError
                           ? const Color(0xFFDB5757)
@@ -176,7 +176,7 @@ class SellerDocumentPicker extends StatelessWidget {
                         height: 46,
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(13),
+                          borderRadius: BorderRadius.circular(8),
                           border: Border.all(
                             color: AppColors.grayBorder,
                           ),
@@ -269,7 +269,7 @@ class SellerDocumentPicker extends StatelessWidget {
       width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(17),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.grayBorder),
       ),
       clipBehavior: Clip.antiAlias,
@@ -350,7 +350,7 @@ class SellerDocumentPicker extends StatelessWidget {
                       ),
                       minimumSize: const Size.fromHeight(46),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                   ),
@@ -371,7 +371,7 @@ class SellerDocumentPicker extends StatelessWidget {
                         color: Color(0xFFF0D0D0),
                       ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                     child: const Icon(
@@ -410,7 +410,7 @@ class SellerDocumentPicker extends StatelessWidget {
             ),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(8),
             ),
             clipBehavior: Clip.antiAlias,
             child: Column(

@@ -58,6 +58,7 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
 
   final List<Map<String, dynamic>> _logisticsCenters = [];
   int? _logisticsPartnerId;
+  String _partnerSearchQuery = '';
   bool _loadingLogisticsCenters = true;
   String? _logisticsCentersError;
   bool _termsAccepted = false;
@@ -171,6 +172,11 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
 
     if (!valid) {
       _message('Please check the required fields.');
+      return;
+    }
+
+    if (_step == 3 && _logisticsPartnerId == null) {
+      _message('Please select a Logistics Partner that is accepting Riders.');
       return;
     }
 
@@ -422,6 +428,18 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
       };
 
   Widget _logisticsCenterField() {
+    final query = _partnerSearchQuery.trim().toLowerCase();
+    final visiblePartners = _logisticsCenters.where((partner) {
+      if (query.isEmpty) return true;
+      final searchable = [
+        partner['company_name'],
+        partner['municipality'],
+        partner['province'],
+        partner['description'],
+      ].where((value) => value != null).join(' ').toLowerCase();
+      return searchable.contains(query);
+    }).toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -433,10 +451,10 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
               height: 44,
               decoration: BoxDecoration(
                 color: AppColors.tealLight,
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(
-                Icons.warehouse_outlined,
+                Icons.local_shipping_outlined,
                 color: AppColors.tealDark,
               ),
             ),
@@ -446,7 +464,7 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Logistics / Sorting Center',
+                    'Choose a Logistics Partner',
                     style: TextStyle(
                       color: AppColors.navy,
                       fontSize: 15,
@@ -455,9 +473,9 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Choose the center that will review your Rider application and manage your assignments.',
+                    'Select an approved ShopHop logistics company accepting Rider applications. This company will review your application.',
                     style: TextStyle(
-                      color: AppColors.navy.withValues(alpha: 0.45),
+                      color: AppColors.navy.withValues(alpha: 0.55),
                       fontSize: 11,
                       height: 1.45,
                     ),
@@ -471,7 +489,7 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
         if (_loadingLogisticsCenters)
           const Center(
             child: Padding(
-              padding: EdgeInsets.all(12),
+              padding: EdgeInsets.all(16),
               child: CircularProgressIndicator(),
             ),
           )
@@ -481,15 +499,14 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
             padding: const EdgeInsets.all(13),
             decoration: BoxDecoration(
               color: const Color(0xFFFFF4E5),
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(8),
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Expanded(
-                  child: Text(
-                    'Unable to load an approved Logistics / Sorting Center.',
-                    style: TextStyle(color: AppColors.navy, fontSize: 11),
-                  ),
+                Text(
+                  _logisticsCentersError!,
+                  style: const TextStyle(color: AppColors.navy, fontSize: 11),
                 ),
                 TextButton(
                   onPressed: () {
@@ -505,30 +522,201 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
             ),
           )
         else
-          DropdownButtonFormField<int>(
+          FormField<int>(
             initialValue: _logisticsPartnerId,
-            isExpanded: true,
-            decoration: RiderUi.inputDecoration(
-              hint: 'Select Logistics / Sorting Center',
-              icon: Icons.warehouse_outlined,
-            ),
-            items: _logisticsCenters.map((center) {
-              final id = int.parse(center['id'].toString());
-              return DropdownMenuItem<int>(
-                value: id,
-                child: Text(
-                  center['label']?.toString() ??
-                      center['company_name']?.toString() ??
-                      'Logistics Center',
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 12),
-                ),
-              );
-            }).toList(),
-            onChanged: (value) => setState(() => _logisticsPartnerId = value),
             validator: (value) => value == null
-                ? 'Please select your Logistics / Sorting Center.'
+                ? 'Please choose a Logistics Partner.'
                 : null,
+            builder: (field) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    onChanged: (value) => setState(() {
+                      _partnerSearchQuery = value;
+                    }),
+                    decoration: RiderUi.inputDecoration(
+                      hint: 'Search logistics company or city',
+                      icon: Icons.search,
+                    ),
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    '${visiblePartners.length} available logistics partner${visiblePartners.length == 1 ? '' : 's'}',
+                    style: TextStyle(
+                      color: AppColors.navy.withValues(alpha: 0.50),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  if (visiblePartners.isEmpty)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: AppColors.grayBg,
+                        border: Border.all(color: AppColors.grayBorder),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'No matching Logistics Partner. Try another name or location.',
+                        style: TextStyle(color: AppColors.navy, fontSize: 11),
+                      ),
+                    )
+                  else
+                    SizedBox(
+                      height: visiblePartners.length <= 2
+                          ? visiblePartners.length * 118.0
+                          : 340,
+                      child: ListView.separated(
+                        primary: false,
+                        physics: const ClampingScrollPhysics(),
+                        itemCount: visiblePartners.length,
+                        separatorBuilder: (context, index) => const SizedBox(height: 8),
+                        itemBuilder: (context, index) {
+                          final partner = visiblePartners[index];
+                          final id = int.parse(partner['id'].toString());
+                          final selected = field.value == id;
+                          final name = partner['company_name']?.toString() ??
+                              'Logistics Partner';
+                          final location = [
+                            partner['municipality'],
+                            partner['province'],
+                          ].where((v) => v != null && v.toString().trim().isNotEmpty)
+                              .join(', ');
+                          final description =
+                              partner['description']?.toString().trim() ?? '';
+                          final logoUrl = partner['logo_url']?.toString();
+
+                          return InkWell(
+                            onTap: () {
+                              field.didChange(id);
+                              setState(() => _logisticsPartnerId = id);
+                            },
+                            borderRadius: BorderRadius.circular(8),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 160),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: selected
+                                    ? AppColors.tealLight.withValues(alpha: .52)
+                                    : Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: selected
+                                      ? AppColors.tealDark
+                                      : AppColors.grayBorder,
+                                  width: selected ? 1.5 : 1,
+                                ),
+                              ),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    width: 55,
+                                    height: 55,
+                                    clipBehavior: Clip.antiAlias,
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.tealLight,
+                                      borderRadius: BorderRadius.circular(7),
+                                    ),
+                                    child: logoUrl != null && logoUrl.isNotEmpty
+                                        ? Image.network(
+                                            logoUrl,
+                                            width: 55,
+                                            height: 55,
+                                            fit: BoxFit.contain,
+                                            errorBuilder: (context, error, stackTrace) =>
+                                                const Icon(Icons.warehouse_outlined,
+                                                    color: AppColors.tealDark),
+                                          )
+                                        : const Icon(Icons.warehouse_outlined,
+                                            color: AppColors.tealDark),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          name,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w700,
+                                            color: AppColors.navy,
+                                          ),
+                                        ),
+                                        if (location.isNotEmpty) ...[
+                                          const SizedBox(height: 3),
+                                          Text(
+                                            location,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              color: AppColors.navy.withValues(alpha: .52),
+                                              fontSize: 10,
+                                            ),
+                                          ),
+                                        ],
+                                        if (description.isNotEmpty) ...[
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            description,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              color: AppColors.navy.withValues(alpha: .60),
+                                              fontSize: 10,
+                                            ),
+                                          ),
+                                        ],
+                                        const SizedBox(height: 6),
+                                        const Text(
+                                          'Accepting Rider applications',
+                                          style: TextStyle(
+                                            color: AppColors.tealDark,
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 5),
+                                  Icon(
+                                    selected ? Icons.check_circle : Icons.radio_button_unchecked,
+                                    color: selected ? AppColors.tealDark : AppColors.grayBorder,
+                                    size: 20,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  if (field.hasError) ...[
+                    const SizedBox(height: 7),
+                    Text(field.errorText!,
+                        style: const TextStyle(color: Colors.red, fontSize: 11)),
+                  ],
+                  const SizedBox(height: 10),
+                  Text(
+                    'Your selected company will review your application after email verification. Branch assignment is determined during approval.',
+                    style: TextStyle(
+                      color: AppColors.navy.withValues(alpha: .48),
+                      fontSize: 10,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
       ],
     );
@@ -539,7 +727,7 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(8),
           border: Border.all(color: AppColors.grayBorder),
           boxShadow: [
             BoxShadow(
@@ -559,15 +747,15 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
         children: [
           Material(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(8),
             child: InkWell(
               onTap: _isSubmitting ? null : () => Navigator.pop(context),
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(8),
               child: Container(
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: AppColors.grayBorder),
                 ),
                 child: const Icon(
@@ -628,7 +816,7 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
                     side: const BorderSide(color: AppColors.grayBorder),
                     padding: const EdgeInsets.symmetric(horizontal: 17),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                   ),
                   child: const Row(
@@ -656,7 +844,7 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
                     backgroundColor: AppColors.teal,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                   ),
                   child: _isSubmitting

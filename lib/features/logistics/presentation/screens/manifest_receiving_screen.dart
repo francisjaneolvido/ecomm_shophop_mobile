@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:shophop/core/theme/app_colors.dart';
+import 'package:shophop/shared/widgets/shop_hop_ui.dart';
+import 'package:shophop/shared/widgets/shop_hop_workflow.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:shophop/features/logistics/data/logistics_scan_service.dart';
 
@@ -19,8 +22,8 @@ class ManifestReceivingScreen extends StatefulWidget {
 }
 
 class _ManifestReceivingScreenState extends State<ManifestReceivingScreen> {
-  static const _navy = Color(0xFF172B4D);
-  static const _teal = Color(0xFF159E8B);
+  static const _navy = AppColors.navy;
+  static const _teal = AppColors.tealDark;
 
   final _camera = MobileScannerController(autoStart: false);
   final _manifestCode = TextEditingController();
@@ -193,28 +196,36 @@ class _ManifestReceivingScreenState extends State<ManifestReceivingScreen> {
     final completed = m?['completed'] == true;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Receive Transport Manifest')), 
+      appBar: AppBar(title: const Text('Inbound Manifest')), 
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text(widget.branchName, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: _navy)),
-          const SizedBox(height: 4),
-          const Text('Destination Branch/Hub confirms physical arrival. Road drivers and sea/air carriers cannot self-confirm receipt. Scan Manifest QR then verify parcel count.', style: TextStyle(color: Color(0xFF65748A))),
-          const SizedBox(height: 16),
+          ShopHopWorkflowHeader(title: 'Inbound manifest receiving',
+            subtitle: widget.branchName, icon: Icons.move_to_inbox_outlined,
+            badge: 'Scan → arrival → count'),
+          const SizedBox(height: 10),
+          const ShopHopSurface(padding: EdgeInsets.all(12), child: Text(
+            'Only the destination facility confirms physical arrival. '
+            'Scan the Manifest QR, verify the shipment, then receive the actual parcel count.',
+            style: TextStyle(fontSize: 12, color: Color(0xFF607084)))),
+          const SizedBox(height: 14),
           if (_message != null) ...[
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: _success ? const Color(0xFFE8F7F1) : const Color(0xFFFFF3E8),
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Text(_message!),
             ),
             const SizedBox(height: 12),
           ],
+          const Text('STEP 1  Scan or enter Manifest QR',
+            style: TextStyle(color: _navy, fontSize: 12, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 9),
           if (_scanning)
             ClipRRect(
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(8),
               child: SizedBox(
                 height: 300,
                 child: MobileScanner(
@@ -260,10 +271,9 @@ class _ManifestReceivingScreenState extends State<ManifestReceivingScreen> {
           ),
           if (m != null) ...[
             const SizedBox(height: 16),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
+            ShopHopSurface(
+              padding: const EdgeInsets.all(14),
+              child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('${m['manifest_code']}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: _navy)),
@@ -287,10 +297,12 @@ class _ManifestReceivingScreenState extends State<ManifestReceivingScreen> {
                     Text('Expected: ${m['expected']} · Received: ${m['received']}'),
                   ],
                 ),
-              ),
             ),
             const SizedBox(height: 12),
-            if (!arrived && !completed)
+            if (!arrived && !completed) ...[
+              const Text('STEP 2  Confirm actual arrival', style: TextStyle(
+                color: _navy, fontSize: 12, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 8),
               SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
@@ -300,7 +312,11 @@ class _ManifestReceivingScreenState extends State<ManifestReceivingScreen> {
                   label: const Text('Confirm destination arrival'),
                 ),
               ),
+            ],
             if (arrived && !completed) ...[
+              const Text('STEP 3  Confirm received parcel count', style: TextStyle(
+                color: _navy, fontSize: 12, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 8),
               TextField(
                 controller: _count,
                 keyboardType: TextInputType.number,

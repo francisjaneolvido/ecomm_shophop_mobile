@@ -90,7 +90,7 @@ class _OtpCodeFieldState extends State<OtpCodeField> {
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(8),
                       border: Border.all(
                         color: current
                             ? AppColors.teal

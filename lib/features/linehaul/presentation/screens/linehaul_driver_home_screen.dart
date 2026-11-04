@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:shophop/core/theme/app_colors.dart';
 import 'package:shophop/shared/widgets/shop_hop_navigation.dart';
 import 'package:shophop/shared/widgets/shop_hop_ui.dart';
 import 'package:shophop/shared/widgets/shop_hop_workflow.dart';
+import 'package:shophop/shared/widgets/shop_hop_ops.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:shophop/core/session/auth_session_service.dart';
 import 'package:shophop/features/auth/data/services/auth_service.dart';
@@ -16,8 +18,8 @@ class LinehaulDriverHomeScreen extends StatefulWidget {
 }
 
 class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
-  static const _navy = Color(0xFF0E1B4D);
-  static const _teal = Color(0xFF18AA94);
+  static const _navy = AppColors.navy;
+  static const _teal = AppColors.tealDark;
   final _camera = MobileScannerController(autoStart: false);
   final _manifestCode = TextEditingController();
   List<Map<String,dynamic>> _trips=[];
@@ -101,62 +103,97 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
     await _load();
   }
 
-  Widget _tripCard(Map<String,dynamic> t) => Padding(
-    padding: const EdgeInsets.only(bottom: 10),
-    child: ShopHopSurface(padding: const EdgeInsets.all(14), child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          const Icon(Icons.local_shipping_outlined, color: _teal, size: 20),
-          const SizedBox(width: 8),
-          Expanded(child: Text(t['code']?.toString() ?? 'Linehaul trip',
-            style: const TextStyle(fontWeight: FontWeight.w900, color: _navy, fontSize: 14))),
-          ShopHopStatusPill(label: (t['status'] ?? 'Assigned').toString().replaceAll('_', ' ')),
-        ]),
-        const SizedBox(height: 8),
-        Text('${t['from'] ?? 'Origin'} → ${t['to'] ?? 'Destination'}',
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: _navy)),
-        if (t['requires_review'] == true) ...[
+  Widget _tripCard(Map<String, dynamic> trip, {bool featured = false}) {
+    final status = (trip['status'] ?? 'assigned').toString();
+    final flagged = trip['requires_review'] == true;
+    final active = !['completed', 'cancelled'].contains(status);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 9),
+      child: ShopHopSurface(padding: const EdgeInsets.all(13), child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            const Icon(Icons.local_shipping_outlined, color: _teal, size: 20),
+            const SizedBox(width: 9),
+            Expanded(child: Text('${trip['code'] ?? 'Linehaul trip'}',
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800,
+                color: _navy), maxLines: 1, overflow: TextOverflow.ellipsis)),
+            ShopHopStatusPill(label: status.replaceAll('_', ' ')),
+          ]),
           const SizedBox(height: 9),
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: const Color(0xFFFFF3E8), borderRadius: BorderRadius.circular(9),
-              border: Border.all(color: const Color(0xFFF4CB8F))),
-            child: Text(t['route_warning']?.toString() ?? 'Invalid inter-island road assignment. Contact Logistics.',
-              style: const TextStyle(fontSize: 11, color: Color(0xFF8C5100), fontWeight: FontWeight.w700)),
-          ),
-        ],
-        const Divider(height: 18),
-        Text('Manifest ${t['manifest_code'] ?? '—'} · ${t['parcel_count'] ?? 0} parcels',
-          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
-        const SizedBox(height: 3),
-        Text('Vehicle ${t['vehicle_code'] ?? '—'} · ${t['plate_number'] ?? '—'}',
-          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
-        if (!['completed', 'cancelled'].contains(t['status']) && t['requires_review'] != true) ...[
-          const SizedBox(height: 11),
-          SizedBox(width: double.infinity, child: OutlinedButton.icon(
-            onPressed: _busy ? null : () => setState(() { _tab = 2; _manifestCode.text = (t['manifest_code'] ?? '').toString(); }),
-            icon: const Icon(Icons.qr_code_scanner_rounded),
-            label: const Text('Open manifest scanner'))),
-        ],
-      ],
-    )),
-  );
+          Text('${trip['from'] ?? 'Origin'} → ${trip['to'] ?? 'Destination'}',
+            style: const TextStyle(color: _navy, fontSize: 13,
+              fontWeight: FontWeight.w700)),
+          const SizedBox(height: 6),
+          Text('Manifest ${trip['manifest_code'] ?? '—'} · '
+            '${trip['parcel_count'] ?? 0} parcels',
+            style: const TextStyle(fontSize: 11, color: Color(0xFF607084))),
+          if (featured) ...[
+            const SizedBox(height: 4),
+            Text('Vehicle ${trip['vehicle_code'] ?? '—'} · '
+              '${trip['plate_number'] ?? '—'}',
+              style: const TextStyle(fontSize: 11, color: Color(0xFF607084))),
+          ],
+          if (flagged) ...[
+            const SizedBox(height: 10),
+            Container(width: double.infinity, padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(color: const Color(0xFFFFF3E8),
+                borderRadius: BorderRadius.circular(6)),
+              child: Text('${trip['route_warning'] ?? 'Route needs Logistics review.'}',
+                style: const TextStyle(color: Color(0xFF8C5100), fontSize: 11))),
+          ],
+          if (active && !flagged) ...[
+            const SizedBox(height: 10),
+            SizedBox(width: double.infinity, child: OutlinedButton.icon(
+              onPressed: _busy ? null : () => setState(() {
+                _tab = 1;
+                _manifestCode.text = (trip['manifest_code'] ?? '').toString();
+              }),
+              icon: const Icon(Icons.qr_code_scanner_rounded),
+              label: const Text('Review / scan manifest'))),
+          ],
+        ])),
+    );
+  }
 
-  Widget _tripsPage({bool history=false}) {
-    final rows = _trips.where((t) => history
-      ? ['completed', 'cancelled'].contains(t['status'])
-      : !['completed', 'cancelled'].contains(t['status'])).toList();
+  Widget _tripsPage({bool history = false}) {
+    final rows = _trips.where((trip) => history
+      ? ['completed', 'cancelled'].contains(trip['status'])
+      : !['completed', 'cancelled'].contains(trip['status'])).toList();
     return RefreshIndicator(onRefresh: _load, child: ListView(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 90), children: [
         ShopHopWorkflowHeader(
-          title: history ? 'Trip history' : 'Assigned linehaul trips',
-          subtitle: history ? 'Completed and cancelled manifest trips.'
-            : 'Review destination and load before departure.',
-          icon: Icons.route_rounded, badge: '${rows.length} ${history ? 'past' : 'active'} trips'),
+          title: history ? 'Trip history' : 'My assigned trips',
+          subtitle: history ? 'Completed and cancelled manifests.'
+            : 'Check the vehicle and route, then scan before departure.',
+          icon: Icons.route_rounded,
+          badge: '${rows.length} ${history ? 'past' : 'active'} trips'),
         const SizedBox(height: 12),
-        if (rows.isEmpty) const ShopHopEmptyState(icon: Icons.route_outlined,
-          title: 'No trips to show', description: 'Assigned manifest trips appear here after dispatch.'),
-        for (final t in rows) _tripCard(t),
+        if (!history && rows.isNotEmpty) ...[
+          Row(children: [
+            Expanded(child: ShopHopOpsCount(label: 'Assigned trips',
+              value: '${rows.length}', icon: Icons.route_outlined)),
+            const SizedBox(width: 8),
+            Expanded(child: ShopHopOpsCount(label: 'Awaiting review',
+              value: '${rows.where((t) => t['requires_review'] == true).length}',
+              icon: Icons.rule_outlined)),
+          ]),
+          const SizedBox(height: 14),
+          const ShopHopOpsHeading(title: 'Next trip',
+            subtitle: 'Manifest acceptance requires physical load verification.'),
+          const SizedBox(height: 8),
+          _tripCard(rows.first, featured: true),
+          if (rows.length > 1) ...[
+            const SizedBox(height: 10),
+            const ShopHopOpsHeading(title: 'Other assigned trips'),
+            const SizedBox(height: 8),
+          ],
+          for (final trip in rows.skip(1)) _tripCard(trip),
+        ] else if (rows.isNotEmpty)
+          for (final trip in rows) _tripCard(trip)
+        else
+          const ShopHopEmptyState(icon: Icons.route_outlined,
+            title: 'No trips to show',
+            description: 'Dispatch assignments appear here after Logistics creates a trip.'),
       ],
     ));
   }
@@ -179,7 +216,7 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
           style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
         const SizedBox(height: 12),
         if (_scanning) ...[
-          ClipRRect(borderRadius: BorderRadius.circular(12), child: SizedBox(
+          ClipRRect(borderRadius: BorderRadius.circular(8), child: SizedBox(
             height: 230, child: MobileScanner(controller: _camera,
               onDetect: (capture) {
                 if (_busy || !_scanning) return;
@@ -225,7 +262,7 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
           const SizedBox(height: 7),
           if (_manifest!['requires_review'] == true)
             Container(padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: const Color(0xFFFFF3E8), borderRadius: BorderRadius.circular(9)),
+              decoration: BoxDecoration(color: const Color(0xFFFFF3E8), borderRadius: BorderRadius.circular(8)),
               child: Text(_manifest!['route_warning']?.toString() ?? 'Road trip requires Logistics review.',
                 style: const TextStyle(color: Color(0xFF8C5100), fontWeight: FontWeight.w700, fontSize: 11))),
           Text('ROAD trip ${_manifest!['trip_code']} · ${_manifest!['trip_status']}'),
@@ -273,11 +310,11 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
   ]));
 
   @override Widget build(BuildContext context){
-    final pages=[_tripsPage(),_vehiclePage(),_scanPage(),_tripsPage(history:true),_accountPage()];
-    return Scaffold(appBar:AppBar(title:const Text('ShopHop Linehaul',style:TextStyle(fontWeight:FontWeight.w800)),actions:[IconButton(onPressed:_busy?null:_load,icon:const Icon(Icons.refresh))]),body:_busy&&_trips.isEmpty?const Center(child:CircularProgressIndicator()):pages[_tab],bottomNavigationBar:ShopHopNavigation(index:_tab,onChanged:(i){if(_scanning&&i!=2){_camera.stop();_scanning=false;}setState(()=>_tab=i);},items:const[
+    final pages=[_tripsPage(),_scanPage(),_vehiclePage(),_tripsPage(history:true),_accountPage()];
+    return Scaffold(appBar:AppBar(title:const Text('ShopHop Linehaul',style:TextStyle(fontWeight:FontWeight.w800)),actions:[IconButton(onPressed:_busy?null:_load,icon:const Icon(Icons.refresh))]),body:_busy&&_trips.isEmpty?const Center(child:CircularProgressIndicator()):pages[_tab],bottomNavigationBar:ShopHopNavigation(index:_tab,onChanged:(i){if(_scanning&&i!=1){_camera.stop();_scanning=false;}setState(()=>_tab=i);},items:const[
       ShopHopNavItem('Trips',Icons.route_outlined,Icons.route_rounded),
-      ShopHopNavItem('Vehicle',Icons.local_shipping_outlined,Icons.local_shipping_rounded),
       ShopHopNavItem('Scan',Icons.qr_code_scanner_rounded,Icons.qr_code_scanner_rounded),
+      ShopHopNavItem('Vehicle',Icons.local_shipping_outlined,Icons.local_shipping_rounded),
       ShopHopNavItem('History',Icons.history_outlined,Icons.history_rounded),
       ShopHopNavItem('Account',Icons.person_outline_rounded,Icons.person_rounded),
     ]));
