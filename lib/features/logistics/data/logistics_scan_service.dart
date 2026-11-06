@@ -9,22 +9,40 @@ class LogisticsScanService {
   const LogisticsScanService._();
 
   static Map<String, String> _headers(String token) => {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      };
+    'Accept': 'application/json',
+    'Authorization': 'Bearer $token',
+  };
 
-  static Future<AuthApiResult> branches(String token, {String search = ''}) async {
+  static Future<AuthApiResult> branches(
+    String token, {
+    String search = '',
+  }) async {
     try {
       final response = await http
-          .get(Uri.parse('${ApiConfig.baseUrl}/logistics/scanner/branches')
-                  .replace(queryParameters: search.trim().isEmpty ? null : {'search': search.trim()}),
-              headers: _headers(token))
+          .get(
+            Uri.parse(
+              '${ApiConfig.baseUrl}/logistics/scanner/branches',
+            ).replace(
+              queryParameters: search.trim().isEmpty
+                  ? null
+                  : {'search': search.trim()},
+            ),
+            headers: _headers(token),
+          )
           .timeout(const Duration(seconds: 20));
       return AuthApiResult.fromResponse(response);
     } on TimeoutException {
-      return const AuthApiResult(success: false, status: 'timeout', message: 'Request timed out. Try again.');
+      return const AuthApiResult(
+        success: false,
+        status: 'timeout',
+        message: 'Request timed out. Try again.',
+      );
     } catch (_) {
-      return const AuthApiResult(success: false, status: 'network_error', message: 'Unable to contact ShopHop server.');
+      return const AuthApiResult(
+        success: false,
+        status: 'network_error',
+        message: 'Unable to contact ShopHop server.',
+      );
     }
   }
 
@@ -36,17 +54,28 @@ class LogisticsScanService {
   }) async {
     try {
       final uri = Uri.parse('${ApiConfig.baseUrl}/logistics/scanner/preview')
-          .replace(queryParameters: {
-        'sorting_center_id': branchId.toString(),
-        'tracking_code': trackingCode.trim(),
-      });
-      final response = await http.get(uri, headers: _headers(token))
+          .replace(
+            queryParameters: {
+              'sorting_center_id': branchId.toString(),
+              'tracking_code': trackingCode.trim(),
+            },
+          );
+      final response = await http
+          .get(uri, headers: _headers(token))
           .timeout(const Duration(seconds: 20));
       return AuthApiResult.fromResponse(response);
     } on TimeoutException {
-      return const AuthApiResult(success: false, status: 'timeout', message: 'Preview timed out. No parcel status was changed.');
+      return const AuthApiResult(
+        success: false,
+        status: 'timeout',
+        message: 'Preview timed out. No parcel status was changed.',
+      );
     } catch (_) {
-      return const AuthApiResult(success: false, status: 'network_error', message: 'Cannot preview parcel. Check connection and try again.');
+      return const AuthApiResult(
+        success: false,
+        status: 'network_error',
+        message: 'Cannot preview parcel. Check connection and try again.',
+      );
     }
   }
 
@@ -55,15 +84,25 @@ class LogisticsScanService {
     required int branchId,
   }) async {
     try {
-      final uri = Uri.parse('${ApiConfig.baseUrl}/logistics/scanner/history')
-          .replace(queryParameters: {'sorting_center_id': branchId.toString()});
-      final response = await http.get(uri, headers: _headers(token))
+      final uri = Uri.parse(
+        '${ApiConfig.baseUrl}/logistics/scanner/history',
+      ).replace(queryParameters: {'sorting_center_id': branchId.toString()});
+      final response = await http
+          .get(uri, headers: _headers(token))
           .timeout(const Duration(seconds: 20));
       return AuthApiResult.fromResponse(response);
     } on TimeoutException {
-      return const AuthApiResult(success: false, status: 'timeout', message: 'Could not load scan history.');
+      return const AuthApiResult(
+        success: false,
+        status: 'timeout',
+        message: 'Could not load scan history.',
+      );
     } catch (_) {
-      return const AuthApiResult(success: false, status: 'network_error', message: 'Could not load scan history. Check connection.');
+      return const AuthApiResult(
+        success: false,
+        status: 'network_error',
+        message: 'Could not load scan history. Check connection.',
+      );
     }
   }
 
@@ -74,15 +113,29 @@ class LogisticsScanService {
   }) async {
     try {
       final response = await http
-          .post(Uri.parse('${ApiConfig.baseUrl}/logistics/scanner/receive'),
-              headers: {..._headers(token), 'Content-Type': 'application/json'},
-              body: jsonEncode({'sorting_center_id': branchId, 'tracking_code': trackingCode.trim()}))
+          .post(
+            Uri.parse('${ApiConfig.baseUrl}/logistics/scanner/receive'),
+            headers: {..._headers(token), 'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'sorting_center_id': branchId,
+              'tracking_code': trackingCode.trim(),
+            }),
+          )
           .timeout(const Duration(seconds: 20));
       return AuthApiResult.fromResponse(response);
     } on TimeoutException {
-      return const AuthApiResult(success: false, status: 'timeout', message: 'Request timed out. Refresh before scanning the parcel again.');
+      return const AuthApiResult(
+        success: false,
+        status: 'timeout',
+        message: 'Request timed out. Refresh before scanning the parcel again.',
+      );
     } catch (_) {
-      return const AuthApiResult(success: false, status: 'network_error', message: 'Unable to contact ShopHop server. Check scan history before retrying.');
+      return const AuthApiResult(
+        success: false,
+        status: 'network_error',
+        message:
+            'Unable to contact ShopHop server. Check scan history before retrying.',
+      );
     }
   }
 
@@ -91,15 +144,25 @@ class LogisticsScanService {
     required int branchId,
   }) async {
     try {
-      final uri = Uri.parse('${ApiConfig.baseUrl}/logistics/scanner/manifests')
-          .replace(queryParameters: {'sorting_center_id': branchId.toString()});
-      final response = await http.get(uri, headers: _headers(token))
+      final uri = Uri.parse(
+        '${ApiConfig.baseUrl}/logistics/scanner/manifests',
+      ).replace(queryParameters: {'sorting_center_id': branchId.toString()});
+      final response = await http
+          .get(uri, headers: _headers(token))
           .timeout(const Duration(seconds: 20));
       return AuthApiResult.fromResponse(response);
     } on TimeoutException {
-      return const AuthApiResult(success: false, status: 'timeout', message: 'Could not load outbound manifests.');
+      return const AuthApiResult(
+        success: false,
+        status: 'timeout',
+        message: 'Could not load outbound manifests.',
+      );
     } catch (_) {
-      return const AuthApiResult(success: false, status: 'network_error', message: 'Could not load outbound manifests. Check connection.');
+      return const AuthApiResult(
+        success: false,
+        status: 'network_error',
+        message: 'Could not load outbound manifests. Check connection.',
+      );
     }
   }
 
@@ -110,19 +173,32 @@ class LogisticsScanService {
     required String trackingCode,
   }) async {
     try {
-      final uri = Uri.parse('${ApiConfig.baseUrl}/logistics/scanner/load-preview')
-          .replace(queryParameters: {
-        'sorting_center_id': branchId.toString(),
-        'manifest_id': manifestId.toString(),
-        'tracking_code': trackingCode.trim(),
-      });
-      final response = await http.get(uri, headers: _headers(token))
+      final uri =
+          Uri.parse(
+            '${ApiConfig.baseUrl}/logistics/scanner/load-preview',
+          ).replace(
+            queryParameters: {
+              'sorting_center_id': branchId.toString(),
+              'manifest_id': manifestId.toString(),
+              'tracking_code': trackingCode.trim(),
+            },
+          );
+      final response = await http
+          .get(uri, headers: _headers(token))
           .timeout(const Duration(seconds: 20));
       return AuthApiResult.fromResponse(response);
     } on TimeoutException {
-      return const AuthApiResult(success: false, status: 'timeout', message: 'Loading verification timed out. No parcel was changed.');
+      return const AuthApiResult(
+        success: false,
+        status: 'timeout',
+        message: 'Loading verification timed out. No parcel was changed.',
+      );
     } catch (_) {
-      return const AuthApiResult(success: false, status: 'network_error', message: 'Unable to verify this parcel for loading.');
+      return const AuthApiResult(
+        success: false,
+        status: 'network_error',
+        message: 'Unable to verify this parcel for loading.',
+      );
     }
   }
 
@@ -133,20 +209,31 @@ class LogisticsScanService {
     required String trackingCode,
   }) async {
     try {
-      final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/logistics/scanner/load'),
-        headers: {..._headers(token), 'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'sorting_center_id': branchId,
-          'manifest_id': manifestId,
-          'tracking_code': trackingCode.trim(),
-        }),
-      ).timeout(const Duration(seconds: 20));
+      final response = await http
+          .post(
+            Uri.parse('${ApiConfig.baseUrl}/logistics/scanner/load'),
+            headers: {..._headers(token), 'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'sorting_center_id': branchId,
+              'manifest_id': manifestId,
+              'tracking_code': trackingCode.trim(),
+            }),
+          )
+          .timeout(const Duration(seconds: 20));
       return AuthApiResult.fromResponse(response);
     } on TimeoutException {
-      return const AuthApiResult(success: false, status: 'timeout', message: 'Loading confirmation timed out. Refresh the manifest before retrying.');
+      return const AuthApiResult(
+        success: false,
+        status: 'timeout',
+        message:
+            'Loading confirmation timed out. Refresh the manifest before retrying.',
+      );
     } catch (_) {
-      return const AuthApiResult(success: false, status: 'network_error', message: 'Unable to mark this parcel loaded.');
+      return const AuthApiResult(
+        success: false,
+        status: 'network_error',
+        message: 'Unable to mark this parcel loaded.',
+      );
     }
   }
 
@@ -157,20 +244,33 @@ class LogisticsScanService {
     required int physicalCount,
   }) async {
     try {
-      final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/logistics/scanner/manifest/batch-load'),
-        headers: {..._headers(token), 'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'sorting_center_id': branchId,
-          'manifest_id': manifestId,
-          'physical_count': physicalCount,
-        }),
-      ).timeout(const Duration(seconds: 20));
+      final response = await http
+          .post(
+            Uri.parse(
+              '${ApiConfig.baseUrl}/logistics/scanner/manifest/batch-load',
+            ),
+            headers: {..._headers(token), 'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'sorting_center_id': branchId,
+              'manifest_id': manifestId,
+              'physical_count': physicalCount,
+            }),
+          )
+          .timeout(const Duration(seconds: 20));
       return AuthApiResult.fromResponse(response);
     } on TimeoutException {
-      return const AuthApiResult(success: false, status: 'timeout', message: 'Batch loading confirmation timed out. Refresh before retrying.');
+      return const AuthApiResult(
+        success: false,
+        status: 'timeout',
+        message:
+            'Batch loading confirmation timed out. Refresh before retrying.',
+      );
     } catch (_) {
-      return const AuthApiResult(success: false, status: 'network_error', message: 'Unable to confirm this manifest load.');
+      return const AuthApiResult(
+        success: false,
+        status: 'network_error',
+        message: 'Unable to confirm this manifest load.',
+      );
     }
   }
 
@@ -180,18 +280,31 @@ class LogisticsScanService {
     required String manifestCode,
   }) async {
     try {
-      final uri = Uri.parse('${ApiConfig.baseUrl}/logistics/scanner/inbound-manifest/preview')
-          .replace(queryParameters: {
-        'sorting_center_id': branchId.toString(),
-        'manifest_code': manifestCode.trim().toUpperCase(),
-      });
-      final response = await http.get(uri, headers: _headers(token))
+      final uri =
+          Uri.parse(
+            '${ApiConfig.baseUrl}/logistics/scanner/inbound-manifest/preview',
+          ).replace(
+            queryParameters: {
+              'sorting_center_id': branchId.toString(),
+              'manifest_code': manifestCode.trim().toUpperCase(),
+            },
+          );
+      final response = await http
+          .get(uri, headers: _headers(token))
           .timeout(const Duration(seconds: 20));
       return AuthApiResult.fromResponse(response);
     } on TimeoutException {
-      return const AuthApiResult(success: false, status: 'timeout', message: 'Inbound manifest verification timed out.');
+      return const AuthApiResult(
+        success: false,
+        status: 'timeout',
+        message: 'Inbound manifest verification timed out.',
+      );
     } catch (_) {
-      return const AuthApiResult(success: false, status: 'network_error', message: 'Unable to verify inbound manifest.');
+      return const AuthApiResult(
+        success: false,
+        status: 'network_error',
+        message: 'Unable to verify inbound manifest.',
+      );
     }
   }
 
@@ -201,19 +314,31 @@ class LogisticsScanService {
     required String manifestCode,
   }) async {
     try {
-      final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/logistics/scanner/inbound-manifest/arrive'),
-        headers: {..._headers(token), 'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'sorting_center_id': branchId,
-          'manifest_code': manifestCode.trim().toUpperCase(),
-        }),
-      ).timeout(const Duration(seconds: 20));
+      final response = await http
+          .post(
+            Uri.parse(
+              '${ApiConfig.baseUrl}/logistics/scanner/inbound-manifest/arrive',
+            ),
+            headers: {..._headers(token), 'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'sorting_center_id': branchId,
+              'manifest_code': manifestCode.trim().toUpperCase(),
+            }),
+          )
+          .timeout(const Duration(seconds: 20));
       return AuthApiResult.fromResponse(response);
     } on TimeoutException {
-      return const AuthApiResult(success: false, status: 'timeout', message: 'Arrival confirmation timed out. Refresh before retrying.');
+      return const AuthApiResult(
+        success: false,
+        status: 'timeout',
+        message: 'Arrival confirmation timed out. Refresh before retrying.',
+      );
     } catch (_) {
-      return const AuthApiResult(success: false, status: 'network_error', message: 'Unable to acknowledge manifest arrival.');
+      return const AuthApiResult(
+        success: false,
+        status: 'network_error',
+        message: 'Unable to acknowledge manifest arrival.',
+      );
     }
   }
 
@@ -224,21 +349,32 @@ class LogisticsScanService {
     required int physicalCount,
   }) async {
     try {
-      final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/logistics/scanner/inbound-manifest/receive-all'),
-        headers: {..._headers(token), 'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'sorting_center_id': branchId,
-          'manifest_code': manifestCode.trim().toUpperCase(),
-          'physical_count': physicalCount,
-        }),
-      ).timeout(const Duration(seconds: 30));
+      final response = await http
+          .post(
+            Uri.parse(
+              '${ApiConfig.baseUrl}/logistics/scanner/inbound-manifest/receive-all',
+            ),
+            headers: {..._headers(token), 'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'sorting_center_id': branchId,
+              'manifest_code': manifestCode.trim().toUpperCase(),
+              'physical_count': physicalCount,
+            }),
+          )
+          .timeout(const Duration(seconds: 30));
       return AuthApiResult.fromResponse(response);
     } on TimeoutException {
-      return const AuthApiResult(success: false, status: 'timeout', message: 'Manifest receiving timed out. Refresh before retrying.');
+      return const AuthApiResult(
+        success: false,
+        status: 'timeout',
+        message: 'Manifest receiving timed out. Refresh before retrying.',
+      );
     } catch (_) {
-      return const AuthApiResult(success: false, status: 'network_error', message: 'Unable to receive this manifest batch.');
+      return const AuthApiResult(
+        success: false,
+        status: 'network_error',
+        message: 'Unable to receive this manifest batch.',
+      );
     }
   }
-
 }

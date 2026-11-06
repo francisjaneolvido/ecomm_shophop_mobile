@@ -118,9 +118,11 @@ class BuyerAccountPage extends StatelessWidget {
             title: 'Delivery addresses',
             subtitle: 'Edit the default address used for new orders',
             onTap: () {
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => BuyerAddressEditorPage(token: token),
-              ));
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => BuyerAddressEditorPage(token: token),
+                ),
+              );
             },
           ),
           const _AccountTile(
@@ -181,13 +183,19 @@ class _AccountTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         child: InkWell(
           borderRadius: BorderRadius.circular(8),
-          onTap: onTap ?? () {
-            ScaffoldMessenger.of(context)
-              ..hideCurrentSnackBar()
-              ..showSnackBar(
-                SnackBar(content: Text('$title is not connected in the mobile app yet.')),
-              );
-          },
+          onTap:
+              onTap ??
+              () {
+                ScaffoldMessenger.of(context)
+                  ..hideCurrentSnackBar()
+                  ..showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        '$title is not connected in the mobile app yet.',
+                      ),
+                    ),
+                  );
+              },
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
             decoration: BoxDecoration(
@@ -231,7 +239,11 @@ class _AccountTile extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Icon(Icons.chevron_right_rounded, size: 20, color: Color(0xFF526177)),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  size: 20,
+                  color: Color(0xFF526177),
+                ),
               ],
             ),
           ),

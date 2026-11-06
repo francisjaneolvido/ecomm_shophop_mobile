@@ -101,15 +101,17 @@ class _BuyerMyLikesPageState extends State<BuyerMyLikesPage>
   }
 
   List<BuyerProductData> get _filteredProducts {
-    return _products.where((product) {
-      if (_discountOnly && product.discountPercent <= 0) return false;
-      if (_inStockOnly && !product.isAvailable) return false;
-      if (_selectedCategory != null &&
-          product.category != _selectedCategory) {
-        return false;
-      }
-      return true;
-    }).toList(growable: false);
+    return _products
+        .where((product) {
+          if (_discountOnly && product.discountPercent <= 0) return false;
+          if (_inStockOnly && !product.isAvailable) return false;
+          if (_selectedCategory != null &&
+              product.category != _selectedCategory) {
+            return false;
+          }
+          return true;
+        })
+        .toList(growable: false);
   }
 
   List<String> get _categories {
@@ -192,10 +194,7 @@ class _BuyerMyLikesPageState extends State<BuyerMyLikesPage>
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          content: Text(message),
-        ),
+        SnackBar(behavior: SnackBarBehavior.floating, content: Text(message)),
       );
   }
 
@@ -378,7 +377,8 @@ class _BuyerMyLikesPageState extends State<BuyerMyLikesPage>
                     children: [
                       _FilterChip(
                         label: 'All',
-                        selected: !_discountOnly &&
+                        selected:
+                            !_discountOnly &&
                             !_inStockOnly &&
                             _selectedCategory == null,
                         onTap: () => setState(() {
@@ -392,14 +392,16 @@ class _BuyerMyLikesPageState extends State<BuyerMyLikesPage>
                         label: 'In Stock',
                         icon: Icons.inventory_2_outlined,
                         selected: _inStockOnly,
-                        onTap: () => setState(() => _inStockOnly = !_inStockOnly),
+                        onTap: () =>
+                            setState(() => _inStockOnly = !_inStockOnly),
                       ),
                       const SizedBox(width: 8),
                       _FilterChip(
                         label: 'Discount',
                         icon: Icons.local_offer_outlined,
                         selected: _discountOnly,
-                        onTap: () => setState(() => _discountOnly = !_discountOnly),
+                        onTap: () =>
+                            setState(() => _discountOnly = !_discountOnly),
                       ),
                       const SizedBox(width: 8),
                       _FilterChip(
@@ -461,35 +463,38 @@ class _BuyerMyLikesPageState extends State<BuyerMyLikesPage>
                     final columns = width >= 1050
                         ? 5
                         : width >= 780
-                            ? 4
-                            : width >= 560
-                                ? 3
-                                : 2;
+                        ? 4
+                        : width >= 560
+                        ? 3
+                        : 2;
 
                     return SliverGrid(
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: columns,
                         crossAxisSpacing: 10,
                         mainAxisSpacing: 10,
-                        childAspectRatio: width < 340 ? 0.50 : width < 430 ? 0.59 : 0.65,
+                        childAspectRatio: width < 340
+                            ? 0.50
+                            : width < 430
+                            ? 0.59
+                            : 0.65,
                       ),
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          final product = likedProducts[index];
-                          return BuyerProductCard(
-                            product: product,
-                            onTap: () {
-                              if (product.isAvailable) {
-                                widget.onOpenProduct(product);
-                              } else {
-                                _showError('This liked product is currently unavailable.');
-                              }
-                            },
-                            onLike: () => _toggleLike(product),
-                          );
-                        },
-                        childCount: likedProducts.length,
-                      ),
+                      delegate: SliverChildBuilderDelegate((context, index) {
+                        final product = likedProducts[index];
+                        return BuyerProductCard(
+                          product: product,
+                          onTap: () {
+                            if (product.isAvailable) {
+                              widget.onOpenProduct(product);
+                            } else {
+                              _showError(
+                                'This liked product is currently unavailable.',
+                              );
+                            }
+                          },
+                          onLike: () => _toggleLike(product),
+                        );
+                      }, childCount: likedProducts.length),
                     );
                   },
                 ),
@@ -555,7 +560,9 @@ class _FilterChip extends StatelessWidget {
                 Icon(
                   icon,
                   size: 15,
-                  color: selected ? AppColors.tealDark : const Color(0xFF7D8790),
+                  color: selected
+                      ? AppColors.tealDark
+                      : const Color(0xFF7D8790),
                 ),
                 const SizedBox(width: 5),
               ],

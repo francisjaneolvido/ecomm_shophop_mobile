@@ -9,18 +9,18 @@ class RiderCustodyScanService {
   const RiderCustodyScanService._();
 
   static Map<String, String> _headers(String token) => {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      };
+    'Accept': 'application/json',
+    'Authorization': 'Bearer $token',
+  };
 
   static Future<AuthApiResult> preview({
     required String token,
     required String trackingCode,
   }) async {
     try {
-      final uri = Uri.parse('${ApiConfig.baseUrl}/rider/scanner/preview').replace(
-        queryParameters: {'tracking_code': trackingCode.trim()},
-      );
+      final uri = Uri.parse(
+        '${ApiConfig.baseUrl}/rider/scanner/preview',
+      ).replace(queryParameters: {'tracking_code': trackingCode.trim()});
       final response = await http
           .get(uri, headers: _headers(token))
           .timeout(const Duration(seconds: 20));
@@ -35,7 +35,8 @@ class RiderCustodyScanService {
       return const AuthApiResult(
         success: false,
         status: 'network_error',
-        message: 'Unable to verify this parcel. Check your connection and try again.',
+        message:
+            'Unable to verify this parcel. Check your connection and try again.',
       );
     }
   }

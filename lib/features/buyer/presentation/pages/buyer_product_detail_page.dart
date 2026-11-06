@@ -27,8 +27,7 @@ class BuyerProductDetailPage extends StatefulWidget {
   final ValueChanged<int>? onCartCountChanged;
 
   @override
-  State<BuyerProductDetailPage> createState() =>
-      _BuyerProductDetailPageState();
+  State<BuyerProductDetailPage> createState() => _BuyerProductDetailPageState();
 }
 
 class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
@@ -170,7 +169,9 @@ class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
         ..showSnackBar(
           SnackBar(
             behavior: SnackBarBehavior.floating,
-            content: Text(liked ? 'Added to My Likes' : 'Removed from My Likes'),
+            content: Text(
+              liked ? 'Added to My Likes' : 'Removed from My Likes',
+            ),
           ),
         );
     } on BuyerCatalogException catch (error) {
@@ -243,11 +244,8 @@ class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
               child: CircularProgressIndicator(color: AppColors.teal),
             )
           : _error != null
-              ? _ProductErrorState(
-                  message: _error!.message,
-                  onRetry: _loadProduct,
-                )
-              : _buildProductBody(),
+          ? _ProductErrorState(message: _error!.message, onRetry: _loadProduct)
+          : _buildProductBody(),
       bottomNavigationBar: !_loading && _error == null && _detail != null
           ? _ProductActionBar(
               stock: _availableStock,
@@ -294,9 +292,11 @@ class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
             currentIndex: _galleryIndex,
             onPageChanged: (index) => setState(() => _galleryIndex = index),
             onSelect: (index) {
-              _galleryController.animateToPage(index,
+              _galleryController.animateToPage(
+                index,
                 duration: const Duration(milliseconds: 230),
-                curve: Curves.easeOutCubic);
+                curve: Curves.easeOutCubic,
+              );
               setState(() => _galleryIndex = index);
             },
           ),
@@ -612,7 +612,9 @@ class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
       ..showSnackBar(
         const SnackBar(
           behavior: SnackBarBehavior.floating,
-          content: Text('Seller chat connection will follow the shared web messaging API.'),
+          content: Text(
+            'Seller chat connection will follow the shared web messaging API.',
+          ),
         ),
       );
   }
@@ -620,8 +622,13 @@ class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
 
 /// A single swipeable gallery for photos and videos, with consistent thumbnails.
 class _GallerySection extends StatelessWidget {
-  const _GallerySection({required this.media, required this.controller,
-    required this.currentIndex, required this.onPageChanged, required this.onSelect});
+  const _GallerySection({
+    required this.media,
+    required this.controller,
+    required this.currentIndex,
+    required this.onPageChanged,
+    required this.onSelect,
+  });
   final List<BuyerMediaItem> media;
   final PageController controller;
   final int currentIndex;
@@ -631,56 +638,99 @@ class _GallerySection extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     color: Colors.white,
-    child: Column(children: [
-      AspectRatio(aspectRatio: 1.05, child: PageView.builder(
-        controller: controller,
-        itemCount: media.length,
-        onPageChanged: onPageChanged,
-        itemBuilder: (context, index) {
-          final item = media[index];
-          if (item.isVideo) {
-            return ShopHopVideoPlayer(
-              key: ValueKey(item.url), url: item.url,
-              active: index == currentIndex,
-            );
-          }
-          if (item.url.isEmpty) {
-            return const _GalleryFallback();
-          }
-          return Image.network(item.url, fit: BoxFit.contain,
-            loadingBuilder: (context, child, progress) =>
-              progress == null ? child : const _GalleryFallback(showLoader: true),
-            errorBuilder: (_, __, ___) => const _GalleryFallback());
-        },
-      )),
-      if (media.length > 1)
-        SizedBox(height: 92, child: ListView.separated(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          scrollDirection: Axis.horizontal,
-          itemCount: media.length,
-          separatorBuilder: (_, __) => const SizedBox(width: 8),
-          itemBuilder: (context, index) {
-            final item = media[index];
-            final active = index == currentIndex;
-            return InkWell(
-              onTap: () => onSelect(index),
-              borderRadius: BorderRadius.circular(10),
-              child: Container(width: 72, height: 72,
-                decoration: BoxDecoration(borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: active ? AppColors.tealDark : const Color(0xFFDFE5E9), width: active ? 2.5 : 1)),
-                clipBehavior: Clip.antiAlias,
-                child: item.isVideo
-                  ? const ColoredBox(color: AppColors.navy,
-                      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                        Icon(Icons.play_circle_fill_rounded, color: Colors.white, size: 25),
-                        Text('VIDEO', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold))]))
-                  : Image.network(item.url, fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const Icon(Icons.image_not_supported_outlined)),
-              ),
-            );
-          },
-        )),
-    ]),
+    child: Column(
+      children: [
+        AspectRatio(
+          aspectRatio: 1.05,
+          child: PageView.builder(
+            controller: controller,
+            itemCount: media.length,
+            onPageChanged: onPageChanged,
+            itemBuilder: (context, index) {
+              final item = media[index];
+              if (item.isVideo) {
+                return ShopHopVideoPlayer(
+                  key: ValueKey(item.url),
+                  url: item.url,
+                  active: index == currentIndex,
+                );
+              }
+              if (item.url.isEmpty) {
+                return const _GalleryFallback();
+              }
+              return Image.network(
+                item.url,
+                fit: BoxFit.contain,
+                loadingBuilder: (context, child, progress) => progress == null
+                    ? child
+                    : const _GalleryFallback(showLoader: true),
+                errorBuilder: (_, __, ___) => const _GalleryFallback(),
+              );
+            },
+          ),
+        ),
+        if (media.length > 1)
+          SizedBox(
+            height: 92,
+            child: ListView.separated(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              scrollDirection: Axis.horizontal,
+              itemCount: media.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                final item = media[index];
+                final active = index == currentIndex;
+                return InkWell(
+                  onTap: () => onSelect(index),
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: active
+                            ? AppColors.tealDark
+                            : const Color(0xFFDFE5E9),
+                        width: active ? 2.5 : 1,
+                      ),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: item.isVideo
+                        ? const ColoredBox(
+                            color: AppColors.navy,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.play_circle_fill_rounded,
+                                  color: Colors.white,
+                                  size: 25,
+                                ),
+                                Text(
+                                  'VIDEO',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : Image.network(
+                            item.url,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) =>
+                                const Icon(Icons.image_not_supported_outlined),
+                          ),
+                  ),
+                );
+              },
+            ),
+          ),
+      ],
+    ),
   );
 }
 
@@ -883,35 +933,37 @@ class _VariantSelector extends StatelessWidget {
     return Wrap(
       spacing: 8,
       runSpacing: 8,
-      children: variants.map((variant) {
-        final isSelected = selected?.id == variant.id;
-        return ChoiceChip(
-          selected: isSelected,
-          onSelected: variant.inStock ? (_) => onSelected(variant) : null,
-          showCheckmark: false,
-          label: Text(
-            variant.label.isNotEmpty ? variant.label : variant.name,
-          ),
-          selectedColor: AppColors.tealLight,
-          disabledColor: const Color(0xFFF0F1F2),
-          backgroundColor: Colors.white,
-          side: BorderSide(
-            color: isSelected ? AppColors.teal : const Color(0xFFDDE3E6),
-          ),
-          labelStyle: TextStyle(
-            color: !variant.inStock
-                ? const Color(0xFFADB4BB)
-                : isSelected
+      children: variants
+          .map((variant) {
+            final isSelected = selected?.id == variant.id;
+            return ChoiceChip(
+              selected: isSelected,
+              onSelected: variant.inStock ? (_) => onSelected(variant) : null,
+              showCheckmark: false,
+              label: Text(
+                variant.label.isNotEmpty ? variant.label : variant.name,
+              ),
+              selectedColor: AppColors.tealLight,
+              disabledColor: const Color(0xFFF0F1F2),
+              backgroundColor: Colors.white,
+              side: BorderSide(
+                color: isSelected ? AppColors.teal : const Color(0xFFDDE3E6),
+              ),
+              labelStyle: TextStyle(
+                color: !variant.inStock
+                    ? const Color(0xFFADB4BB)
+                    : isSelected
                     ? AppColors.tealDark
                     : AppColors.navy,
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        );
-      }).toList(growable: false),
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            );
+          })
+          .toList(growable: false),
     );
   }
 }
@@ -938,9 +990,7 @@ class _QuantityButton extends StatelessWidget {
         child: Icon(
           icon,
           size: 18,
-          color: onTap == null
-              ? const Color(0xFFB9C0C6)
-              : AppColors.navy,
+          color: onTap == null ? const Color(0xFFB9C0C6) : AppColors.navy,
         ),
       ),
     );
@@ -1204,10 +1254,7 @@ class _ReviewCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               'Variation: ${review.variant}',
-              style: const TextStyle(
-                color: Color(0xFF8B949D),
-                fontSize: 9.5,
-              ),
+              style: const TextStyle(color: Color(0xFF8B949D), fontSize: 9.5),
             ),
           ],
           if (review.comment.isNotEmpty) ...[
@@ -1386,15 +1433,14 @@ class _ProductErrorState extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Color(0xFF737D89),
-                height: 1.4,
-              ),
+              style: const TextStyle(color: Color(0xFF737D89), height: 1.4),
             ),
             const SizedBox(height: 16),
             FilledButton.icon(
               onPressed: onRetry,
-              style: FilledButton.styleFrom(backgroundColor: AppColors.tealDark),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.tealDark,
+              ),
               icon: const Icon(Icons.refresh_rounded),
               label: const Text('Try again'),
             ),

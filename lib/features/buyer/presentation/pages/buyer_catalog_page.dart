@@ -185,11 +185,14 @@ class _BuyerCatalogPageState extends State<BuyerCatalogPage> {
       );
       if (!mounted) return;
 
-      final currentIndex = _products.indexWhere((item) => item.id == product.id);
+      final currentIndex = _products.indexWhere(
+        (item) => item.id == product.id,
+      );
       if (currentIndex >= 0) {
         setState(() {
-          _products[currentIndex] =
-              _products[currentIndex].copyWith(isLiked: liked);
+          _products[currentIndex] = _products[currentIndex].copyWith(
+            isLiked: liked,
+          );
         });
       }
 
@@ -198,7 +201,9 @@ class _BuyerCatalogPageState extends State<BuyerCatalogPage> {
         ..showSnackBar(
           SnackBar(
             behavior: SnackBarBehavior.floating,
-            content: Text(liked ? 'Added to My Likes' : 'Removed from My Likes'),
+            content: Text(
+              liked ? 'Added to My Likes' : 'Removed from My Likes',
+            ),
           ),
         );
     } on BuyerCatalogException catch (error) {
@@ -208,7 +213,9 @@ class _BuyerCatalogPageState extends State<BuyerCatalogPage> {
         return;
       }
 
-      final currentIndex = _products.indexWhere((item) => item.id == product.id);
+      final currentIndex = _products.indexWhere(
+        (item) => item.id == product.id,
+      );
       if (currentIndex >= 0) {
         setState(() => _products[currentIndex] = previous);
       }
@@ -308,32 +315,33 @@ class _BuyerCatalogPageState extends State<BuyerCatalogPage> {
                     final columns = width >= 1050
                         ? 5
                         : width >= 780
-                            ? 4
-                            : width >= 560
-                                ? 3
-                                : 2;
+                        ? 4
+                        : width >= 560
+                        ? 3
+                        : 2;
 
                     return SliverGrid(
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: columns,
                         crossAxisSpacing: 10,
                         mainAxisSpacing: 10,
-                        childAspectRatio: width < 340 ? 0.50 : width < 430 ? 0.59 : 0.65,
+                        childAspectRatio: width < 340
+                            ? 0.50
+                            : width < 430
+                            ? 0.59
+                            : 0.65,
                       ),
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          final product = _products[index];
-                          return BuyerProductCard(
-                            product: product,
-                            onTap: () {
-                              FocusScope.of(context).unfocus();
-                              widget.onOpenProduct(product);
-                            },
-                            onLike: () => _toggleLike(product),
-                          );
-                        },
-                        childCount: _products.length,
-                      ),
+                      delegate: SliverChildBuilderDelegate((context, index) {
+                        final product = _products[index];
+                        return BuyerProductCard(
+                          product: product,
+                          onTap: () {
+                            FocusScope.of(context).unfocus();
+                            widget.onOpenProduct(product);
+                          },
+                          onLike: () => _toggleLike(product),
+                        );
+                      }, childCount: _products.length),
                     );
                   },
                 ),
@@ -351,19 +359,19 @@ class _BuyerCatalogPageState extends State<BuyerCatalogPage> {
                             ),
                           )
                         : (_pagination?.hasMore ?? false)
-                            ? OutlinedButton.icon(
-                                onPressed: () => _loadProducts(reset: false),
-                                icon: const Icon(Icons.expand_more_rounded),
-                                label: const Text('Load more'),
-                              )
-                            : Text(
-                                'You reached the end of the catalog.',
-                                style: TextStyle(
-                                  color: AppColors.navy.withValues(alpha: 0.46),
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                        ? OutlinedButton.icon(
+                            onPressed: () => _loadProducts(reset: false),
+                            icon: const Icon(Icons.expand_more_rounded),
+                            label: const Text('Load more'),
+                          )
+                        : Text(
+                            'You reached the end of the catalog.',
+                            style: TextStyle(
+                              color: AppColors.navy.withValues(alpha: 0.46),
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                   ),
                 ),
               ),
@@ -373,7 +381,6 @@ class _BuyerCatalogPageState extends State<BuyerCatalogPage> {
       ),
     );
   }
-
 }
 
 class _CatalogHeader extends StatelessWidget {
@@ -512,7 +519,11 @@ class _SortHeaderDelegate extends SliverPersistentHeaderDelegate {
   double get maxExtent => 78;
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
     return Material(
       color: Colors.white,
       elevation: overlapsContent ? 2 : 0,
@@ -605,15 +616,14 @@ class _CatalogErrorState extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Color(0xFF737D89),
-                height: 1.4,
-              ),
+              style: const TextStyle(color: Color(0xFF737D89), height: 1.4),
             ),
             const SizedBox(height: 16),
             FilledButton.icon(
               onPressed: onRetry,
-              style: FilledButton.styleFrom(backgroundColor: AppColors.tealDark),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.tealDark,
+              ),
               icon: const Icon(Icons.refresh_rounded),
               label: const Text('Try again'),
             ),
@@ -664,13 +674,10 @@ class _EmptyCatalogState extends StatelessWidget {
               hasQuery
                   ? 'Try another keyword${categoryName == null ? '' : ' inside $categoryName'}.'
                   : categoryName == null
-                      ? 'Approved seller products will appear here automatically.'
-                      : 'There are no approved products under $categoryName yet.',
+                  ? 'Approved seller products will appear here automatically.'
+                  : 'There are no approved products under $categoryName yet.',
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Color(0xFF7A8490),
-                height: 1.4,
-              ),
+              style: const TextStyle(color: Color(0xFF7A8490), height: 1.4),
             ),
             if (hasQuery) ...[
               const SizedBox(height: 14),

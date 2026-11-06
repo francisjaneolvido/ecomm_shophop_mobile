@@ -19,34 +19,25 @@ class PersonalDetailsStep extends StatelessWidget {
     this.minimumAge,
   });
 
-  final TextEditingController
-      firstNameController;
+  final TextEditingController firstNameController;
 
-  final TextEditingController
-      lastNameController;
+  final TextEditingController lastNameController;
 
-  final TextEditingController
-      middleInitialController;
+  final TextEditingController middleInitialController;
 
-  final TextEditingController
-      emailController;
+  final TextEditingController emailController;
 
-  final TextEditingController
-      contactController;
+  final TextEditingController contactController;
 
-  final TextEditingController
-      birthdayController;
+  final TextEditingController birthdayController;
 
-  final TextEditingController
-      ageController;
+  final TextEditingController ageController;
 
   final String? selectedSex;
 
-  final ValueChanged<String?>
-      onSexChanged;
+  final ValueChanged<String?> onSexChanged;
 
-  final VoidCallback
-      onBirthdayTap;
+  final VoidCallback onBirthdayTap;
 
   /// Optional age rule supplied by the registration flow. Buyer and Seller
   /// use 18 to mirror the Laravel web validation contract, while Rider can
@@ -54,38 +45,24 @@ class PersonalDetailsStep extends StatelessWidget {
   final int? minimumAge;
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
+  Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionHeader(),
 
-        const SizedBox(
-          height: 24,
-        ),
+        const SizedBox(height: 24),
 
         _buildTextField(
-          controller:
-              firstNameController,
-          label:
-              'First name',
-          hint:
-              'Enter your first name',
-          icon:
-              Icons.person_outline_rounded,
-          textInputAction:
-              TextInputAction.next,
-          textCapitalization:
-              TextCapitalization.words,
-          autofillHints: const [
-            AutofillHints.givenName,
-          ],
+          controller: firstNameController,
+          label: 'First name',
+          hint: 'Enter your first name',
+          icon: Icons.person_outline_rounded,
+          textInputAction: TextInputAction.next,
+          textCapitalization: TextCapitalization.words,
+          autofillHints: const [AutofillHints.givenName],
           validator: (value) {
-            final firstName =
-                value?.trim() ?? '';
+            final firstName = value?.trim() ?? '';
 
             if (firstName.isEmpty) {
               return 'First name is required.';
@@ -99,29 +76,18 @@ class PersonalDetailsStep extends StatelessWidget {
           },
         ),
 
-        const SizedBox(
-          height: 18,
-        ),
+        const SizedBox(height: 18),
 
         _buildTextField(
-          controller:
-              lastNameController,
-          label:
-              'Last name',
-          hint:
-              'Enter your last name',
-          icon:
-              Icons.badge_outlined,
-          textInputAction:
-              TextInputAction.next,
-          textCapitalization:
-              TextCapitalization.words,
-          autofillHints: const [
-            AutofillHints.familyName,
-          ],
+          controller: lastNameController,
+          label: 'Last name',
+          hint: 'Enter your last name',
+          icon: Icons.badge_outlined,
+          textInputAction: TextInputAction.next,
+          textCapitalization: TextCapitalization.words,
+          autofillHints: const [AutofillHints.familyName],
           validator: (value) {
-            final lastName =
-                value?.trim() ?? '';
+            final lastName = value?.trim() ?? '';
 
             if (lastName.isEmpty) {
               return 'Last name is required.';
@@ -135,49 +101,28 @@ class PersonalDetailsStep extends StatelessWidget {
           },
         ),
 
-        const SizedBox(
-          height: 18,
-        ),
+        const SizedBox(height: 18),
 
         _buildTextField(
-          controller:
-              middleInitialController,
-          label:
-              'Middle initial',
-          hint:
-              'e.g. M.',
-          icon:
-              Icons.short_text_rounded,
-          textInputAction:
-              TextInputAction.next,
-          textCapitalization:
-              TextCapitalization.characters,
-          requiredField:
-              false,
+          controller: middleInitialController,
+          label: 'Middle initial',
+          hint: 'e.g. M.',
+          icon: Icons.short_text_rounded,
+          textInputAction: TextInputAction.next,
+          textCapitalization: TextCapitalization.characters,
+          requiredField: false,
           inputFormatters: [
-            FilteringTextInputFormatter.allow(
-              RegExp(
-                r'[a-zA-Z.]',
-              ),
-            ),
-            LengthLimitingTextInputFormatter(
-              2,
-            ),
+            FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z.]')),
+            LengthLimitingTextInputFormatter(2),
           ],
           validator: (value) {
-            final middle =
-                value?.trim() ?? '';
+            final middle = value?.trim() ?? '';
 
             if (middle.isEmpty) {
               return null;
             }
 
-            final valid =
-                RegExp(
-              r'^[A-Za-z]\.?$',
-            ).hasMatch(
-              middle,
-            );
+            final valid = RegExp(r'^[A-Za-z]\.?$').hasMatch(middle);
 
             if (!valid) {
               return 'Use an initial like M or M.';
@@ -187,47 +132,30 @@ class PersonalDetailsStep extends StatelessWidget {
           },
         ),
 
-        const SizedBox(
-          height: 18,
-        ),
+        const SizedBox(height: 18),
 
         _buildSexField(),
 
-        const SizedBox(
-          height: 18,
-        ),
+        const SizedBox(height: 18),
 
         _buildTextField(
-          controller:
-              emailController,
-          label:
-              'Email address',
-          hint:
-              'you@example.com',
-          icon:
-              Icons.mail_outline_rounded,
-          keyboardType:
-              TextInputType.emailAddress,
-          textInputAction:
-              TextInputAction.next,
-          autofillHints: const [
-            AutofillHints.email,
-          ],
+          controller: emailController,
+          label: 'Email address',
+          hint: 'you@example.com',
+          icon: Icons.mail_outline_rounded,
+          keyboardType: TextInputType.emailAddress,
+          textInputAction: TextInputAction.next,
+          autofillHints: const [AutofillHints.email],
           validator: (value) {
-            final email =
-                value?.trim() ?? '';
+            final email = value?.trim() ?? '';
 
             if (email.isEmpty) {
               return 'Email address is required.';
             }
 
-            final emailPattern =
-                RegExp(
-              r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
-            );
+            final emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
 
-            if (!emailPattern
-                .hasMatch(email)) {
+            if (!emailPattern.hasMatch(email)) {
               return 'Enter a valid email address.';
             }
 
@@ -235,44 +163,28 @@ class PersonalDetailsStep extends StatelessWidget {
           },
         ),
 
-        const SizedBox(
-          height: 18,
-        ),
+        const SizedBox(height: 18),
 
         _buildTextField(
-          controller:
-              contactController,
-          label:
-              'Contact number',
-          hint:
-              '09XXXXXXXXX',
-          icon:
-              Icons.phone_outlined,
-          keyboardType:
-              TextInputType.phone,
-          textInputAction:
-              TextInputAction.next,
-          autofillHints: const [
-            AutofillHints.telephoneNumber,
-          ],
+          controller: contactController,
+          label: 'Contact number',
+          hint: '09XXXXXXXXX',
+          icon: Icons.phone_outlined,
+          keyboardType: TextInputType.phone,
+          textInputAction: TextInputAction.next,
+          autofillHints: const [AutofillHints.telephoneNumber],
           inputFormatters: [
-            FilteringTextInputFormatter
-                .digitsOnly,
-            LengthLimitingTextInputFormatter(
-              11,
-            ),
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(11),
           ],
           validator: (value) {
-            final contact =
-                value?.trim() ?? '';
+            final contact = value?.trim() ?? '';
 
             if (contact.isEmpty) {
               return 'Contact number is required.';
             }
 
-            if (!RegExp(
-              r'^09\d{9}$',
-            ).hasMatch(contact)) {
+            if (!RegExp(r'^09\d{9}$').hasMatch(contact)) {
               return 'Use an 11-digit number starting with 09.';
             }
 
@@ -280,76 +192,54 @@ class PersonalDetailsStep extends StatelessWidget {
           },
         ),
 
-        const SizedBox(
-          height: 18,
-        ),
+        const SizedBox(height: 18),
 
         _buildBirthdayAndAge(),
 
-        const SizedBox(
-          height: 6,
-        ),
+        const SizedBox(height: 6),
       ],
     );
   }
 
   Widget _buildSectionHeader() {
     return Row(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
           width: 44,
           height: 44,
-          decoration:
-              BoxDecoration(
-            color:
-                AppColors.tealLight,
-            borderRadius:
-                BorderRadius.circular(
-              14,
-            ),
+          decoration: BoxDecoration(
+            color: AppColors.tealLight,
+            borderRadius: BorderRadius.circular(14),
           ),
           child: const Icon(
             Icons.person_outline_rounded,
-            color:
-                AppColors.tealDark,
+            color: AppColors.tealDark,
             size: 21,
           ),
         ),
 
-        const SizedBox(
-          width: 13,
-        ),
+        const SizedBox(width: 13),
 
         Expanded(
           child: Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
                 'Personal information',
                 style: TextStyle(
-                  color:
-                      AppColors.navy,
+                  color: AppColors.navy,
                   fontSize: 16,
-                  fontWeight:
-                      FontWeight.w700,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
 
-              const SizedBox(
-                height: 4,
-              ),
+              const SizedBox(height: 4),
 
               Text(
                 'Tell us a little about yourself.',
                 style: TextStyle(
-                  color: AppColors
-                      .navy
-                      .withValues(
-                    alpha: 0.45,
-                  ),
+                  color: AppColors.navy.withValues(alpha: 0.45),
                   fontSize: 12,
                   height: 1.4,
                 ),
@@ -363,67 +253,34 @@ class PersonalDetailsStep extends StatelessWidget {
 
   Widget _buildSexField() {
     return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _label(
-          'Sex',
-          required: true,
-        ),
+        _label('Sex', required: true),
 
-        const SizedBox(
-          height: 8,
-        ),
+        const SizedBox(height: 8),
 
-        DropdownButtonFormField<
-            String>(
-          initialValue:
-              selectedSex,
-          isExpanded:
-              true,
-          icon:
-              const Icon(
-            Icons
-                .keyboard_arrow_down_rounded,
-            color:
-                AppColors.navy,
+        DropdownButtonFormField<String>(
+          initialValue: selectedSex,
+          isExpanded: true,
+          icon: const Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: AppColors.navy,
           ),
-          decoration:
-              _inputDecoration(
-            hint:
-                'Select sex',
-            icon:
-                Icons.groups_2_outlined,
+          decoration: _inputDecoration(
+            hint: 'Select sex',
+            icon: Icons.groups_2_outlined,
           ),
-          items:
-              const [
+          items: const [
+            DropdownMenuItem(value: 'Male', child: Text('Male')),
+            DropdownMenuItem(value: 'Female', child: Text('Female')),
             DropdownMenuItem(
-              value:
-                  'Male',
-              child:
-                  Text('Male'),
-            ),
-            DropdownMenuItem(
-              value:
-                  'Female',
-              child:
-                  Text('Female'),
-            ),
-            DropdownMenuItem(
-              value:
-                  'Prefer not to say',
-              child:
-                  Text(
-                'Prefer not to say',
-              ),
+              value: 'Prefer not to say',
+              child: Text('Prefer not to say'),
             ),
           ],
-          onChanged:
-              onSexChanged,
-          validator:
-              (value) {
-            if (value == null ||
-                value.isEmpty) {
+          onChanged: onSexChanged,
+          validator: (value) {
+            if (value == null || value.isEmpty) {
               return 'Please select your sex.';
             }
 
@@ -436,60 +293,38 @@ class PersonalDetailsStep extends StatelessWidget {
 
   Widget _buildBirthdayAndAge() {
     return Row(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
           flex: 3,
           child: Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _label(
-                'Birthday',
-                required: true,
-              ),
+              _label('Birthday', required: true),
 
-              const SizedBox(
-                height: 8,
-              ),
+              const SizedBox(height: 8),
 
               TextFormField(
-                controller:
-                    birthdayController,
+                controller: birthdayController,
                 readOnly: true,
-                onTap:
-                    onBirthdayTap,
-                style:
-                    const TextStyle(
-                  color:
-                      AppColors.navy,
+                onTap: onBirthdayTap,
+                style: const TextStyle(
+                  color: AppColors.navy,
                   fontSize: 13,
-                  fontWeight:
-                      FontWeight.w500,
+                  fontWeight: FontWeight.w500,
                 ),
                 decoration:
                     _inputDecoration(
-                  hint:
-                      'Select date',
-                  icon:
-                      Icons
-                          .calendar_month_outlined,
-                ).copyWith(
-                  suffixIcon:
-                      const Icon(
-                    Icons
-                        .keyboard_arrow_down_rounded,
-                    color:
-                        AppColors.navy,
-                  ),
-                ),
-                validator:
-                    (value) {
-                  if (value == null ||
-                      value
-                          .trim()
-                          .isEmpty) {
+                      hint: 'Select date',
+                      icon: Icons.calendar_month_outlined,
+                    ).copyWith(
+                      suffixIcon: const Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        color: AppColors.navy,
+                      ),
+                    ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
                     return 'Birthday is required.';
                   }
 
@@ -504,8 +339,8 @@ class PersonalDetailsStep extends StatelessWidget {
                     var age = today.year - birthday.year;
                     final birthdayNotReached =
                         today.month < birthday.month ||
-                            (today.month == birthday.month &&
-                                today.day < birthday.day);
+                        (today.month == birthday.month &&
+                            today.day < birthday.day);
                     if (birthdayNotReached) age--;
 
                     if (age < minimum) {
@@ -520,50 +355,30 @@ class PersonalDetailsStep extends StatelessWidget {
           ),
         ),
 
-        const SizedBox(
-          width: 12,
-        ),
+        const SizedBox(width: 12),
 
         Expanded(
           flex: 2,
           child: Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _label(
-                'Age',
-              ),
+              _label('Age'),
 
-              const SizedBox(
-                height: 8,
-              ),
+              const SizedBox(height: 8),
 
               TextFormField(
-                controller:
-                    ageController,
-                readOnly:
-                    true,
-                style:
-                    const TextStyle(
-                  color:
-                      AppColors.navy,
+                controller: ageController,
+                readOnly: true,
+                style: const TextStyle(
+                  color: AppColors.navy,
                   fontSize: 13,
-                  fontWeight:
-                      FontWeight.w600,
+                  fontWeight: FontWeight.w600,
                 ),
-                textAlign:
-                    TextAlign.center,
-                decoration:
-                    _inputDecoration(
-                  hint:
-                      '--',
-                  icon:
-                      Icons
-                          .cake_outlined,
-                ).copyWith(
-                  fillColor:
-                      AppColors.grayBg,
-                ),
+                textAlign: TextAlign.center,
+                decoration: _inputDecoration(
+                  hint: '--',
+                  icon: Icons.cake_outlined,
+                ).copyWith(fillColor: AppColors.grayBg),
               ),
             ],
           ),
@@ -573,105 +388,59 @@ class PersonalDetailsStep extends StatelessWidget {
   }
 
   Widget _buildTextField({
-    required TextEditingController
-        controller,
+    required TextEditingController controller,
     required String label,
     required String hint,
     required IconData icon,
-    required String? Function(
-      String?,
-    ) validator,
+    required String? Function(String?) validator,
     TextInputType? keyboardType,
     TextInputAction? textInputAction,
-    TextCapitalization
-        textCapitalization =
-        TextCapitalization.none,
-    List<TextInputFormatter>?
-        inputFormatters,
-    List<String>?
-        autofillHints,
+    TextCapitalization textCapitalization = TextCapitalization.none,
+    List<TextInputFormatter>? inputFormatters,
+    List<String>? autofillHints,
     bool requiredField = true,
   }) {
     return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _label(
-          label,
-          required:
-              requiredField,
-        ),
+        _label(label, required: requiredField),
 
-        const SizedBox(
-          height: 8,
-        ),
+        const SizedBox(height: 8),
 
         TextFormField(
-          controller:
-              controller,
-          keyboardType:
-              keyboardType,
-          textInputAction:
-              textInputAction,
-          textCapitalization:
-              textCapitalization,
-          inputFormatters:
-              inputFormatters,
-          autofillHints:
-              autofillHints,
-          validator:
-              validator,
-          style:
-              const TextStyle(
-            color:
-                AppColors.navy,
+          controller: controller,
+          keyboardType: keyboardType,
+          textInputAction: textInputAction,
+          textCapitalization: textCapitalization,
+          inputFormatters: inputFormatters,
+          autofillHints: autofillHints,
+          validator: validator,
+          style: const TextStyle(
+            color: AppColors.navy,
             fontSize: 13,
-            fontWeight:
-                FontWeight.w500,
+            fontWeight: FontWeight.w500,
           ),
-          decoration:
-              _inputDecoration(
-            hint:
-                hint,
-            icon:
-                icon,
-          ),
+          decoration: _inputDecoration(hint: hint, icon: icon),
         ),
       ],
     );
   }
 
-  Widget _label(
-    String label, {
-    bool required = false,
-  }) {
+  Widget _label(String label, {bool required = false}) {
     return RichText(
       text: TextSpan(
-        style:
-            const TextStyle(
-          color:
-              AppColors.navy,
+        style: const TextStyle(
+          color: AppColors.navy,
           fontSize: 12,
-          fontWeight:
-              FontWeight.w600,
+          fontWeight: FontWeight.w600,
         ),
         children: [
-          TextSpan(
-            text:
-                label,
-          ),
+          TextSpan(text: label),
 
           if (required)
             const TextSpan(
-              text:
-                  ' *',
-              style:
-                  TextStyle(
-                color:
-                    Color(
-                  0xFFDB5757,
-                ),
-              ),
+              text: ' *',
+              style: TextStyle(color: Color(0xFFDB5757)),
             ),
         ],
       ),
@@ -683,105 +452,46 @@ class PersonalDetailsStep extends StatelessWidget {
     required IconData icon,
   }) {
     return InputDecoration(
-      hintText:
-          hint,
+      hintText: hint,
 
-      hintStyle:
-          TextStyle(
-        color:
-            AppColors.navy
-                .withValues(
-          alpha: 0.27,
-        ),
+      hintStyle: TextStyle(
+        color: AppColors.navy.withValues(alpha: 0.27),
         fontSize: 13,
       ),
 
-      prefixIcon:
-          Icon(
+      prefixIcon: Icon(
         icon,
         size: 19,
-        color:
-            AppColors.navy
-                .withValues(
-          alpha: 0.35,
-        ),
+        color: AppColors.navy.withValues(alpha: 0.35),
       ),
 
-      filled:
-          true,
+      filled: true,
 
-      fillColor:
-          Colors.white,
+      fillColor: Colors.white,
 
-      contentPadding:
-          const EdgeInsets.symmetric(
-        horizontal: 14,
-        vertical: 15,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
+
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: AppColors.grayBorder),
       ),
 
-      enabledBorder:
-          OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(
-          14,
-        ),
-        borderSide:
-            const BorderSide(
-          color:
-              AppColors.grayBorder,
-        ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: AppColors.teal, width: 1.5),
       ),
 
-      focusedBorder:
-          OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(
-          14,
-        ),
-        borderSide:
-            const BorderSide(
-          color:
-              AppColors.teal,
-          width: 1.5,
-        ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Color(0xFFDB5757)),
       ),
 
-      errorBorder:
-          OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(
-          14,
-        ),
-        borderSide:
-            const BorderSide(
-          color:
-              Color(
-            0xFFDB5757,
-          ),
-        ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Color(0xFFDB5757), width: 1.5),
       ),
 
-      focusedErrorBorder:
-          OutlineInputBorder(
-        borderRadius:
-            BorderRadius.circular(
-          14,
-        ),
-        borderSide:
-            const BorderSide(
-          color:
-              Color(
-            0xFFDB5757,
-          ),
-          width: 1.5,
-        ),
-      ),
-
-      errorStyle:
-          const TextStyle(
-        fontSize: 10,
-        height: 1.3,
-      ),
+      errorStyle: const TextStyle(fontSize: 10, height: 1.3),
     );
   }
 }

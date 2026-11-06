@@ -42,7 +42,9 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
 
   Future<void> _loadSession() async {
     try {
-      final session = await AuthSessionService.readSession().timeout(const Duration(seconds: 3));
+      final session = await AuthSessionService.readSession().timeout(
+        const Duration(seconds: 3),
+      );
 
       if (!mounted) return;
 
@@ -69,7 +71,9 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
 
   Future<void> _refreshProfile(String token) async {
     try {
-      final result = await AuthService.me(token: token).timeout(const Duration(seconds: 8));
+      final result = await AuthService.me(
+        token: token,
+      ).timeout(const Duration(seconds: 8));
       if (!mounted) return;
 
       if (!result.success) {

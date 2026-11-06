@@ -28,8 +28,7 @@ class SellerVerificationStep extends StatelessWidget {
         SellerUi.sectionHeader(
           icon: Icons.verified_user_outlined,
           title: 'Verify your seller identity',
-          subtitle:
-              'Upload the documents required for seller account review.',
+          subtitle: 'Upload the documents required for seller account review.',
         ),
         const SizedBox(height: 24),
         SellerDocumentPicker(
@@ -54,9 +53,7 @@ class SellerVerificationStep extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppColors.tealLight.withValues(alpha: 0.45),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: AppColors.teal.withValues(alpha: 0.14),
-            ),
+            border: Border.all(color: AppColors.teal.withValues(alpha: 0.14)),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,

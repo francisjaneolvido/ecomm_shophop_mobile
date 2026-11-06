@@ -30,7 +30,8 @@ class _BuyerCheckoutPageState extends State<BuyerCheckoutPage> {
   final Map<int, int> _logisticsPartners = <int, int>{};
   final Map<int, String> _notes = <int, String>{};
   String _paymentMethod = 'cod';
-  String _voucherCode = '';
+  final String _voucherCode = ''; // Legacy field: new checkouts use _sellerVouchers instead.
+  final Map<int, String> _sellerVouchers = <int, String>{};
   String _merchandiseVoucherCode = '';
   String _shippingVoucherCode = '';
   bool _loading = true;
@@ -84,6 +85,7 @@ class _BuyerCheckoutPageState extends State<BuyerCheckoutPage> {
     Map<int, int>? logisticsPartners,
     String? paymentMethod,
     String? voucherCode,
+    Map<int, String>? sellerVouchers,
     String? merchandiseVoucherCode,
     String? shippingVoucherCode,
     bool showBusy = true,
@@ -97,6 +99,7 @@ class _BuyerCheckoutPageState extends State<BuyerCheckoutPage> {
         logisticsPartners: logisticsPartners ?? _logisticsPartners,
         paymentMethod: paymentMethod ?? _paymentMethod,
         voucherCode: voucherCode ?? _voucherCode,
+        sellerVouchers: sellerVouchers ?? _sellerVouchers,
         merchandiseVoucherCode: merchandiseVoucherCode ?? _merchandiseVoucherCode,
         shippingVoucherCode: shippingVoucherCode ?? _shippingVoucherCode,
       );
@@ -164,27 +167,27 @@ class _BuyerCheckoutPageState extends State<BuyerCheckoutPage> {
     if (preview == null) setState(() => _paymentMethod = previous);
   }
 
-  Future<void> _chooseVoucher() async {
+  Future<void> _chooseVoucher(int sellerId) async {
     final preview = _preview;
-    if (preview == null || _recalculating) return;
-
+    if (preview == null || _recalculating || _placingOrder) return;
+    final shopVouchers = preview.vouchers.where((voucher) => voucher.sellerId == sellerId).toList();
     final selected = await showModalBottomSheet<String?>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => _VoucherSheet(
-        vouchers: preview.vouchers,
-        selectedCode: _voucherCode,
+        vouchers: shopVouchers,
+        selectedCode: _sellerVouchers[sellerId] ?? '',
       ),
     );
-
     if (!mounted || selected == null) return;
     final candidate = selected == '__NONE__' ? '' : selected;
-    if (candidate == _voucherCode) return;
-
-    final updated = await _fetchPreview(voucherCode: candidate);
+    if (candidate == (_sellerVouchers[sellerId] ?? '')) return;
+    final next = Map<int, String>.from(_sellerVouchers);
+    if (candidate.isEmpty) { next.remove(sellerId); } else { next[sellerId] = candidate; }
+    final updated = await _fetchPreview(sellerVouchers: next);
     if (!mounted || updated == null) return;
-    setState(() => _voucherCode = candidate);
+    setState(() { _sellerVouchers..clear()..addAll(next); });
   }
 
   Future<void> _choosePlatformVouchers() async {
@@ -205,8 +208,18 @@ class _BuyerCheckoutPageState extends State<BuyerCheckoutPage> {
             TextField(controller: shipping, textCapitalization: TextCapitalization.characters,
               decoration: const InputDecoration(labelText: 'Free shipping code')),
             const SizedBox(height: 8),
-            Text('Available: ${_preview?.availablePlatformVouchers.map((v) => '${v.code} (${v.kind})').join(', ') ?? 'None'}',
-              style: const TextStyle(fontSize: 11)),
+            const Text('Available ShopHop vouchers (tap to select):', style: TextStyle(fontSize: 11)),
+            const SizedBox(height: 7),
+            Wrap(spacing: 6, runSpacing: 6, children: [
+              for (final voucher in (_preview?.availablePlatformVouchers ?? <BuyerCheckoutPlatformVoucherData>[]))
+                ActionChip(
+                  label: Text('${voucher.code} · ${voucher.type == 'percent' ? '${voucher.value.toStringAsFixed(0)}%' : '₱${voucher.value.toStringAsFixed(0)}'} ${voucher.kind}', style: const TextStyle(fontSize: 10)),
+                  onPressed: () {
+                    if (voucher.kind == 'shipping') { shipping.text = voucher.code; }
+                    else { merchandise.text = voucher.code; }
+                  },
+                ),
+            ]),
           ]),
         ),
         actions: [
@@ -237,7 +250,7 @@ class _BuyerCheckoutPageState extends State<BuyerCheckoutPage> {
     final missingCourier = preview.groups.any((group) =>
         group.logisticsOptions.isEmpty || _logisticsPartners[group.sellerId] == null);
     if (missingCourier) {
-      _showMessage('A courier is required. Check the delivery address in your Account, then refresh checkout.');
+      _showMessage('No courier with a valid delivery path is available for every shop. Check your delivery address, then refresh checkout.');
       return;
     }
 
@@ -272,6 +285,7 @@ class _BuyerCheckoutPageState extends State<BuyerCheckoutPage> {
         logisticsPartners: _logisticsPartners,
         paymentMethod: _paymentMethod,
         voucherCode: _voucherCode,
+        sellerVouchers: _sellerVouchers,
         merchandiseVoucherCode: _merchandiseVoucherCode,
         shippingVoucherCode: _shippingVoucherCode,
         notes: _notes,
@@ -421,16 +435,16 @@ class _BuyerCheckoutPageState extends State<BuyerCheckoutPage> {
               onEditAddress: _editDeliveryAddress,
               onNoteChanged: (value) => _notes[group.sellerId] = value,
             ),
+            _VoucherCard(
+              selectedCode: _sellerVouchers[group.sellerId] ?? '',
+              selectedDiscount: group.voucherDiscount + group.sellerShippingDiscount,
+              voucherCount: preview.vouchers.where((v) => v.sellerId == group.sellerId).length,
+              enabled: !_recalculating && !_placingOrder,
+              onTap: () => _chooseVoucher(group.sellerId),
+              shopName: group.shopName,
+            ),
             const SizedBox(height: 10),
           ],
-          _VoucherCard(
-            selectedCode: _voucherCode,
-            selectedDiscount: preview.summary.voucherDiscount,
-            voucherCount: preview.vouchers.length,
-            enabled: !_recalculating && !_placingOrder,
-            onTap: _chooseVoucher,
-          ),
-          const SizedBox(height: 10),
           _SurfaceCard(child: ListTile(
             contentPadding: const EdgeInsets.symmetric(horizontal: 10),
             leading: const Icon(Icons.discount_outlined, color: AppColors.tealDark),
@@ -782,7 +796,7 @@ class _CheckoutShopCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'Delivery unavailable. No approved courier serves both the seller pickup location and your selected delivery address. Shipping shown above is an estimate, not an available service.',
+                          'Delivery unavailable. No approved courier has both pickup/delivery coverage and a valid delivery path for this shop. Inter-center transfers require verified links. Shipping shown above is an estimate, not an available service.',
                           style: TextStyle(fontSize: 10.5, color: Color(0xFF8A4C00)),
                         ),
                         const SizedBox(height: 9),
@@ -952,8 +966,10 @@ class _VoucherCard extends StatelessWidget {
     required this.voucherCount,
     required this.enabled,
     required this.onTap,
+    required this.shopName,
   });
 
+  final String shopName;
   final String selectedCode;
   final double selectedDiscount;
   final int voucherCount;
@@ -987,8 +1003,8 @@ class _VoucherCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Shop Voucher',
+                    Text(
+                      'Shop Voucher · $shopName',
                       style: TextStyle(
                         color: AppColors.navy,
                         fontSize: 11,
@@ -1244,7 +1260,7 @@ class _VoucherSheet extends StatelessWidget {
         ),
         decoration: const BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,

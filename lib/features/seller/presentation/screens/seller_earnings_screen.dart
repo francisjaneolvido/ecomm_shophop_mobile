@@ -39,7 +39,10 @@ class _SellerEarningsScreenState extends State<SellerEarningsScreen> {
       await _logout(localOnly: true);
       return;
     }
-    setState(() { _busy = true; _email = session.email; });
+    setState(() {
+      _busy = true;
+      _email = session.email;
+    });
     final result = await SellerEarningsService.load(session.token);
     if (!mounted) return;
     if (result.statusCode == 401 || result.statusCode == 403) {
@@ -61,60 +64,149 @@ class _SellerEarningsScreenState extends State<SellerEarningsScreen> {
 
   Future<void> _logout({bool localOnly = false}) async {
     final session = await AuthSessionService.readSession();
-    if (!localOnly && session != null) await AuthService.logout(token: session.token);
+    if (!localOnly && session != null) {
+      await AuthService.logout(token: session.token);
+    }
     await AuthSessionService.clearSession();
     if (!mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => const LoginScreen()), (_) => false);
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (_) => false,
+    );
   }
 
   String _money(double v) => '₱${v.toStringAsFixed(2)}';
 
-  Widget _moneyCard(String label, double amount, {bool highlight = false}) => Card(
-    child: Padding(
-      padding: const EdgeInsets.all(14),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF65748A))),
-        const SizedBox(height: 5),
-        Text(_money(amount), style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900, color: highlight ? _teal : _navy)),
-      ]),
-    ),
-  );
+  Widget _moneyCard(String label, double amount, {bool highlight = false}) =>
+      Card(
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(fontSize: 12, color: Color(0xFF65748A)),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                _money(amount),
+                style: TextStyle(
+                  fontSize: 19,
+                  fontWeight: FontWeight.w900,
+                  color: highlight ? _teal : _navy,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
 
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: const Text('ShopHop Seller', style: TextStyle(fontWeight: FontWeight.w800)),
-      actions: [IconButton(onPressed: _busy ? null : _load, icon: const Icon(Icons.refresh))],
+      title: const Text(
+        'ShopHop Seller',
+        style: TextStyle(fontWeight: FontWeight.w800),
+      ),
+      actions: [
+        IconButton(
+          onPressed: _busy ? null : _load,
+          icon: const Icon(Icons.refresh),
+        ),
+      ],
     ),
     body: RefreshIndicator(
       onRefresh: _load,
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 18, 16, 40),
         children: [
-          Text(_sellerName, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: _navy)),
+          Text(
+            _sellerName,
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w900,
+              color: _navy,
+            ),
+          ),
           Text(_email ?? '', style: const TextStyle(color: Color(0xFF65748A))),
           const SizedBox(height: 6),
-          const Text('Earnings only on mobile for now. Seller operations remain on ShopHop Web.', style: TextStyle(color: Color(0xFF65748A))),
+          const Text(
+            'Earnings only on mobile for now. Seller operations remain on ShopHop Web.',
+            style: TextStyle(color: Color(0xFF65748A)),
+          ),
           const SizedBox(height: 16),
           if (_busy) const LinearProgressIndicator(color: _teal),
-          if (_message != null) Padding(padding: const EdgeInsets.only(top: 10), child: Text(_message!)),
+          if (_message != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Text(_message!),
+            ),
           const SizedBox(height: 12),
-          Row(children: [Expanded(child: _moneyCard('Pending', _pending)), const SizedBox(width: 8), Expanded(child: _moneyCard('Available', _available, highlight: true))]),
-          Row(children: [Expanded(child: _moneyCard('Paid', _paid)), const Expanded(child: SizedBox())]),
+          Row(
+            children: [
+              Expanded(child: _moneyCard('Pending', _pending)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _moneyCard('Available', _available, highlight: true),
+              ),
+            ],
+          ),
+          Row(
+            children: [
+              Expanded(child: _moneyCard('Paid', _paid)),
+              const Expanded(child: SizedBox()),
+            ],
+          ),
           const SizedBox(height: 14),
-          const Text('Settlement history', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: _navy)),
+          const Text(
+            'Settlement history',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: _navy,
+            ),
+          ),
           const SizedBox(height: 8),
-          if (_entries.isEmpty && !_busy) const Card(child: Padding(padding: EdgeInsets.all(18), child: Text('No Seller earnings prepared yet.'))),
+          if (_entries.isEmpty && !_busy)
+            const Card(
+              child: Padding(
+                padding: EdgeInsets.all(18),
+                child: Text('No Seller earnings prepared yet.'),
+              ),
+            ),
           ..._entries.map((e) {
             final status = (e['status'] ?? 'pending').toString();
-            return Card(child: ListTile(
-              leading: Icon(status == 'paid' ? Icons.check_circle_outline : status == 'available' ? Icons.account_balance_wallet_outlined : Icons.schedule, color: status == 'available' ? _teal : _navy),
-              title: Text('Order #${e['order_id'] ?? '—'} · ${_money(_num(e['amount']))}', style: const TextStyle(fontWeight: FontWeight.w800)),
-              subtitle: Text('${status.toUpperCase()}${e['payment_reference'] != null ? ' · Ref ${e['payment_reference']}' : e['distribution_reference'] != null ? ' · ${e['distribution_reference']}' : ''}'),
-            ));
+            return Card(
+              child: ListTile(
+                leading: Icon(
+                  status == 'paid'
+                      ? Icons.check_circle_outline
+                      : status == 'available'
+                      ? Icons.account_balance_wallet_outlined
+                      : Icons.schedule,
+                  color: status == 'available' ? _teal : _navy,
+                ),
+                title: Text(
+                  'Order #${e['order_id'] ?? '—'} · ${_money(_num(e['amount']))}',
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+                subtitle: Text(
+                  '${status.toUpperCase()}${e['payment_reference'] != null
+                      ? ' · Ref ${e['payment_reference']}'
+                      : e['distribution_reference'] != null
+                      ? ' · ${e['distribution_reference']}'
+                      : ''}',
+                ),
+              ),
+            );
           }),
           const SizedBox(height: 18),
-          OutlinedButton.icon(onPressed: _busy ? null : () => _logout(), icon: const Icon(Icons.logout), label: const Text('Sign out')),
+          OutlinedButton.icon(
+            onPressed: _busy ? null : () => _logout(),
+            icon: const Icon(Icons.logout),
+            label: const Text('Sign out'),
+          ),
         ],
       ),
     ),

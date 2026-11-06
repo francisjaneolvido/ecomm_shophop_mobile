@@ -40,8 +40,7 @@ class VerificationCard extends StatelessWidget {
   final VoidCallback onVerify;
   final VoidCallback onResend;
 
-  bool get _canResend =>
-      secondsRemaining == 0 && !isResending && enabled;
+  bool get _canResend => secondsRemaining == 0 && !isResending && enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -92,17 +91,11 @@ class VerificationCard extends StatelessWidget {
           _expiryNote(),
           if (errorMessage != null) ...[
             const SizedBox(height: 15),
-            _messageCard(
-              errorMessage!,
-              isError: true,
-            ),
+            _messageCard(errorMessage!, isError: true),
           ],
           if (successMessage != null) ...[
             const SizedBox(height: 15),
-            _messageCard(
-              successMessage!,
-              isError: false,
-            ),
+            _messageCard(successMessage!, isError: false),
           ],
           const SizedBox(height: 20),
           _verifyButton(),
@@ -120,10 +113,7 @@ class VerificationCard extends StatelessWidget {
   Widget _emailCard() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(
-        horizontal: 13,
-        vertical: 12,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
       decoration: BoxDecoration(
         color: AppColors.grayBg,
         borderRadius: BorderRadius.circular(8),
@@ -186,13 +176,9 @@ class VerificationCard extends StatelessWidget {
           elevation: 0,
           backgroundColor: AppColors.teal,
           foregroundColor: Colors.white,
-          disabledBackgroundColor:
-              AppColors.teal.withValues(alpha: 0.35),
-          disabledForegroundColor:
-              Colors.white.withValues(alpha: 0.85),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          disabledBackgroundColor: AppColors.teal.withValues(alpha: 0.35),
+          disabledForegroundColor: Colors.white.withValues(alpha: 0.85),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
         child: isVerifying
             ? const SizedBox(
@@ -230,13 +216,9 @@ class VerificationCard extends StatelessWidget {
         TextButton(
           onPressed: _canResend ? onResend : null,
           style: TextButton.styleFrom(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 4,
-              vertical: 6,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
             minimumSize: Size.zero,
-            tapTargetSize:
-                MaterialTapTargetSize.shrinkWrap,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
           child: isResending
               ? const SizedBox(
@@ -271,9 +253,7 @@ class VerificationCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.tealLight.withValues(alpha: 0.42),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: AppColors.teal.withValues(alpha: 0.13),
-        ),
+        border: Border.all(color: AppColors.teal.withValues(alpha: 0.13)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -323,13 +303,8 @@ class VerificationCard extends StatelessWidget {
     );
   }
 
-  Widget _messageCard(
-    String message, {
-    required bool isError,
-  }) {
-    final foreground = isError
-        ? const Color(0xFFC55353)
-        : AppColors.tealDark;
+  Widget _messageCard(String message, {required bool isError}) {
+    final foreground = isError ? const Color(0xFFC55353) : AppColors.tealDark;
 
     return Container(
       width: double.infinity,

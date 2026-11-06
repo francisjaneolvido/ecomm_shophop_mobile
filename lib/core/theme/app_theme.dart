@@ -17,10 +17,9 @@ class AppTheme {
 
   static ThemeData get light {
     final base = ThemeData.light(useMaterial3: true);
-    final text = GoogleFonts.poppinsTextTheme(base.textTheme).apply(
-      bodyColor: AppColors.navy,
-      displayColor: AppColors.navy,
-    );
+    final text = GoogleFonts.poppinsTextTheme(
+      base.textTheme,
+    ).apply(bodyColor: AppColors.navy, displayColor: AppColors.navy);
     const selected = AppColors.tealDark;
     const unselected = Color(0xFF526177);
     final inputBorder = OutlineInputBorder(
@@ -68,7 +67,10 @@ class AppTheme {
         helperStyle: text.bodySmall?.copyWith(color: unselected),
         prefixIconColor: unselected,
         suffixIconColor: unselected,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
         border: inputBorder,
         enabledBorder: inputBorder,
         disabledBorder: OutlineInputBorder(
@@ -96,7 +98,9 @@ class AppTheme {
           minimumSize: const Size(0, controlHeight),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           textStyle: text.labelLarge?.copyWith(fontWeight: FontWeight.w700),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(inputRadius)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(inputRadius),
+          ),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
@@ -108,7 +112,9 @@ class AppTheme {
           minimumSize: const Size(0, controlHeight),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           textStyle: text.labelLarge?.copyWith(fontWeight: FontWeight.w700),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(inputRadius)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(inputRadius),
+          ),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -118,7 +124,9 @@ class AppTheme {
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
           side: const BorderSide(color: AppColors.grayBorder),
           textStyle: text.labelLarge?.copyWith(fontWeight: FontWeight.w600),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(inputRadius)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(inputRadius),
+          ),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
@@ -143,31 +151,45 @@ class AppTheme {
         iconColor: AppColors.tealDark,
         textColor: AppColors.navy,
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(inputRadius)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(inputRadius),
+        ),
       ),
-      dividerTheme: const DividerThemeData(color: AppColors.grayBorder, thickness: 1),
+      dividerTheme: const DividerThemeData(
+        color: AppColors.grayBorder,
+        thickness: 1,
+      ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         backgroundColor: AppColors.navy,
         contentTextStyle: text.bodySmall?.copyWith(color: Colors.white),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(cardRadius)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(cardRadius),
+        ),
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(dialogRadius)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(dialogRadius),
+        ),
         titleTextStyle: text.titleMedium?.copyWith(
           fontWeight: FontWeight.w700,
           color: AppColors.navy,
         ),
-        contentTextStyle: text.bodyMedium?.copyWith(color: unselected, height: 1.5),
+        contentTextStyle: text.bodyMedium?.copyWith(
+          color: unselected,
+          height: 1.5,
+        ),
       ),
       bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: Colors.white,
         modalBackgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(dialogRadius)),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(dialogRadius),
+          ),
         ),
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
@@ -175,8 +197,12 @@ class AppTheme {
         backgroundColor: Colors.white,
         selectedItemColor: selected,
         unselectedItemColor: unselected,
-        selectedLabelStyle: text.labelSmall?.copyWith(fontWeight: FontWeight.w700),
-        unselectedLabelStyle: text.labelSmall?.copyWith(fontWeight: FontWeight.w500),
+        selectedLabelStyle: text.labelSmall?.copyWith(
+          fontWeight: FontWeight.w700,
+        ),
+        unselectedLabelStyle: text.labelSmall?.copyWith(
+          fontWeight: FontWeight.w500,
+        ),
         showUnselectedLabels: true,
         elevation: 0,
       ),
@@ -189,7 +215,9 @@ class AppTheme {
         iconTheme: WidgetStateProperty.resolveWith<IconThemeData>((states) {
           return IconThemeData(
             size: 23,
-            color: states.contains(WidgetState.selected) ? selected : unselected,
+            color: states.contains(WidgetState.selected)
+                ? selected
+                : unselected,
           );
         }),
         labelTextStyle: WidgetStateProperty.resolveWith<TextStyle>((states) {
@@ -197,20 +225,27 @@ class AppTheme {
             fontWeight: states.contains(WidgetState.selected)
                 ? FontWeight.w700
                 : FontWeight.w500,
-            color: states.contains(WidgetState.selected) ? selected : unselected,
+            color: states.contains(WidgetState.selected)
+                ? selected
+                : unselected,
           );
         }),
       ),
       progressIndicatorTheme: const ProgressIndicatorThemeData(color: selected),
       checkboxTheme: CheckboxThemeData(
-        fillColor: WidgetStateProperty.resolveWith<Color>((states) =>
-            states.contains(WidgetState.selected) ? selected : Colors.transparent),
+        fillColor: WidgetStateProperty.resolveWith<Color>(
+          (states) => states.contains(WidgetState.selected)
+              ? selected
+              : Colors.transparent,
+        ),
         checkColor: const WidgetStatePropertyAll<Color>(Colors.white),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
       ),
       radioTheme: RadioThemeData(
-        fillColor: WidgetStateProperty.resolveWith<Color>((states) =>
-            states.contains(WidgetState.selected) ? selected : unselected),
+        fillColor: WidgetStateProperty.resolveWith<Color>(
+          (states) =>
+              states.contains(WidgetState.selected) ? selected : unselected,
+        ),
       ),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
         backgroundColor: AppColors.navy,

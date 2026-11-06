@@ -13,7 +13,9 @@ void main() {
 
     test('rewrites localhost Laravel media to the live origin', () {
       expect(
-        ApiConfig.resolveMediaUrl('http://127.0.0.1:8000/storage/items/photo.jpg'),
+        ApiConfig.resolveMediaUrl(
+          'http://127.0.0.1:8000/storage/items/photo.jpg',
+        ),
         'https://shop-hop.site/storage/items/photo.jpg',
       );
     });
@@ -25,12 +27,15 @@ void main() {
       );
     });
 
-    test('resolves relative asset paths against web origin, not /api/mobile', () {
-      expect(
-        ApiConfig.resolveMediaUrl('/images/product.jpg'),
-        'https://shop-hop.site/images/product.jpg',
-      );
-    });
+    test(
+      'resolves relative asset paths against web origin, not /api/mobile',
+      () {
+        expect(
+          ApiConfig.resolveMediaUrl('/images/product.jpg'),
+          'https://shop-hop.site/images/product.jpg',
+        );
+      },
+    );
 
     test('does not rewrite genuine third-party media', () {
       expect(
@@ -42,30 +47,36 @@ void main() {
 
   group('Auth response parsing', () {
     test('does not accept a Cloudflare HTML page as successful login', () {
-      final result = AuthApiResult.fromResponse(http.Response(
-        '<html><body>Authentication required</body></html>',
-        200,
-        headers: {'content-type': 'text/html'},
-      ));
+      final result = AuthApiResult.fromResponse(
+        http.Response(
+          '<html><body>Authentication required</body></html>',
+          200,
+          headers: {'content-type': 'text/html'},
+        ),
+      );
       expect(result.success, isFalse);
       expect(result.status, 'unexpected_response');
     });
 
     test('retains valid Laravel auth result', () {
-      final result = AuthApiResult.fromResponse(http.Response(
-        '{"success":true,"status":"approved","message":"Welcome","data":{"token":"test-token"}}',
-        200,
-        headers: {'content-type': 'application/json'},
-      ));
+      final result = AuthApiResult.fromResponse(
+        http.Response(
+          '{"success":true,"status":"approved","message":"Welcome","data":{"token":"test-token"}}',
+          200,
+          headers: {'content-type': 'application/json'},
+        ),
+      );
       expect(result.success, isTrue);
       expect(result.data['token'], 'test-token');
     });
 
     test('does not accept a 500 response even with a success field', () {
-      final result = AuthApiResult.fromResponse(http.Response(
-        '{"success":true,"message":"not actually successful"}',
-        500,
-      ));
+      final result = AuthApiResult.fromResponse(
+        http.Response(
+          '{"success":true,"message":"not actually successful"}',
+          500,
+        ),
+      );
       expect(result.success, isFalse);
     });
   });

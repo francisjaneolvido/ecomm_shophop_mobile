@@ -90,9 +90,9 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
 
   List<Map<String, dynamic>> _rows(dynamic source) => source is List
       ? source
-          .whereType<Map>()
-          .map((row) => Map<String, dynamic>.from(row))
-          .toList()
+            .whereType<Map>()
+            .map((row) => Map<String, dynamic>.from(row))
+            .toList()
       : <Map<String, dynamic>>[];
 
   double _number(dynamic value) =>
@@ -109,8 +109,9 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
     }
 
     try {
-      final session = await AuthSessionService.readSession()
-          .timeout(const Duration(seconds: 8));
+      final session = await AuthSessionService.readSession().timeout(
+        const Duration(seconds: 8),
+      );
       if (!mounted) return;
 
       if (session == null || session.accountType != 'rider') {
@@ -120,8 +121,9 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
 
       _token = session.token;
 
-      final me = await AuthService.me(token: session.token)
-          .timeout(const Duration(seconds: 15));
+      final me = await AuthService.me(
+        token: session.token,
+      ).timeout(const Duration(seconds: 15));
       if (!mounted) return;
 
       if (!me.success) {
@@ -147,19 +149,23 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
 
       setState(() {
         _name = me.data['name']?.toString() ?? 'Rider';
-        _logisticsCenter = me.data['logistics_company']?.toString() ??
+        _logisticsCenter =
+            me.data['logistics_company']?.toString() ??
             me.data['logistics_center']?.toString() ??
             'Logistics / Sorting Center';
         _sortingCenterName = me.data['sorting_center_name']?.toString();
         _sortingCenterCode = me.data['sorting_center_code']?.toString();
         _sortingCenterAddress = me.data['sorting_center_address']?.toString();
         _coverageArea = me.data['coverage_area']?.toString();
-        _operationalAreaMode = me.data['operational_area_mode']?.toString() ?? 'legacy';
+        _operationalAreaMode =
+            me.data['operational_area_mode']?.toString() ?? 'legacy';
         final areas = me.data['operational_service_areas'];
         if (areas is List && areas.isNotEmpty) {
-          final labels = areas.whereType<Map>()
+          final labels = areas
+              .whereType<Map>()
               .map((item) => item['label']?.toString() ?? '')
-              .where((value) => value.trim().isNotEmpty).toList();
+              .where((value) => value.trim().isNotEmpty)
+              .toList();
           _operationalAreaSummary = labels.take(4).join(' · ');
           if (labels.length > 4) {
             _operationalAreaSummary += ' · +${labels.length - 4} more';
@@ -186,12 +192,14 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
       final rawAssignments = assignmentResult.data['assignments'];
       final assignments = rawAssignments is List
           ? rawAssignments
-              .whereType<Map>()
-              .map((value) => RiderAssignment.fromJson(
+                .whereType<Map>()
+                .map(
+                  (value) => RiderAssignment.fromJson(
                     Map<String, dynamic>.from(value),
-                  ))
-              .where((assignment) => assignment.id > 0)
-              .toList()
+                  ),
+                )
+                .where((assignment) => assignment.id > 0)
+                .toList()
           : <RiderAssignment>[];
 
       final syncErrors = <String>[];
@@ -483,28 +491,27 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
   List<RiderAssignment> get _deliveryHistory =>
       _assignments.where((assignment) => !assignment.isTask).toList();
 
-  List<Map<String, dynamic>> get _completedTransfers => _transfers.where((item) {
+  List<Map<String, dynamic>> get _completedTransfers =>
+      _transfers.where((item) {
         final received = item['received_at'];
         return received != null && received.toString().trim().isNotEmpty;
       }).toList();
 
   List<Map<String, dynamic>> get _activeReturns => _returns.where((item) {
-        final status = item['status']?.toString().toLowerCase() ?? '';
-        return status != 'seller_received' && status != 'cancelled';
-      }).toList();
+    final status = item['status']?.toString().toLowerCase() ?? '';
+    return status != 'seller_received' && status != 'cancelled';
+  }).toList();
 
   List<Map<String, dynamic>> get _completedReturns => _returns.where((item) {
-        final status = item['status']?.toString().toLowerCase() ?? '';
-        return status == 'seller_received';
-      }).toList();
+    final status = item['status']?.toString().toLowerCase() ?? '';
+    return status == 'seller_received';
+  }).toList();
 
   List<Map<String, dynamic>> get _codToRemit =>
       _codCollections.where((cash) => cash['can_remit'] == true).toList();
 
-  double get _codCashOnHand => _codToRemit.fold<double>(
-        0,
-        (sum, cash) => sum + _number(cash['amount']),
-      );
+  double get _codCashOnHand =>
+      _codToRemit.fold<double>(0, (sum, cash) => sum + _number(cash['amount']));
 
   List<_RiderTask> get _todayTasks {
     final tasks = <_RiderTask>[];
@@ -514,10 +521,12 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
       final seller = assignment.sellerBusinessName.trim().isNotEmpty
           ? assignment.sellerBusinessName.trim()
           : assignment.sellerName.trim();
-      final pickupCenter = assignment.pickupDropoffCenter ??
+      final pickupCenter =
+          assignment.pickupDropoffCenter ??
           assignment.originSortingCenter ??
           assignment.currentSortingCenter;
-      final deliveryCenter = assignment.deliveryPickupCenter ??
+      final deliveryCenter =
+          assignment.deliveryPickupCenter ??
           assignment.destinationSortingCenter ??
           assignment.currentSortingCenter;
 
@@ -536,8 +545,8 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
           to: pickup
               ? (pickupCenter?.name ?? 'Assigned branch')
               : (assignment.deliveryName.trim().isEmpty
-                  ? 'Buyer'
-                  : assignment.deliveryName.trim()),
+                    ? 'Buyer'
+                    : assignment.deliveryName.trim()),
           nextStep: _nextStep(assignment),
           priority: _assignmentPriority(assignment),
           assignment: assignment,
@@ -555,8 +564,8 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
           key: 'return-$id',
           kind: _RiderTaskKind.returnTask,
           title: 'Return to Seller',
-          trackingCode: item['tracking_code']?.toString().trim().isNotEmpty ==
-                  true
+          trackingCode:
+              item['tracking_code']?.toString().trim().isNotEmpty == true
               ? item['tracking_code'].toString()
               : 'Order #${item['order_id'] ?? ''}',
           status: _humanize(status),
@@ -565,15 +574,15 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
           nextStep: status == 'assigned'
               ? 'Collect the return parcel from your assigned branch.'
               : status == 'in_transit'
-                  ? 'Hand the parcel to the Seller and upload proof.'
-                  : status == 'awaiting_seller'
-                      ? 'Waiting for the Seller to confirm receipt.'
-                      : 'Check the return status with your branch.',
+              ? 'Hand the parcel to the Seller and upload proof.'
+              : status == 'awaiting_seller'
+              ? 'Waiting for the Seller to confirm receipt.'
+              : 'Check the return status with your branch.',
           priority: status == 'in_transit'
               ? 5
               : status == 'assigned'
-                  ? 6
-                  : 10,
+              ? 6
+              : 10,
           raw: item,
         ),
       );
@@ -596,7 +605,8 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
       return 'At the Seller, scan the parcel waybill QR. Confirming the scan accepts the assignment and records pickup in one step.';
     }
     if (assignment.status == 'picked_up') {
-      final center = assignment.pickupDropoffCenter ??
+      final center =
+          assignment.pickupDropoffCenter ??
           assignment.originSortingCenter ??
           assignment.currentSortingCenter;
       return center == null
@@ -669,11 +679,11 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : (!_profileLoaded && _error != null)
-              ? _loadErrorPage()
-              : RefreshIndicator(
-                  onRefresh: () => _load(showLoader: false),
-                  child: _pageForTab(),
-                ),
+          ? _loadErrorPage()
+          : RefreshIndicator(
+              onRefresh: () => _load(showLoader: false),
+              child: _pageForTab(),
+            ),
       bottomNavigationBar: ShopHopNavigation(
         index: _tab,
         onChanged: (value) {
@@ -682,10 +692,26 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
         },
         items: const [
           ShopHopNavItem('Today', Icons.home_outlined, Icons.home_rounded),
-          ShopHopNavItem('Tasks', Icons.assignment_outlined, Icons.assignment_rounded),
-          ShopHopNavItem('Scan', Icons.qr_code_scanner_rounded, Icons.qr_code_scanner_rounded),
-          ShopHopNavItem('Wallet', Icons.account_balance_wallet_outlined, Icons.account_balance_wallet_rounded),
-          ShopHopNavItem('Account', Icons.person_outline_rounded, Icons.person_rounded),
+          ShopHopNavItem(
+            'Tasks',
+            Icons.assignment_outlined,
+            Icons.assignment_rounded,
+          ),
+          ShopHopNavItem(
+            'Scan',
+            Icons.qr_code_scanner_rounded,
+            Icons.qr_code_scanner_rounded,
+          ),
+          ShopHopNavItem(
+            'Wallet',
+            Icons.account_balance_wallet_outlined,
+            Icons.account_balance_wallet_rounded,
+          ),
+          ShopHopNavItem(
+            'Account',
+            Icons.person_outline_rounded,
+            Icons.person_rounded,
+          ),
         ],
       ),
     );
@@ -716,130 +742,232 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
   Widget _todayPage() {
     final allTasks = _todayTasks;
     final nextTask = allTasks.isEmpty ? null : allTasks.first;
-    final pickup = allTasks.where((t) => t.kind == _RiderTaskKind.pickup).length;
-    final delivery = allTasks.where((t) => t.kind == _RiderTaskKind.delivery).length;
-    final returns = allTasks.where((t) => t.kind == _RiderTaskKind.returnTask).length;
+    final pickup = allTasks
+        .where((t) => t.kind == _RiderTaskKind.pickup)
+        .length;
+    final delivery = allTasks
+        .where((t) => t.kind == _RiderTaskKind.delivery)
+        .length;
+    final returns = allTasks
+        .where((t) => t.kind == _RiderTaskKind.returnTask)
+        .length;
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(14, 16, 14, 90),
       children: [
         _todayHeader(allTasks.length),
         if (_error != null) ...[
-          const SizedBox(height: 12), _notice(_error!, Icons.sync_problem_rounded),
+          const SizedBox(height: 12),
+          _notice(_error!, Icons.sync_problem_rounded),
         ],
         if (_codToRemit.isNotEmpty) ...[
-          const SizedBox(height: 12), _codAlert(),
+          const SizedBox(height: 12),
+          _codAlert(),
         ],
         const SizedBox(height: 16),
-        Row(children: [
-          Expanded(child: _taskSummary('Pickups', pickup, Icons.inventory_2_outlined)),
-          const SizedBox(width: 8),
-          Expanded(child: _taskSummary('Deliveries', delivery, Icons.local_shipping_outlined)),
-          const SizedBox(width: 8),
-          Expanded(child: _taskSummary('Returns', returns, Icons.keyboard_return_outlined)),
-        ]),
+        Row(
+          children: [
+            Expanded(
+              child: _taskSummary(
+                'Pickups',
+                pickup,
+                Icons.inventory_2_outlined,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _taskSummary(
+                'Deliveries',
+                delivery,
+                Icons.local_shipping_outlined,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _taskSummary(
+                'Returns',
+                returns,
+                Icons.keyboard_return_outlined,
+              ),
+            ),
+          ],
+        ),
         const SizedBox(height: 22),
-        _sectionHeader(title: 'Next action',
-          subtitle: 'Only the highest priority assigned task is shown here.'),
+        _sectionHeader(
+          title: 'Next action',
+          subtitle: 'Only the highest priority assigned task is shown here.',
+        ),
         const SizedBox(height: 9),
         if (nextTask == null)
-          _empty(icon: Icons.check_circle_outline_rounded,
+          _empty(
+            icon: Icons.check_circle_outline_rounded,
             title: 'No active assignments',
-            text: 'Pull down to refresh when new work is assigned.')
-        else _taskCard(nextTask, emphasized: true),
+            text: 'Pull down to refresh when new work is assigned.',
+          )
+        else
+          _taskCard(nextTask, emphasized: true),
         const SizedBox(height: 12),
-        SizedBox(width: double.infinity, child: OutlinedButton.icon(
-          onPressed: () => setState(() { _tasksCompleted = false; _tab = 1; }),
-          icon: const Icon(Icons.assignment_outlined),
-          label: Text('See all ${allTasks.length} active tasks'),
-        )),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: () => setState(() {
+              _tasksCompleted = false;
+              _tab = 1;
+            }),
+            icon: const Icon(Icons.assignment_outlined),
+            label: Text('See all ${allTasks.length} active tasks'),
+          ),
+        ),
         const SizedBox(height: 10),
-        SizedBox(width: double.infinity, child: TextButton.icon(
-          onPressed: () => setState(() => _tab = 2),
-          icon: const Icon(Icons.qr_code_scanner_rounded),
-          label: const Text('Open QR scanner'),
-        )),
+        SizedBox(
+          width: double.infinity,
+          child: TextButton.icon(
+            onPressed: () => setState(() => _tab = 2),
+            icon: const Icon(Icons.qr_code_scanner_rounded),
+            label: const Text('Open QR scanner'),
+          ),
+        ),
       ],
     );
   }
 
   Widget _taskSummary(String label, int value, IconData icon) => Container(
     padding: const EdgeInsets.all(11),
-    decoration: BoxDecoration(color: Colors.white,
+    decoration: BoxDecoration(
+      color: Colors.white,
       border: Border.all(color: AppColors.grayBorder),
-      borderRadius: BorderRadius.circular(8)),
-    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Icon(icon, size: 18, color: AppColors.tealDark),
-      const SizedBox(height: 8),
-      Text('$value', style: const TextStyle(fontSize: 20,
-        fontWeight: FontWeight.w800, color: AppColors.navy)),
-      Text(label, style: const TextStyle(fontSize: 10.5,
-        color: Color(0xFF607084))),
-    ]),
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 18, color: AppColors.tealDark),
+        const SizedBox(height: 8),
+        Text(
+          '$value',
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w800,
+            color: AppColors.navy,
+          ),
+        ),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 10.5, color: Color(0xFF607084)),
+        ),
+      ],
+    ),
   );
 
   Widget _tasksPage() {
     if (_tasksCompleted) {
-      return ListView(physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(14, 16, 14, 90), children: [
-        _taskModeSwitch(),
-        const SizedBox(height: 12),
-        // Reuse the existing history renderer without duplicating its records.
-        _historyInline(),
-      ]);
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(14, 16, 14, 90),
+        children: [
+          _taskModeSwitch(),
+          const SizedBox(height: 12),
+          // Reuse the existing history renderer without duplicating its records.
+          _historyInline(),
+        ],
+      );
     }
     final tasks = _todayTasks;
     final filtered = tasks.where((task) {
       if (_taskFilter == 'pickup') return task.kind == _RiderTaskKind.pickup;
-      if (_taskFilter == 'delivery') return task.kind == _RiderTaskKind.delivery;
-      if (_taskFilter == 'return') return task.kind == _RiderTaskKind.returnTask;
+      if (_taskFilter == 'delivery') {
+        return task.kind == _RiderTaskKind.delivery;
+      }
+      if (_taskFilter == 'return') {
+        return task.kind == _RiderTaskKind.returnTask;
+      }
       return true;
     }).toList();
-    return ListView(physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(14, 16, 14, 90), children: [
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(14, 16, 14, 90),
+      children: [
         _taskModeSwitch(),
         const SizedBox(height: 12),
-        SingleChildScrollView(scrollDirection: Axis.horizontal,
-          child: Row(children: [
-            _taskFilterChip('All', 'all', tasks.length), const SizedBox(width: 6),
-            _taskFilterChip('Pickup', 'pickup', tasks.where((t) => t.kind == _RiderTaskKind.pickup).length),
-            const SizedBox(width: 6),
-            _taskFilterChip('Delivery', 'delivery', tasks.where((t) => t.kind == _RiderTaskKind.delivery).length),
-            const SizedBox(width: 6),
-            _taskFilterChip('Returns', 'return', tasks.where((t) => t.kind == _RiderTaskKind.returnTask).length),
-          ])),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              _taskFilterChip('All', 'all', tasks.length),
+              const SizedBox(width: 6),
+              _taskFilterChip(
+                'Pickup',
+                'pickup',
+                tasks.where((t) => t.kind == _RiderTaskKind.pickup).length,
+              ),
+              const SizedBox(width: 6),
+              _taskFilterChip(
+                'Delivery',
+                'delivery',
+                tasks.where((t) => t.kind == _RiderTaskKind.delivery).length,
+              ),
+              const SizedBox(width: 6),
+              _taskFilterChip(
+                'Returns',
+                'return',
+                tasks.where((t) => t.kind == _RiderTaskKind.returnTask).length,
+              ),
+            ],
+          ),
+        ),
         const SizedBox(height: 12),
-        if (filtered.isEmpty) _empty(icon: Icons.assignment_turned_in_outlined,
-          title: 'No matching tasks',
-          text: 'Choose another filter, or pull down to refresh.'),
+        if (filtered.isEmpty)
+          _empty(
+            icon: Icons.assignment_turned_in_outlined,
+            title: 'No matching tasks',
+            text: 'Choose another filter, or pull down to refresh.',
+          ),
         for (final task in filtered) _taskCard(task),
-      ]);
+      ],
+    );
   }
 
   Widget _taskModeSwitch() => Column(
-    crossAxisAlignment: CrossAxisAlignment.start, children: [
-    Text(_tasksCompleted ? 'Completed / history' : 'Active tasks',
-      style: const TextStyle(fontSize: 18,
-        fontWeight: FontWeight.w800, color: AppColors.navy)),
-    const SizedBox(height: 10),
-    SegmentedButton<bool>(
-      segments: const [ButtonSegment(value: false, label: Text('Active')),
-        ButtonSegment(value: true, label: Text('History'))],
-      selected: {_tasksCompleted},
-      onSelectionChanged: (values) => setState(() => _tasksCompleted = values.first),
-      showSelectedIcon: false,
-      style: ButtonStyle(visualDensity: VisualDensity.compact,
-        textStyle: WidgetStateProperty.all(const TextStyle(fontSize: 11))),
-    ),
-  ]);
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        _tasksCompleted ? 'Completed / history' : 'Active tasks',
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w800,
+          color: AppColors.navy,
+        ),
+      ),
+      const SizedBox(height: 10),
+      SegmentedButton<bool>(
+        segments: const [
+          ButtonSegment(value: false, label: Text('Active')),
+          ButtonSegment(value: true, label: Text('History')),
+        ],
+        selected: {_tasksCompleted},
+        onSelectionChanged: (values) =>
+            setState(() => _tasksCompleted = values.first),
+        showSelectedIcon: false,
+        style: ButtonStyle(
+          visualDensity: VisualDensity.compact,
+          textStyle: WidgetStateProperty.all(const TextStyle(fontSize: 11)),
+        ),
+      ),
+    ],
+  );
 
   Widget _historyInline() => Column(
-    crossAxisAlignment: CrossAxisAlignment.start, children: [
-      if (_deliveryHistory.isEmpty && _completedReturns.isEmpty &&
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      if (_deliveryHistory.isEmpty &&
+          _completedReturns.isEmpty &&
           _completedTransfers.isEmpty)
-        _empty(icon: Icons.history_toggle_off_rounded,
+        _empty(
+          icon: Icons.history_toggle_off_rounded,
           title: 'No completed records',
-          text: 'Your completed pickup, delivery and return records appear here.'),
+          text:
+              'Your completed pickup, delivery and return records appear here.',
+        ),
       if (_deliveryHistory.isNotEmpty) ...[
         _sectionHeader(title: 'Pickup & delivery'),
         const SizedBox(height: 8),
@@ -849,24 +977,31 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
       if (_completedTransfers.isNotEmpty) ...[
         _sectionHeader(title: 'Transfers'),
         const SizedBox(height: 8),
-        ..._completedTransfers.map((row) => _historyRow(
-          icon: Icons.transfer_within_a_station_outlined,
-          title: row['tracking_code']?.toString() ?? 'Transfer',
-          subtitle: '${row['from'] ?? 'Origin'} → ${row['to'] ?? 'Destination'}',
-          status: 'Received',
-        )),
+        ..._completedTransfers.map(
+          (row) => _historyRow(
+            icon: Icons.transfer_within_a_station_outlined,
+            title: row['tracking_code']?.toString() ?? 'Transfer',
+            subtitle:
+                '${row['from'] ?? 'Origin'} → ${row['to'] ?? 'Destination'}',
+            status: 'Received',
+          ),
+        ),
         const SizedBox(height: 14),
       ],
       if (_completedReturns.isNotEmpty) ...[
         _sectionHeader(title: 'Returns'),
         const SizedBox(height: 8),
-        ..._completedReturns.map((row) => _historyRow(
-          icon: Icons.assignment_return_outlined,
-          title: row['tracking_code']?.toString() ??
-            'Order #${row['order_id'] ?? '-'}',
-          subtitle: '${row['branch'] ?? 'Branch'} → ${row['seller'] ?? 'Seller'}',
-          status: 'Seller received',
-        )),
+        ..._completedReturns.map(
+          (row) => _historyRow(
+            icon: Icons.assignment_return_outlined,
+            title:
+                row['tracking_code']?.toString() ??
+                'Order #${row['order_id'] ?? '-'}',
+            subtitle:
+                '${row['branch'] ?? 'Branch'} → ${row['seller'] ?? 'Seller'}',
+            status: 'Seller received',
+          ),
+        ),
       ],
     ],
   );
@@ -946,8 +1081,10 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
                 ),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 7,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFE8F7F3),
                   borderRadius: BorderRadius.circular(999),
@@ -955,11 +1092,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      Icons.circle,
-                      size: 8,
-                      color: AppColors.tealDark,
-                    ),
+                    Icon(Icons.circle, size: 8, color: AppColors.tealDark),
                     SizedBox(width: 6),
                     Text(
                       'Active',
@@ -1045,9 +1178,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
       showCheckmark: false,
       selectedColor: AppColors.navy,
       backgroundColor: Colors.white,
-      side: BorderSide(
-        color: selected ? AppColors.navy : AppColors.grayBorder,
-      ),
+      side: BorderSide(color: selected ? AppColors.navy : AppColors.grayBorder),
       labelStyle: TextStyle(
         color: selected ? Colors.white : AppColors.navy,
         fontSize: 11.5,
@@ -1062,46 +1193,97 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
     final color = _taskColor(task.kind);
     return Container(
       margin: const EdgeInsets.only(bottom: 9),
-      decoration: BoxDecoration(color: Colors.white,
+      decoration: BoxDecoration(
+        color: Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: emphasized ? AppColors.tealDark : AppColors.grayBorder,
-          width: emphasized ? 1.4 : 1)),
-      child: Padding(padding: const EdgeInsets.all(13), child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Icon(_taskIcon(task.kind), size: 20, color: color),
-            const SizedBox(width: 8),
-            Expanded(child: Text(task.title, style: const TextStyle(
-              fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.navy))),
-            _statusPill(task.status),
-          ]),
-          const SizedBox(height: 9),
-          Text(task.trackingCode, maxLines: 1, overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800,
-              color: AppColors.navy)),
-          const SizedBox(height: 5),
-          Row(children: [const Icon(Icons.route_outlined, size: 15,
-              color: Color(0xFF607084)),
-            const SizedBox(width: 6),
-            Expanded(child: Text('${task.from} → ${task.to}',
-              maxLines: 2, overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 11, color: Color(0xFF607084)))),
-          ]),
-          if (emphasized) ...[
-            const SizedBox(height: 10),
-            Text(task.nextStep, style: const TextStyle(color: AppColors.navy,
-              fontSize: 11.5, height: 1.4)),
-            const SizedBox(height: 10),
-            if (busy) const LinearProgressIndicator(minHeight: 3)
-            else _taskActions(task),
+        border: Border.all(
+          color: emphasized ? AppColors.tealDark : AppColors.grayBorder,
+          width: emphasized ? 1.4 : 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(13),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(_taskIcon(task.kind), size: 20, color: color),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    task.title,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.navy,
+                    ),
+                  ),
+                ),
+                _statusPill(task.status),
+              ],
+            ),
+            const SizedBox(height: 9),
+            Text(
+              task.trackingCode,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+                color: AppColors.navy,
+              ),
+            ),
+            const SizedBox(height: 5),
+            Row(
+              children: [
+                const Icon(
+                  Icons.route_outlined,
+                  size: 15,
+                  color: Color(0xFF607084),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    '${task.from} → ${task.to}',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF607084),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            if (emphasized) ...[
+              const SizedBox(height: 10),
+              Text(
+                task.nextStep,
+                style: const TextStyle(
+                  color: AppColors.navy,
+                  fontSize: 11.5,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 10),
+              if (busy)
+                const LinearProgressIndicator(minHeight: 3)
+              else
+                _taskActions(task),
+            ],
+            const SizedBox(height: 6),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: busy ? null : () => _showTaskDetails(task),
+                icon: const Icon(Icons.open_in_new_rounded, size: 16),
+                label: const Text('Details & actions'),
+              ),
+            ),
           ],
-          const SizedBox(height: 6),
-          Align(alignment: Alignment.centerRight, child: TextButton.icon(
-            onPressed: busy ? null : () => _showTaskDetails(task),
-            icon: const Icon(Icons.open_in_new_rounded, size: 16),
-            label: const Text('Details & actions'),
-          )),
-        ])),
+        ),
+      ),
     );
   }
 
@@ -1312,151 +1494,158 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
         const SizedBox(height: 14),
         SegmentedButton<bool>(
           segments: const [
-            ButtonSegment(value: true, label: Text('COD cash'),
-              icon: Icon(Icons.payments_outlined)),
-            ButtonSegment(value: false, label: Text('My earnings'),
-              icon: Icon(Icons.account_balance_wallet_outlined)),
+            ButtonSegment(
+              value: true,
+              label: Text('COD cash'),
+              icon: Icon(Icons.payments_outlined),
+            ),
+            ButtonSegment(
+              value: false,
+              label: Text('My earnings'),
+              icon: Icon(Icons.account_balance_wallet_outlined),
+            ),
           ],
           selected: {_walletCod},
-          onSelectionChanged: (values) => setState(() => _walletCod = values.first),
+          onSelectionChanged: (values) =>
+              setState(() => _walletCod = values.first),
           showSelectedIcon: false,
         ),
         const SizedBox(height: 16),
         if (_walletCod) ...[
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: AppColors.navy,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.payments_outlined,
-                      color: AppColors.teal,
-                    ),
-                  ),
-                  const SizedBox(width: 11),
-                  const Expanded(
-                    child: Text(
-                      'COD cash to hand over',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: AppColors.navy,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.payments_outlined,
+                        color: AppColors.teal,
                       ),
                     ),
+                    const SizedBox(width: 11),
+                    const Expanded(
+                      child: Text(
+                        'COD cash to hand over',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  '₱${_codCashOnHand.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 30,
+                    fontWeight: FontWeight.w900,
                   ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Text(
-                '₱${_codCashOnHand.toStringAsFixed(2)}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 30,
-                  fontWeight: FontWeight.w900,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${_codToRemit.length} collection${_codToRemit.length == 1 ? '' : 's'} currently in your custody',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.68),
+                    fontSize: 11,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Buyer → Rider → Logistics → ShopHop Admin',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.78),
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 22),
+          _sectionHeader(
+            title: 'COD collections',
+            subtitle:
+                'Record handover only after physically giving the cash to Logistics.',
+          ),
+          const SizedBox(height: 10),
+          if (_codCollections.isEmpty)
+            _empty(
+              icon: Icons.payments_outlined,
+              title: 'No COD collections yet',
+              text: 'COD records appear here after successful cash deliveries.',
+            )
+          else
+            ..._codCollections.map(_codCollectionCard),
+        ] else ...[
+          _sectionHeader(
+            title: 'My earnings',
+            subtitle: 'Pickup and delivery fees recorded by Logistics.',
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _moneySummary(
+                  'Pending',
+                  _pendingEarnings,
+                  Icons.schedule_rounded,
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                '${_codToRemit.length} collection${_codToRemit.length == 1 ? '' : 's'} currently in your custody',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.68),
-                  fontSize: 11,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Buyer → Rider → Logistics → ShopHop Admin',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.78),
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w600,
+              const SizedBox(width: 10),
+              Expanded(
+                child: _moneySummary(
+                  'Available',
+                  _availableEarnings,
+                  Icons.account_balance_wallet_rounded,
                 ),
               ),
             ],
           ),
-        ),
-        const SizedBox(height: 22),
-        _sectionHeader(
-          title: 'COD collections',
-          subtitle:
-              'Record handover only after physically giving the cash to Logistics.',
-        ),
-        const SizedBox(height: 10),
-        if (_codCollections.isEmpty)
-          _empty(
-            icon: Icons.payments_outlined,
-            title: 'No COD collections yet',
-            text: 'COD records appear here after successful cash deliveries.',
-          )
-        else
-          ..._codCollections.map(_codCollectionCard),
-        ] else ...[
-        _sectionHeader(
-          title: 'My earnings',
-          subtitle: 'Pickup and delivery fees recorded by Logistics.',
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(
-              child: _moneySummary(
-                'Pending',
-                _pendingEarnings,
-                Icons.schedule_rounded,
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _moneySummary(
+                  'Paid',
+                  _paidEarnings,
+                  Icons.check_circle_outline_rounded,
+                ),
               ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _moneySummary(
-                'Available',
-                _availableEarnings,
-                Icons.account_balance_wallet_rounded,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(
-              child: _moneySummary(
-                'Paid',
-                _paidEarnings,
-                Icons.check_circle_outline_rounded,
-              ),
-            ),
-            const SizedBox(width: 10),
-            const Expanded(child: SizedBox()),
-          ],
-        ),
-        const SizedBox(height: 12),
-        _notice(
-          'Earnings are payout ledger records. Your Logistics company still handles the actual payout.',
-          Icons.info_outline_rounded,
-        ),
-        const SizedBox(height: 12),
-        if (_earnings.isEmpty)
-          _empty(
-            icon: Icons.receipt_long_outlined,
-            title: 'No Rider fee records yet',
-            text: 'Eligible fees appear after the required logistics events.',
-          )
-        else
-          ..._earnings.map(_earningRow),
+              const SizedBox(width: 10),
+              const Expanded(child: SizedBox()),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _notice(
+            'Earnings are payout ledger records. Your Logistics company still handles the actual payout.',
+            Icons.info_outline_rounded,
+          ),
+          const SizedBox(height: 12),
+          if (_earnings.isEmpty)
+            _empty(
+              icon: Icons.receipt_long_outlined,
+              title: 'No Rider fee records yet',
+              text: 'Eligible fees appear after the required logistics events.',
+            )
+          else
+            ..._earnings.map(_earningRow),
         ],
       ],
     );
@@ -1790,9 +1979,11 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
           ),
         ] else if (_operationalAreaMode == 'configured') ...[
           const SizedBox(height: 12),
-          _accountInfoCard(Icons.warning_amber_rounded,
+          _accountInfoCard(
+            Icons.warning_amber_rounded,
             'Rider barangay assignment required',
-            'No operational barangays assigned. Contact your branch manager.'),
+            'No operational barangays assigned. Contact your branch manager.',
+          ),
         ] else if (_coverageArea?.trim().isNotEmpty == true) ...[
           const SizedBox(height: 12),
           _accountInfoCard(
@@ -1870,15 +2061,22 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
     );
   }
 
-  Widget _taskSheetAction(String label, IconData icon,
-      VoidCallback action, BuildContext sheetContext) =>
-    SizedBox(width: double.infinity, child: FilledButton.icon(
+  Widget _taskSheetAction(
+    String label,
+    IconData icon,
+    VoidCallback action,
+    BuildContext sheetContext,
+  ) => SizedBox(
+    width: double.infinity,
+    child: FilledButton.icon(
       onPressed: () {
         Navigator.pop(sheetContext);
         action();
       },
-      icon: Icon(icon, size: 18), label: Text(label),
-    ));
+      icon: Icon(icon, size: 18),
+      label: Text(label),
+    ),
+  );
 
   Future<void> _showTaskDetails(_RiderTask task) async {
     final assignment = task.assignment;
@@ -1920,9 +2118,12 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
               if (assignment != null) ...[
                 const SizedBox(height: 16),
                 if (task.kind == _RiderTaskKind.pickup) ...[
-                  _detailLine('Seller', assignment.sellerBusinessName.isNotEmpty
-                      ? assignment.sellerBusinessName
-                      : assignment.sellerName),
+                  _detailLine(
+                    'Seller',
+                    assignment.sellerBusinessName.isNotEmpty
+                        ? assignment.sellerBusinessName
+                        : assignment.sellerName,
+                  ),
                   _detailLine('Contact', assignment.sellerContact),
                   _detailLine('Address', assignment.sellerAddress),
                 ] else ...[
@@ -1935,39 +2136,65 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
                   assignment.items.isEmpty
                       ? 'No item details available'
                       : assignment.items
-                          .map((item) => '${item.quantity}× ${item.name}')
-                          .join(' · '),
+                            .map((item) => '${item.quantity}× ${item.name}')
+                            .join(' · '),
                 ),
                 if (assignment.isCod)
                   _detailLine('COD amount', '₱${assignment.totalAmount}'),
                 if (assignment.failureReason?.trim().isNotEmpty == true)
                   _detailLine('Failure reason', assignment.failureReason!),
               ],
-              if (task.raw?['reason']?.toString().trim().isNotEmpty == true) ...[
+              if (task.raw?['reason']?.toString().trim().isNotEmpty ==
+                  true) ...[
                 const SizedBox(height: 12),
                 _detailLine('Return reason', task.raw!['reason'].toString()),
               ],
               const SizedBox(height: 12),
-              if (assignment != null && (assignment.canAcceptPickup ||
-                  assignment.canConfirmPickup || assignment.canStartDelivery))
-                _taskSheetAction('Open QR scanner', Icons.qr_code_scanner_rounded,
-                  () => setState(() => _tab = 2), sheetContext),
+              if (assignment != null &&
+                  (assignment.canAcceptPickup ||
+                      assignment.canConfirmPickup ||
+                      assignment.canStartDelivery))
+                _taskSheetAction(
+                  'Open QR scanner',
+                  Icons.qr_code_scanner_rounded,
+                  () => setState(() => _tab = 2),
+                  sheetContext,
+                ),
               if (assignment != null && assignment.canCompleteDelivery)
-                _taskSheetAction('Confirm delivery with proof', Icons.task_alt_rounded,
-                  () => _complete(assignment), sheetContext),
+                _taskSheetAction(
+                  'Confirm delivery with proof',
+                  Icons.task_alt_rounded,
+                  () => _complete(assignment),
+                  sheetContext,
+                ),
               if (assignment != null && assignment.canFailDelivery)
-                SizedBox(width: double.infinity, child: OutlinedButton.icon(
-                  onPressed: () { Navigator.pop(sheetContext); _fail(assignment); },
-                  icon: const Icon(Icons.report_outlined),
-                  label: const Text('Report failed attempt'))),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(sheetContext);
+                      _fail(assignment);
+                    },
+                    icon: const Icon(Icons.report_outlined),
+                    label: const Text('Report failed attempt'),
+                  ),
+                ),
               if (task.kind == _RiderTaskKind.returnTask &&
                   task.raw?['status'] == 'assigned')
-                _taskSheetAction('Confirm branch pickup', Icons.inventory_2_outlined,
-                  () => _collectReturn(task.raw!), sheetContext),
+                _taskSheetAction(
+                  'Confirm branch pickup',
+                  Icons.inventory_2_outlined,
+                  () => _collectReturn(task.raw!),
+                  sheetContext,
+                ),
               if (task.kind == _RiderTaskKind.returnTask &&
                   task.raw?['status'] == 'in_transit')
-                _taskSheetAction('Submit Seller handover proof', Icons.add_a_photo_outlined,
-                  () => _handoverReturn(task.raw!), sheetContext),
+                _taskSheetAction(
+                  'Submit Seller handover proof',
+                  Icons.add_a_photo_outlined,
+                  () => _handoverReturn(task.raw!),
+                  sheetContext,
+                ),
             ],
           ),
         ),
@@ -2263,11 +2490,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
         children: [
           const Row(
             children: [
-              Icon(
-                Icons.hub_outlined,
-                color: AppColors.tealDark,
-                size: 20,
-              ),
+              Icon(Icons.hub_outlined, color: AppColors.tealDark, size: 20),
               SizedBox(width: 8),
               Text(
                 'Assigned branch / hub',

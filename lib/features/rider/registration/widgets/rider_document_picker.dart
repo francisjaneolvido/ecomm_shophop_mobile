@@ -98,8 +98,8 @@ class RiderDocumentPicker extends StatelessWidget {
                       color: field.hasError
                           ? const Color(0xFFDB5757)
                           : file != null
-                              ? AppColors.teal.withValues(alpha: 0.55)
-                              : AppColors.grayBorder,
+                          ? AppColors.teal.withValues(alpha: 0.55)
+                          : AppColors.grayBorder,
                     ),
                   ),
                   child: Row(
@@ -146,8 +146,7 @@ class RiderDocumentPicker extends StatelessWidget {
                               Text(
                                 _size(file),
                                 style: TextStyle(
-                                  color:
-                                      AppColors.navy.withValues(alpha: 0.36),
+                                  color: AppColors.navy.withValues(alpha: 0.36),
                                   fontSize: 9.5,
                                 ),
                               ),
@@ -322,8 +321,10 @@ class RiderDocumentPicker extends StatelessWidget {
                     ),
                     IconButton(
                       onPressed: () => Navigator.pop(dialogContext),
-                      icon:
-                          const Icon(Icons.close_rounded, color: AppColors.navy),
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        color: AppColors.navy,
+                      ),
                     ),
                   ],
                 ),
@@ -348,6 +349,4 @@ class RiderDocumentPicker extends StatelessWidget {
       ),
     );
   }
-
-
 }

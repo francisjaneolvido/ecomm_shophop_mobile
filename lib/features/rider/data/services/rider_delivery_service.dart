@@ -30,10 +30,12 @@ class RiderDeliveryService {
 
   static Future<AuthApiResult> codCollections({required String token}) async {
     try {
-      final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/rider/cod'),
-        headers: _headers(token),
-      ).timeout(_requestTimeout);
+      final response = await http
+          .get(
+            Uri.parse('${ApiConfig.baseUrl}/rider/cod'),
+            headers: _headers(token),
+          )
+          .timeout(_requestTimeout);
       return AuthApiResult.fromResponse(response);
     } on TimeoutException {
       return _timeoutError();
@@ -47,10 +49,12 @@ class RiderDeliveryService {
     required int deliveryId,
   }) async {
     try {
-      final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/rider/cod/$deliveryId/remit'),
-        headers: _headers(token),
-      ).timeout(_requestTimeout);
+      final response = await http
+          .post(
+            Uri.parse('${ApiConfig.baseUrl}/rider/cod/$deliveryId/remit'),
+            headers: _headers(token),
+          )
+          .timeout(_requestTimeout);
       return AuthApiResult.fromResponse(response);
     } on TimeoutException {
       return _timeoutError();
@@ -88,11 +92,10 @@ class RiderDeliveryService {
     try {
       final response = await http
           .post(
-            Uri.parse('${ApiConfig.baseUrl}/rider/assignments/$deliveryId/fail'),
-            headers: {
-              ..._headers(token),
-              'Content-Type': 'application/json',
-            },
+            Uri.parse(
+              '${ApiConfig.baseUrl}/rider/assignments/$deliveryId/fail',
+            ),
+            headers: {..._headers(token), 'Content-Type': 'application/json'},
             body: jsonEncode({'failure_reason': reason.trim()}),
           )
           .timeout(_requestTimeout);
@@ -113,7 +116,9 @@ class RiderDeliveryService {
     try {
       final request = http.MultipartRequest(
         'POST',
-        Uri.parse('${ApiConfig.baseUrl}/rider/assignments/$deliveryId/complete'),
+        Uri.parse(
+          '${ApiConfig.baseUrl}/rider/assignments/$deliveryId/complete',
+        ),
       );
       request.headers.addAll(_headers(token));
       if (cashCollected) {
@@ -145,7 +150,9 @@ class RiderDeliveryService {
       }
 
       final streamed = await request.send().timeout(_requestTimeout);
-      final response = await http.Response.fromStream(streamed).timeout(_requestTimeout);
+      final response = await http.Response.fromStream(
+        streamed,
+      ).timeout(_requestTimeout);
       return AuthApiResult.fromResponse(response);
     } on TimeoutException {
       return _timeoutError();
@@ -162,7 +169,9 @@ class RiderDeliveryService {
     try {
       final response = await http
           .post(
-            Uri.parse('${ApiConfig.baseUrl}/rider/assignments/$deliveryId/$action'),
+            Uri.parse(
+              '${ApiConfig.baseUrl}/rider/assignments/$deliveryId/$action',
+            ),
             headers: _headers(token),
           )
           .timeout(_requestTimeout);
@@ -175,15 +184,16 @@ class RiderDeliveryService {
   }
 
   static Map<String, String> _headers(String token) => {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      };
+    'Accept': 'application/json',
+    'Authorization': 'Bearer $token',
+  };
 
   static AuthApiResult _timeoutError() {
     return const AuthApiResult(
       success: false,
       status: 'timeout',
-      message: 'ShopHop took too long to respond. Check the server and try again.',
+      message:
+          'ShopHop took too long to respond. Check the server and try again.',
     );
   }
 

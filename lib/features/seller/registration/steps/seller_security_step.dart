@@ -24,26 +24,20 @@ class SellerSecurityStep extends StatefulWidget {
   final VoidCallback onPrivacyTap;
 
   @override
-  State<SellerSecurityStep> createState() =>
-      _SellerSecurityStepState();
+  State<SellerSecurityStep> createState() => _SellerSecurityStepState();
 }
 
-class _SellerSecurityStepState
-    extends State<SellerSecurityStep> {
+class _SellerSecurityStepState extends State<SellerSecurityStep> {
   bool _obscurePassword = true;
   bool _obscureConfirmation = true;
 
   String get _password => widget.passwordController.text;
 
   bool get _hasLength => _password.length >= 8;
-  bool get _hasUppercase =>
-      RegExp(r'[A-Z]').hasMatch(_password);
-  bool get _hasLowercase =>
-      RegExp(r'[a-z]').hasMatch(_password);
-  bool get _hasNumber =>
-      RegExp(r'[0-9]').hasMatch(_password);
-  bool get _hasSpecial =>
-      RegExp(r'[^A-Za-z0-9]').hasMatch(_password);
+  bool get _hasUppercase => RegExp(r'[A-Z]').hasMatch(_password);
+  bool get _hasLowercase => RegExp(r'[a-z]').hasMatch(_password);
+  bool get _hasNumber => RegExp(r'[0-9]').hasMatch(_password);
+  bool get _hasSpecial => RegExp(r'[^A-Za-z0-9]').hasMatch(_password);
 
   @override
   Widget build(BuildContext context) {
@@ -81,9 +75,7 @@ class _SellerSecurityStepState
           obscureText: _obscurePassword,
           keyboardType: TextInputType.visiblePassword,
           textInputAction: TextInputAction.next,
-          autofillHints: const [
-            AutofillHints.newPassword,
-          ],
+          autofillHints: const [AutofillHints.newPassword],
           onChanged: (_) => setState(() {}),
           validator: (value) {
             final password = value ?? '';
@@ -119,28 +111,27 @@ class _SellerSecurityStepState
             fontSize: 13,
             fontWeight: FontWeight.w500,
           ),
-          decoration: SellerUi.inputDecoration(
-            hint: 'Create a strong password',
-            icon: Icons.lock_outline_rounded,
-          ).copyWith(
-            suffixIcon: IconButton(
-              tooltip: _obscurePassword
-                  ? 'Show password'
-                  : 'Hide password',
-              onPressed: () {
-                setState(() {
-                  _obscurePassword = !_obscurePassword;
-                });
-              },
-              icon: Icon(
-                _obscurePassword
-                    ? Icons.visibility_outlined
-                    : Icons.visibility_off_outlined,
-                size: 20,
-                color: AppColors.navy.withValues(alpha: 0.38),
+          decoration:
+              SellerUi.inputDecoration(
+                hint: 'Create a strong password',
+                icon: Icons.lock_outline_rounded,
+              ).copyWith(
+                suffixIcon: IconButton(
+                  tooltip: _obscurePassword ? 'Show password' : 'Hide password',
+                  onPressed: () {
+                    setState(() {
+                      _obscurePassword = !_obscurePassword;
+                    });
+                  },
+                  icon: Icon(
+                    _obscurePassword
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
+                    size: 20,
+                    color: AppColors.navy.withValues(alpha: 0.38),
+                  ),
+                ),
               ),
-            ),
-          ),
         ),
       ],
     );
@@ -157,9 +148,7 @@ class _SellerSecurityStepState
           obscureText: _obscureConfirmation,
           keyboardType: TextInputType.visiblePassword,
           textInputAction: TextInputAction.done,
-          autofillHints: const [
-            AutofillHints.newPassword,
-          ],
+          autofillHints: const [AutofillHints.newPassword],
           validator: (value) {
             if (value == null || value.isEmpty) {
               return 'Please confirm your password.';
@@ -176,29 +165,29 @@ class _SellerSecurityStepState
             fontSize: 13,
             fontWeight: FontWeight.w500,
           ),
-          decoration: SellerUi.inputDecoration(
-            hint: 'Re-enter your password',
-            icon: Icons.lock_reset_rounded,
-          ).copyWith(
-            suffixIcon: IconButton(
-              tooltip: _obscureConfirmation
-                  ? 'Show password'
-                  : 'Hide password',
-              onPressed: () {
-                setState(() {
-                  _obscureConfirmation =
-                      !_obscureConfirmation;
-                });
-              },
-              icon: Icon(
-                _obscureConfirmation
-                    ? Icons.visibility_outlined
-                    : Icons.visibility_off_outlined,
-                size: 20,
-                color: AppColors.navy.withValues(alpha: 0.38),
+          decoration:
+              SellerUi.inputDecoration(
+                hint: 'Re-enter your password',
+                icon: Icons.lock_reset_rounded,
+              ).copyWith(
+                suffixIcon: IconButton(
+                  tooltip: _obscureConfirmation
+                      ? 'Show password'
+                      : 'Hide password',
+                  onPressed: () {
+                    setState(() {
+                      _obscureConfirmation = !_obscureConfirmation;
+                    });
+                  },
+                  icon: Icon(
+                    _obscureConfirmation
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
+                    size: 20,
+                    color: AppColors.navy.withValues(alpha: 0.38),
+                  ),
+                ),
               ),
-            ),
-          ),
         ),
       ],
     );
@@ -211,9 +200,7 @@ class _SellerSecurityStepState
       decoration: BoxDecoration(
         color: AppColors.grayBg,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: AppColors.grayBorder,
-        ),
+        border: Border.all(color: AppColors.grayBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -228,14 +215,8 @@ class _SellerSecurityStepState
           ),
           const SizedBox(height: 11),
           _requirement('Minimum 8 characters', _hasLength),
-          _requirement(
-            '1 uppercase letter (A–Z)',
-            _hasUppercase,
-          ),
-          _requirement(
-            '1 lowercase letter (a–z)',
-            _hasLowercase,
-          ),
+          _requirement('1 uppercase letter (A–Z)', _hasUppercase),
+          _requirement('1 lowercase letter (a–z)', _hasLowercase),
           _requirement('1 number (0–9)', _hasNumber),
           _requirement(
             '1 special character (e.g. ! @ # \$ % ^ & *)',
@@ -246,11 +227,7 @@ class _SellerSecurityStepState
     );
   }
 
-  Widget _requirement(
-    String label,
-    bool complete, {
-    bool optional = false,
-  }) {
+  Widget _requirement(String label, bool complete, {bool optional = false}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -263,17 +240,11 @@ class _SellerSecurityStepState
               shape: BoxShape.circle,
               color: complete ? AppColors.teal : Colors.white,
               border: Border.all(
-                color: complete
-                    ? AppColors.teal
-                    : AppColors.grayBorder,
+                color: complete ? AppColors.teal : AppColors.grayBorder,
               ),
             ),
             child: complete
-                ? const Icon(
-                    Icons.check_rounded,
-                    size: 11,
-                    color: Colors.white,
-                  )
+                ? const Icon(Icons.check_rounded, size: 11, color: Colors.white)
                 : null,
           ),
           const SizedBox(width: 9),
@@ -283,13 +254,9 @@ class _SellerSecurityStepState
               style: SellerUi.text(
                 color: complete
                     ? AppColors.tealDark
-                    : AppColors.navy.withValues(
-                        alpha: optional ? 0.34 : 0.46,
-                      ),
+                    : AppColors.navy.withValues(alpha: optional ? 0.34 : 0.46),
                 fontSize: 10.5,
-                fontWeight: complete
-                    ? FontWeight.w600
-                    : FontWeight.w500,
+                fontWeight: complete ? FontWeight.w600 : FontWeight.w500,
                 height: 1.4,
               ),
             ),
@@ -306,9 +273,7 @@ class _SellerSecurityStepState
       decoration: BoxDecoration(
         color: AppColors.tealLight.withValues(alpha: 0.45),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: AppColors.teal.withValues(alpha: 0.15),
-        ),
+        border: Border.all(color: AppColors.teal.withValues(alpha: 0.15)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -359,8 +324,8 @@ class _SellerSecurityStepState
                   color: field.hasError
                       ? const Color(0xFFDB5757)
                       : checked
-                          ? AppColors.teal.withValues(alpha: 0.60)
-                          : AppColors.grayBorder,
+                      ? AppColors.teal.withValues(alpha: 0.60)
+                      : AppColors.grayBorder,
                 ),
               ),
               child: Row(
@@ -379,8 +344,7 @@ class _SellerSecurityStepState
                       },
                       activeColor: AppColors.teal,
                       checkColor: Colors.white,
-                      materialTapTargetSize:
-                          MaterialTapTargetSize.shrinkWrap,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(5),
                       ),
@@ -394,8 +358,7 @@ class _SellerSecurityStepState
                         Text(
                           "I have read and agree to ShopHop's ",
                           style: SellerUi.text(
-                            color:
-                                AppColors.navy.withValues(alpha: 0.60),
+                            color: AppColors.navy.withValues(alpha: 0.60),
                             fontSize: 10.5,
                             height: 1.5,
                           ),
@@ -415,8 +378,7 @@ class _SellerSecurityStepState
                         Text(
                           ' and ',
                           style: SellerUi.text(
-                            color:
-                                AppColors.navy.withValues(alpha: 0.60),
+                            color: AppColors.navy.withValues(alpha: 0.60),
                             fontSize: 10.5,
                             height: 1.5,
                           ),

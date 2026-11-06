@@ -34,7 +34,9 @@ class BuyerHomePage extends StatefulWidget {
 
 class _BuyerHomePageState extends State<BuyerHomePage>
     with AutomaticKeepAliveClientMixin {
-  final PageController _bannerController = PageController(viewportFraction: 0.94);
+  final PageController _bannerController = PageController(
+    viewportFraction: 0.94,
+  );
   final ScrollController _scrollController = ScrollController();
 
   BuyerHomeData? _home;
@@ -75,7 +77,8 @@ class _BuyerHomePageState extends State<BuyerHomePage>
   }
 
   void _handleScroll() {
-    final shouldShow = _scrollController.hasClients && _scrollController.offset > 500;
+    final shouldShow =
+        _scrollController.hasClients && _scrollController.offset > 500;
     if (shouldShow != _showBackToTop && mounted) {
       setState(() => _showBackToTop = shouldShow);
     }
@@ -282,16 +285,17 @@ class _BuyerHomePageState extends State<BuyerHomePage>
     }
 
     final home = _home!;
-    final recommended = [
-      ...home.recommendedProducts,
-      ...home.trendingProducts,
-      ...home.newArrivals,
-    ].fold<List<BuyerProductData>>(<BuyerProductData>[], (list, product) {
-      if (list.every((item) => item.id != product.id)) {
-        list.add(product);
-      }
-      return list;
-    });
+    final recommended =
+        [
+          ...home.recommendedProducts,
+          ...home.trendingProducts,
+          ...home.newArrivals,
+        ].fold<List<BuyerProductData>>(<BuyerProductData>[], (list, product) {
+          if (list.every((item) => item.id != product.id)) {
+            list.add(product);
+          }
+          return list;
+        });
 
     return SafeArea(
       bottom: false,
@@ -360,7 +364,8 @@ class _BuyerHomePageState extends State<BuyerHomePage>
                       controller: _bannerController,
                       items: _heroItems,
                       currentIndex: _bannerIndex,
-                      onChanged: (index) => setState(() => _bannerIndex = index),
+                      onChanged: (index) =>
+                          setState(() => _bannerIndex = index),
                       onTap: (item) {
                         if (item.product != null) {
                           widget.onOpenProduct(item.product!);
@@ -424,7 +429,9 @@ class _BuyerHomePageState extends State<BuyerHomePage>
                       mainAxisSpacing: 8,
                       childAspectRatio: MediaQuery.sizeOf(context).width < 350
                           ? 0.50
-                          : MediaQuery.sizeOf(context).width < 400 ? 0.57 : 0.63,
+                          : MediaQuery.sizeOf(context).width < 400
+                          ? 0.57
+                          : 0.63,
                     ),
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
@@ -461,10 +468,10 @@ class _BuyerHomePageState extends State<BuyerHomePage>
                   foregroundColor: Colors.white,
                   onPressed: _showBackToTop
                       ? () => _scrollController.animateTo(
-                            0,
-                            duration: const Duration(milliseconds: 420),
-                            curve: Curves.easeOutCubic,
-                          )
+                          0,
+                          duration: const Duration(milliseconds: 420),
+                          curve: Curves.easeOutCubic,
+                        )
                       : null,
                   child: const Icon(Icons.keyboard_arrow_up_rounded),
                 ),
@@ -486,21 +493,20 @@ class _BuyerHomePageState extends State<BuyerHomePage>
           mainAxisSpacing: 8,
           childAspectRatio: MediaQuery.sizeOf(context).width < 350
               ? 0.50
-              : MediaQuery.sizeOf(context).width < 400 ? 0.57 : 0.63,
+              : MediaQuery.sizeOf(context).width < 400
+              ? 0.57
+              : 0.63,
         ),
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
-            final product = products[index];
-            return BuyerProductCard(
-              product: product.copyWith(
-                isLiked: _likedProductIds.contains(product.id),
-              ),
-              onTap: () => widget.onOpenProduct(product),
-              onLike: () => _toggleLike(product),
-            );
-          },
-          childCount: products.length,
-        ),
+        delegate: SliverChildBuilderDelegate((context, index) {
+          final product = products[index];
+          return BuyerProductCard(
+            product: product.copyWith(
+              isLiked: _likedProductIds.contains(product.id),
+            ),
+            onTap: () => widget.onOpenProduct(product),
+            onLike: () => _toggleLike(product),
+          );
+        }, childCount: products.length),
       ),
     );
   }
@@ -558,7 +564,11 @@ class _SearchField extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 14),
           child: Row(
             children: [
-              const Icon(Icons.search_rounded, color: Color(0xFF7A8994), size: 20),
+              const Icon(
+                Icons.search_rounded,
+                color: Color(0xFF7A8994),
+                size: 20,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -598,11 +608,11 @@ class _HardcodedActionIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SizedBox.square(
-        dimension: size,
-        child: CustomPaint(
-          painter: _HardcodedActionPainter(type: type, color: color),
-        ),
-      );
+    dimension: size,
+    child: CustomPaint(
+      painter: _HardcodedActionPainter(type: type, color: color),
+    ),
+  );
 }
 
 class _HardcodedActionPainter extends CustomPainter {
@@ -690,10 +700,7 @@ class _HeaderActionButton extends StatelessWidget {
           splashRadius: 22,
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints.tightFor(width: 42, height: 42),
-          icon: _HardcodedActionIcon(
-            type: type,
-            color: Colors.white,
-          ),
+          icon: _HardcodedActionIcon(type: type, color: Colors.white),
         ),
         if (count > 0)
           Positioned(
@@ -766,11 +773,14 @@ class _HeroCarousel extends StatelessWidget {
                           Image.network(
                             item.imageUrl,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => const _MissingBannerImage(),
+                            errorBuilder: (_, __, ___) =>
+                                const _MissingBannerImage(),
                           )
                         else
                           const _MissingBannerImage(),
-                        Container(color: AppColors.navy.withValues(alpha: 0.43)),
+                        Container(
+                          color: AppColors.navy.withValues(alpha: 0.43),
+                        ),
                         Positioned(
                           left: 14,
                           right: 12,
@@ -788,8 +798,12 @@ class _HeroCarousel extends StatelessWidget {
                                         vertical: 4,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: Colors.white.withValues(alpha: 0.9),
-                                        borderRadius: BorderRadius.circular(999),
+                                        color: Colors.white.withValues(
+                                          alpha: 0.9,
+                                        ),
+                                        borderRadius: BorderRadius.circular(
+                                          999,
+                                        ),
                                       ),
                                       child: Text(
                                         item.tag,
@@ -818,7 +832,9 @@ class _HeroCarousel extends StatelessWidget {
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
-                                        color: Colors.white.withValues(alpha: 0.92),
+                                        color: Colors.white.withValues(
+                                          alpha: 0.92,
+                                        ),
                                         fontSize: 10,
                                         fontWeight: FontWeight.w500,
                                       ),
@@ -1050,7 +1066,11 @@ class _HomeErrorView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.inventory_2_outlined, size: 42, color: AppColors.tealDark),
+            const Icon(
+              Icons.inventory_2_outlined,
+              size: 42,
+              color: AppColors.tealDark,
+            ),
             const SizedBox(height: 12),
             const Text(
               'Unable to load ShopHop',
@@ -1072,7 +1092,9 @@ class _HomeErrorView extends StatelessWidget {
             const SizedBox(height: 16),
             FilledButton(
               onPressed: onRetry,
-              style: FilledButton.styleFrom(backgroundColor: AppColors.tealDark),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.tealDark,
+              ),
               child: const Text('Retry'),
             ),
           ],
@@ -1104,7 +1126,10 @@ class _EmptyCatalogCard extends StatelessWidget {
               color: AppColors.tealLight,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(Icons.storefront_outlined, color: AppColors.tealDark),
+            child: const Icon(
+              Icons.storefront_outlined,
+              color: AppColors.tealDark,
+            ),
           ),
           const SizedBox(height: 12),
           const Text(
@@ -1129,7 +1154,6 @@ class _EmptyCatalogCard extends StatelessWidget {
     );
   }
 }
-
 
 /// Honest media fallback when a seller image URL is missing or unavailable.
 /// Keep live image URLs from the Laravel API; no fake product photography.

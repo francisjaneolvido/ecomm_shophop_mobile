@@ -95,7 +95,10 @@ class BuyerCheckoutItemData {
 }
 
 class BuyerCheckoutLogisticsOptionData {
-  const BuyerCheckoutLogisticsOptionData({required this.id, required this.name});
+  const BuyerCheckoutLogisticsOptionData({
+    required this.id,
+    required this.name,
+  });
 
   final int id;
   final String name;
@@ -129,6 +132,7 @@ class BuyerCheckoutGroupData {
     required this.shippingFee,
     required this.codFee,
     required this.voucherDiscount,
+    required this.sellerShippingDiscount,
     required this.groupTotal,
   });
 
@@ -151,6 +155,7 @@ class BuyerCheckoutGroupData {
   final double shippingFee;
   final double codFee;
   final double voucherDiscount;
+  final double sellerShippingDiscount;
   final double groupTotal;
 
   factory BuyerCheckoutGroupData.fromJson(Map<String, dynamic> json) {
@@ -168,7 +173,8 @@ class BuyerCheckoutGroupData {
       municipality: shop['municipality']?.toString() ?? '',
       shippingFeeStandard: _asDouble(json['shipping_fee_standard']),
       shippingFeeExpress: _asDouble(json['shipping_fee_express']),
-      shippingRouteLabel: quote['route_label']?.toString() ?? 'Route-based shipping',
+      shippingRouteLabel:
+          quote['route_label']?.toString() ?? 'Route-based shipping',
       shippingWeightKg: _asDouble(quote['weight_kg']),
       shippingBaseFee: _asDouble(quote['base_fee']),
       shippingDistanceFee: _asDouble(quote['distance_fee']),
@@ -188,6 +194,7 @@ class BuyerCheckoutGroupData {
       shippingFee: _asDouble(json['shipping_fee']),
       codFee: _asDouble(json['cod_fee']),
       voucherDiscount: _asDouble(json['voucher_discount']),
+      sellerShippingDiscount: _asDouble(json['seller_shipping_discount']),
       groupTotal: _asDouble(json['group_total']),
     );
   }
@@ -228,9 +235,9 @@ class BuyerCheckoutVoucherData {
       sellerId: json['seller_id'] == null ? null : _asInt(json['seller_id']),
       productIds: json['product_ids'] is List
           ? (json['product_ids'] as List)
-              .map(_asInt)
-              .where((id) => id > 0)
-              .toList(growable: false)
+                .map(_asInt)
+                .where((id) => id > 0)
+                .toList(growable: false)
           : const <int>[],
     );
   }
@@ -272,16 +279,37 @@ class BuyerCheckoutSummaryData {
 }
 
 class BuyerCheckoutPlatformVoucherData {
-  const BuyerCheckoutPlatformVoucherData({required this.code, required this.name, required this.kind});
+  const BuyerCheckoutPlatformVoucherData({
+    required this.code,
+    required this.name,
+    required this.kind,
+    this.type = '',
+    this.value = 0,
+    this.maxDiscount,
+    this.remainingBudget,
+  });
   final String code;
   final String name;
   final String kind;
-  factory BuyerCheckoutPlatformVoucherData.fromJson(Map<String, dynamic> json) =>
-      BuyerCheckoutPlatformVoucherData(
-        code: json['code']?.toString() ?? '',
-        name: json['name']?.toString() ?? '',
-        kind: json['kind']?.toString() ?? '',
-      );
+  final String type;
+  final double value;
+  final double? maxDiscount;
+  final double? remainingBudget;
+  factory BuyerCheckoutPlatformVoucherData.fromJson(
+    Map<String, dynamic> json,
+  ) => BuyerCheckoutPlatformVoucherData(
+    code: json['code']?.toString() ?? '',
+    name: json['name']?.toString() ?? '',
+    kind: json['kind']?.toString() ?? '',
+    type: json['type']?.toString() ?? '',
+    value: _asDouble(json['value']),
+    maxDiscount: json['max_discount'] == null
+        ? null
+        : _asDouble(json['max_discount']),
+    remainingBudget: json['remaining_budget'] == null
+        ? null
+        : _asDouble(json['remaining_budget']),
+  );
 }
 
 class BuyerCheckoutPreviewData {
@@ -325,7 +353,10 @@ class BuyerCheckoutPreviewData {
         BuyerCheckoutVoucherData.fromJson,
       ),
       initialVoucherCode: json['initial_voucher_code']?.toString() ?? '',
-      availablePlatformVouchers: _mapList(json['available_platform_vouchers'], BuyerCheckoutPlatformVoucherData.fromJson),
+      availablePlatformVouchers: _mapList(
+        json['available_platform_vouchers'],
+        BuyerCheckoutPlatformVoucherData.fromJson,
+      ),
       itemCount: _asInt(json['item_count']),
       quantityCount: _asInt(json['quantity_count']),
       shopCount: _asInt(json['shop_count']),
@@ -360,9 +391,9 @@ class BuyerCheckoutPlaceResult {
       checkoutGroupId: json['checkout_group_id']?.toString() ?? '',
       orderIds: json['order_ids'] is List
           ? (json['order_ids'] as List)
-              .map(_asInt)
-              .where((id) => id > 0)
-              .toList(growable: false)
+                .map(_asInt)
+                .where((id) => id > 0)
+                .toList(growable: false)
           : const <int>[],
       paymentMethod: json['payment_method']?.toString() ?? 'cod',
       grandTotal: _asDouble(json['grand_total']),
@@ -382,6 +413,7 @@ class BuyerCheckoutService {
     Map<int, int> logisticsPartners = const <int, int>{},
     String paymentMethod = 'cod',
     String voucherCode = '',
+    Map<int, String> sellerVouchers = const <int, String>{},
     String merchandiseVoucherCode = '',
     String shippingVoucherCode = '',
   }) async {
@@ -395,6 +427,7 @@ class BuyerCheckoutService {
         logisticsPartners: logisticsPartners,
         paymentMethod: paymentMethod,
         voucherCode: voucherCode,
+        sellerVouchers: sellerVouchers,
         merchandiseVoucherCode: merchandiseVoucherCode,
         shippingVoucherCode: shippingVoucherCode,
       ),
@@ -412,6 +445,7 @@ class BuyerCheckoutService {
     required Map<int, int> logisticsPartners,
     required String paymentMethod,
     String voucherCode = '',
+    Map<int, String> sellerVouchers = const <int, String>{},
     String merchandiseVoucherCode = '',
     String shippingVoucherCode = '',
     Map<int, String> notes = const <int, String>{},
@@ -422,6 +456,7 @@ class BuyerCheckoutService {
       logisticsPartners: logisticsPartners,
       paymentMethod: paymentMethod,
       voucherCode: voucherCode,
+      sellerVouchers: sellerVouchers,
       merchandiseVoucherCode: merchandiseVoucherCode,
       shippingVoucherCode: shippingVoucherCode,
     );
@@ -449,13 +484,13 @@ class BuyerCheckoutService {
     required Map<int, int> logisticsPartners,
     required String paymentMethod,
     required String voucherCode,
+    required Map<int, String> sellerVouchers,
     required String merchandiseVoucherCode,
     required String shippingVoucherCode,
   }) {
     return <String, dynamic>{
       'items': {
-        for (final entry in items.entries)
-          entry.key: {'quantity': entry.value},
+        for (final entry in items.entries) entry.key: {'quantity': entry.value},
       },
       'shipping_method': {
         for (final entry in shippingMethods.entries)
@@ -467,6 +502,10 @@ class BuyerCheckoutService {
       },
       'payment_method': paymentMethod,
       'voucher_code': voucherCode.trim(),
+      'seller_vouchers': {
+        for (final entry in sellerVouchers.entries)
+          entry.key.toString(): entry.value.trim().toUpperCase(),
+      },
       'merchandise_voucher_code': merchandiseVoucherCode.trim().toUpperCase(),
       'shipping_voucher_code': shippingVoucherCode.trim().toUpperCase(),
     };
@@ -501,7 +540,8 @@ class BuyerCheckoutService {
       }
 
       final decoded = _decode(response.body);
-      final successful = response.statusCode >= 200 && response.statusCode < 300;
+      final successful =
+          response.statusCode >= 200 && response.statusCode < 300;
       if (!successful || decoded['success'] == false) {
         throw BuyerCheckoutException(
           _messageFromResponse(decoded, response.statusCode),
@@ -537,7 +577,9 @@ class BuyerCheckoutService {
   ) {
     final data = body['data'];
     if (data is! Map) {
-      throw BuyerCheckoutException('ShopHop returned an invalid $label response.');
+      throw BuyerCheckoutException(
+        'ShopHop returned an invalid $label response.',
+      );
     }
     return Map<String, dynamic>.from(data);
   }
@@ -580,10 +622,7 @@ class BuyerCheckoutService {
   }
 }
 
-List<T> _mapList<T>(
-  dynamic value,
-  T Function(Map<String, dynamic>) parser,
-) {
+List<T> _mapList<T>(dynamic value, T Function(Map<String, dynamic>) parser) {
   if (value is! List) return <T>[];
   return value
       .whereType<Map>()
@@ -602,4 +641,3 @@ double _asDouble(dynamic value) {
   if (value is num) return value.toDouble();
   return double.tryParse(value?.toString() ?? '') ?? 0;
 }
-

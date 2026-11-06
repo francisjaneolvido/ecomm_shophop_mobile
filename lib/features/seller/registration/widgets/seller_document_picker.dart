@@ -20,12 +20,7 @@ class SellerDocumentPicker extends StatelessWidget {
   final PlatformFile? selectedFile;
   final ValueChanged<PlatformFile?> onChanged;
 
-  static const _allowedExtensions = [
-    'jpg',
-    'jpeg',
-    'png',
-    'pdf',
-  ];
+  static const _allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf'];
 
   static const _maxBytes = 5 * 1024 * 1024;
 
@@ -55,18 +50,12 @@ class SellerDocumentPicker extends StatelessWidget {
       final extension = (file.extension ?? '').toLowerCase();
 
       if (!_allowedExtensions.contains(extension)) {
-        _showMessage(
-          context,
-          'Only JPG, JPEG, PNG or PDF files are allowed.',
-        );
+        _showMessage(context, 'Only JPG, JPEG, PNG or PDF files are allowed.');
         return;
       }
 
       if (file.size > _maxBytes) {
-        _showMessage(
-          context,
-          'File is too large. Maximum size is 5MB.',
-        );
+        _showMessage(context, 'File is too large. Maximum size is 5MB.');
         return;
       }
 
@@ -77,17 +66,11 @@ class SellerDocumentPicker extends StatelessWidget {
         return;
       }
 
-      _showMessage(
-        context,
-        'Unable to select the file. Please try again.',
-      );
+      _showMessage(context, 'Unable to select the file. Please try again.');
     }
   }
 
-  void _showMessage(
-    BuildContext context,
-    String message,
-  ) {
+  void _showMessage(BuildContext context, String message) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
@@ -103,9 +86,7 @@ class SellerDocumentPicker extends StatelessWidget {
           backgroundColor: AppColors.navy,
           behavior: SnackBarBehavior.floating,
           margin: const EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       );
   }
@@ -123,9 +104,7 @@ class SellerDocumentPicker extends StatelessWidget {
   bool _isImage(PlatformFile file) {
     final extension = (file.extension ?? '').toLowerCase();
 
-    return extension == 'jpg' ||
-        extension == 'jpeg' ||
-        extension == 'png';
+    return extension == 'jpg' || extension == 'jpeg' || extension == 'png';
   }
 
   bool _isPdf(PlatformFile file) {
@@ -165,8 +144,8 @@ class SellerDocumentPicker extends StatelessWidget {
                       color: field.hasError
                           ? const Color(0xFFDB5757)
                           : file != null
-                              ? AppColors.teal.withValues(alpha: 0.55)
-                              : AppColors.grayBorder,
+                          ? AppColors.teal.withValues(alpha: 0.55)
+                          : AppColors.grayBorder,
                     ),
                   ),
                   child: Row(
@@ -177,9 +156,7 @@ class SellerDocumentPicker extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: AppColors.grayBorder,
-                          ),
+                          border: Border.all(color: AppColors.grayBorder),
                         ),
                         child: Icon(
                           file == null
@@ -283,34 +260,24 @@ class SellerDocumentPicker extends StatelessWidget {
                 height: 190,
                 padding: const EdgeInsets.all(10),
                 color: AppColors.grayBg,
-                child: Image.memory(
-                  file.bytes!,
-                  fit: BoxFit.contain,
-                ),
+                child: Image.memory(file.bytes!, fit: BoxFit.contain),
               ),
             )
           else
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(
-                vertical: 28,
-                horizontal: 18,
-              ),
+              padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 18),
               color: AppColors.grayBg,
               child: Column(
                 children: [
                   Icon(
-                    _isPdf(file)
-                        ? Icons.picture_as_pdf_outlined
-                        : icon,
+                    _isPdf(file) ? Icons.picture_as_pdf_outlined : icon,
                     color: AppColors.tealDark,
                     size: 34,
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    _isPdf(file)
-                        ? 'PDF selected'
-                        : 'Document selected',
+                    _isPdf(file) ? 'PDF selected' : 'Document selected',
                     style: SellerUi.text(
                       color: AppColors.navy,
                       fontSize: 12,
@@ -320,10 +287,7 @@ class SellerDocumentPicker extends StatelessWidget {
                 ],
               ),
             ),
-          const Divider(
-            height: 1,
-            color: AppColors.grayBorder,
-          ),
+          const Divider(height: 1, color: AppColors.grayBorder),
           Padding(
             padding: const EdgeInsets.all(12),
             child: Row(
@@ -331,10 +295,7 @@ class SellerDocumentPicker extends StatelessWidget {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: () => _pick(context, field),
-                    icon: const Icon(
-                      Icons.sync_rounded,
-                      size: 16,
-                    ),
+                    icon: const Icon(Icons.sync_rounded, size: 16),
                     label: Text(
                       'Change',
                       style: SellerUi.text(
@@ -345,9 +306,7 @@ class SellerDocumentPicker extends StatelessWidget {
                     ),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.navy,
-                      side: const BorderSide(
-                        color: AppColors.grayBorder,
-                      ),
+                      side: const BorderSide(color: AppColors.grayBorder),
                       minimumSize: const Size.fromHeight(46),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -367,17 +326,12 @@ class SellerDocumentPicker extends StatelessWidget {
                     style: OutlinedButton.styleFrom(
                       padding: EdgeInsets.zero,
                       foregroundColor: const Color(0xFFC45252),
-                      side: const BorderSide(
-                        color: Color(0xFFF0D0D0),
-                      ),
+                      side: const BorderSide(color: Color(0xFFF0D0D0)),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: const Icon(
-                      Icons.delete_outline_rounded,
-                      size: 18,
-                    ),
+                    child: const Icon(Icons.delete_outline_rounded, size: 18),
                   ),
                 ),
               ],
@@ -388,10 +342,7 @@ class SellerDocumentPicker extends StatelessWidget {
     );
   }
 
-  void _showFullImage(
-    BuildContext context,
-    PlatformFile file,
-  ) {
+  void _showFullImage(BuildContext context, PlatformFile file) {
     if (file.bytes == null) {
       return;
     }
@@ -404,10 +355,7 @@ class SellerDocumentPicker extends StatelessWidget {
           insetPadding: const EdgeInsets.all(16),
           backgroundColor: Colors.transparent,
           child: Container(
-            constraints: const BoxConstraints(
-              maxWidth: 650,
-              maxHeight: 700,
-            ),
+            constraints: const BoxConstraints(maxWidth: 650, maxHeight: 700),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(8),
@@ -441,10 +389,7 @@ class SellerDocumentPicker extends StatelessWidget {
                     ],
                   ),
                 ),
-                const Divider(
-                  height: 1,
-                  color: AppColors.grayBorder,
-                ),
+                const Divider(height: 1, color: AppColors.grayBorder),
                 Expanded(
                   child: Container(
                     color: AppColors.grayBg,
@@ -453,10 +398,7 @@ class SellerDocumentPicker extends StatelessWidget {
                       minScale: 1,
                       maxScale: 4,
                       child: Center(
-                        child: Image.memory(
-                          file.bytes!,
-                          fit: BoxFit.contain,
-                        ),
+                        child: Image.memory(file.bytes!, fit: BoxFit.contain),
                       ),
                     ),
                   ),

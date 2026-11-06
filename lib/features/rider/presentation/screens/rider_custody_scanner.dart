@@ -75,7 +75,8 @@ class _RiderCustodyScannerState extends State<RiderCustodyScanner> {
       if (mounted) {
         setState(() {
           _success = false;
-          _message = 'That is not a ShopHop parcel QR. Scan the shipping label.';
+          _message =
+              'That is not a ShopHop parcel QR. Scan the shipping label.';
         });
       }
       return;
@@ -130,7 +131,9 @@ class _RiderCustodyScannerState extends State<RiderCustodyScanner> {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(handoff['confirm_label']?.toString() ?? 'Confirm custody'),
+            child: Text(
+              handoff['confirm_label']?.toString() ?? 'Confirm custody',
+            ),
           ),
         ],
       ),
@@ -309,7 +312,9 @@ class _RiderCustodyScannerState extends State<RiderCustodyScanner> {
                   ? null
                   : () => _scanning ? _stopCamera() : _startCamera(),
               icon: Icon(
-                _scanning ? Icons.stop_circle_outlined : Icons.qr_code_scanner_rounded,
+                _scanning
+                    ? Icons.stop_circle_outlined
+                    : Icons.qr_code_scanner_rounded,
               ),
               label: Text(_scanning ? 'Pause camera' : 'Open camera'),
             ),
@@ -395,7 +400,10 @@ class _RiderCustodyScannerState extends State<RiderCustodyScanner> {
           ),
           const SizedBox(height: 13),
           if (handoff['waybill'] is Map) ...[
-            _waybillCard(Map<String, dynamic>.from(handoff['waybill'] as Map), color),
+            _waybillCard(
+              Map<String, dynamic>.from(handoff['waybill'] as Map),
+              color,
+            ),
             const SizedBox(height: 13),
           ],
           Text(
@@ -441,7 +449,10 @@ class _RiderCustodyScannerState extends State<RiderCustodyScanner> {
   Widget _waybillCard(Map<String, dynamic> waybill, Color color) {
     final rawItems = waybill['items'];
     final items = rawItems is List
-        ? rawItems.whereType<Map>().map((item) => Map<String, dynamic>.from(item)).toList()
+        ? rawItems
+              .whereType<Map>()
+              .map((item) => Map<String, dynamic>.from(item))
+              .toList()
         : <Map<String, dynamic>>[];
     final cod = waybill['cod_amount']?.toString();
 
@@ -473,7 +484,11 @@ class _RiderCustodyScannerState extends State<RiderCustodyScanner> {
               ),
               Text(
                 waybill['order_number']?.toString() ?? '',
-                style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w800),
+                style: TextStyle(
+                  color: color,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ],
           ),
@@ -486,9 +501,12 @@ class _RiderCustodyScannerState extends State<RiderCustodyScanner> {
             _waybillLine('Ship to', waybill['buyer_address']),
           if ((waybill['buyer_phone']?.toString() ?? '').isNotEmpty)
             _waybillLine('Contact', waybill['buyer_phone']),
-          _waybillLine('Payment', cod != null && cod.isNotEmpty
-              ? '${waybill['payment_method'] ?? 'COD'} · ₱$cod'
-              : waybill['payment_method']),
+          _waybillLine(
+            'Payment',
+            cod != null && cod.isNotEmpty
+                ? '${waybill['payment_method'] ?? 'COD'} · ₱$cod'
+                : waybill['payment_method'],
+          ),
           _waybillLine('Items', '${waybill['item_count'] ?? 0} pc(s)'),
           if (items.isNotEmpty) ...[
             const SizedBox(height: 7),
@@ -500,14 +518,21 @@ class _RiderCustodyScannerState extends State<RiderCustodyScanner> {
                 padding: const EdgeInsets.only(bottom: 3),
                 child: Text(
                   '• $qty× $name${variant.isNotEmpty && variant != 'Standard' ? ' · $variant' : ''}',
-                  style: const TextStyle(color: Color(0xFF526174), fontSize: 11.2, height: 1.3),
+                  style: const TextStyle(
+                    color: Color(0xFF526174),
+                    fontSize: 11.2,
+                    height: 1.3,
+                  ),
                 ),
               );
             }),
             if (items.length > 4)
               Text(
                 '+ ${items.length - 4} more item line(s)',
-                style: const TextStyle(color: Color(0xFF7A8799), fontSize: 10.5),
+                style: const TextStyle(
+                  color: Color(0xFF7A8799),
+                  fontSize: 10.5,
+                ),
               ),
           ],
         ],
@@ -527,13 +552,22 @@ class _RiderCustodyScannerState extends State<RiderCustodyScanner> {
             width: 88,
             child: Text(
               label,
-              style: const TextStyle(color: Color(0xFF7A8799), fontSize: 10.5, fontWeight: FontWeight.w700),
+              style: const TextStyle(
+                color: Color(0xFF7A8799),
+                fontSize: 10.5,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(color: AppColors.navy, fontSize: 10.8, fontWeight: FontWeight.w600, height: 1.3),
+              style: const TextStyle(
+                color: AppColors.navy,
+                fontSize: 10.8,
+                fontWeight: FontWeight.w600,
+                height: 1.3,
+              ),
             ),
           ),
         ],
@@ -620,10 +654,7 @@ class _RiderCustodyScannerState extends State<RiderCustodyScanner> {
           _notice(_message!, success: _success),
           const SizedBox(height: 12),
         ],
-        if (_handoff != null)
-          _handoffCard(_handoff!)
-        else
-          _cameraCard(),
+        if (_handoff != null) _handoffCard(_handoff!) else _cameraCard(),
         const SizedBox(height: 14),
         Container(
           padding: const EdgeInsets.all(14),

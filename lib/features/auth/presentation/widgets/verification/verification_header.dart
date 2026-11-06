@@ -5,10 +5,7 @@ import 'package:shophop/features/auth/domain/registration_role.dart';
 import 'package:shophop/features/auth/presentation/widgets/verification/verification_ui.dart';
 
 class VerificationHeader extends StatelessWidget {
-  const VerificationHeader({
-    super.key,
-    required this.role,
-  });
+  const VerificationHeader({super.key, required this.role});
 
   final RegistrationRole role;
 
@@ -22,9 +19,7 @@ class VerificationHeader extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppColors.tealLight,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: AppColors.teal.withValues(alpha: 0.13),
-            ),
+            border: Border.all(color: AppColors.teal.withValues(alpha: 0.13)),
           ),
           child: const Icon(
             Icons.mark_email_read_outlined,

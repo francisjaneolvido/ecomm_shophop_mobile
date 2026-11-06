@@ -75,15 +75,14 @@ class _OtpCodeFieldState extends State<OtpCodeField> {
           Row(
             children: List.generate(6, (index) {
               final hasDigit = index < code.length;
-              final current = index == code.length &&
+              final current =
+                  index == code.length &&
                   code.length < 6 &&
                   _focusNode.hasFocus;
 
               return Expanded(
                 child: Padding(
-                  padding: EdgeInsets.only(
-                    right: index == 5 ? 0 : 7,
-                  ),
+                  padding: EdgeInsets.only(right: index == 5 ? 0 : 7),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 150),
                     height: 58,
@@ -95,8 +94,8 @@ class _OtpCodeFieldState extends State<OtpCodeField> {
                         color: current
                             ? AppColors.teal
                             : hasDigit
-                                ? AppColors.teal.withValues(alpha: 0.48)
-                                : AppColors.grayBorder,
+                            ? AppColors.teal.withValues(alpha: 0.48)
+                            : AppColors.grayBorder,
                         width: current ? 1.6 : 1,
                       ),
                     ),

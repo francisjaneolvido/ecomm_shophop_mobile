@@ -13,13 +13,19 @@ class BuyerOrderException implements Exception {
 }
 
 class BuyerOrderItemData {
-  const BuyerOrderItemData({required this.name, required this.variant, required this.quantity, required this.price});
+  const BuyerOrderItemData({
+    required this.name,
+    required this.variant,
+    required this.quantity,
+    required this.price,
+  });
   final String name;
   final String variant;
   final int quantity;
   final double price;
 
-  factory BuyerOrderItemData.fromJson(Map<String, dynamic> json) => BuyerOrderItemData(
+  factory BuyerOrderItemData.fromJson(Map<String, dynamic> json) =>
+      BuyerOrderItemData(
         name: json['name']?.toString() ?? 'Product',
         variant: json['variant']?.toString() ?? 'Standard',
         quantity: (num.tryParse(json['quantity'].toString()) ?? 0).toInt(),
@@ -31,7 +37,8 @@ class BuyerOrderMilestone {
   const BuyerOrderMilestone({required this.label, required this.at});
   final String label;
   final String at;
-  factory BuyerOrderMilestone.fromJson(Map<String, dynamic> json) => BuyerOrderMilestone(
+  factory BuyerOrderMilestone.fromJson(Map<String, dynamic> json) =>
+      BuyerOrderMilestone(
         label: json['label']?.toString() ?? '',
         at: json['at']?.toString() ?? '',
       );
@@ -84,10 +91,24 @@ class BuyerOrderData {
       failureReason: json['failure_reason']?.toString(),
       canConfirmReceipt: json['can_confirm_receipt'] == true,
       items: rawItems is List
-          ? rawItems.whereType<Map>().map((item) => BuyerOrderItemData.fromJson(Map<String, dynamic>.from(item))).toList()
+          ? rawItems
+                .whereType<Map>()
+                .map(
+                  (item) => BuyerOrderItemData.fromJson(
+                    Map<String, dynamic>.from(item),
+                  ),
+                )
+                .toList()
           : const [],
       timeline: rawTimeline is List
-          ? rawTimeline.whereType<Map>().map((item) => BuyerOrderMilestone.fromJson(Map<String, dynamic>.from(item))).toList()
+          ? rawTimeline
+                .whereType<Map>()
+                .map(
+                  (item) => BuyerOrderMilestone.fromJson(
+                    Map<String, dynamic>.from(item),
+                  ),
+                )
+                .toList()
           : const [],
     );
   }
@@ -102,28 +123,55 @@ class BuyerOrderPageData {
 class BuyerOrderService {
   BuyerOrderService._();
 
-  static Future<BuyerOrderPageData> list({required String token, int page = 1}) async {
+  static Future<BuyerOrderPageData> list({
+    required String token,
+    int page = 1,
+  }) async {
     final data = await _request('/buyer/orders?page=$page', token: token);
     final orders = data['orders'];
     return BuyerOrderPageData(
       orders: orders is List
-          ? orders.whereType<Map>().map((item) => BuyerOrderData.fromJson(Map<String, dynamic>.from(item))).toList()
+          ? orders
+                .whereType<Map>()
+                .map(
+                  (item) =>
+                      BuyerOrderData.fromJson(Map<String, dynamic>.from(item)),
+                )
+                .toList()
           : const [],
       hasMore: data['has_more'] == true,
     );
   }
 
-  static Future<void> confirmReceipt({required String token, required int orderId}) async {
-    await _request('/buyer/orders/$orderId/confirm-receipt', token: token, post: true);
+  static Future<void> confirmReceipt({
+    required String token,
+    required int orderId,
+  }) async {
+    await _request(
+      '/buyer/orders/$orderId/confirm-receipt',
+      token: token,
+      post: true,
+    );
   }
 
-  static Future<Map<String, dynamic>> _request(String path, {required String token, bool post = false}) async {
+  static Future<Map<String, dynamic>> _request(
+    String path, {
+    required String token,
+    bool post = false,
+  }) async {
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}$path');
-      final headers = {'Accept': 'application/json', 'Authorization': 'Bearer $token'};
+      final headers = {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      };
       final response = post
-          ? await http.post(url, headers: headers).timeout(const Duration(seconds: 15))
-          : await http.get(url, headers: headers).timeout(const Duration(seconds: 15));
+          ? await http
+                .post(url, headers: headers)
+                .timeout(const Duration(seconds: 15))
+          : await http
+                .get(url, headers: headers)
+                .timeout(const Duration(seconds: 15));
       Map<String, dynamic> result = {};
       try {
         final decoded = jsonDecode(response.body);
@@ -131,12 +179,20 @@ class BuyerOrderService {
       } catch (_) {
         // A non-JSON error is reported with its HTTP status below.
       }
-      if (response.statusCode < 200 || response.statusCode >= 300 || result['success'] != true) {
+      if (response.statusCode < 200 ||
+          response.statusCode >= 300 ||
+          result['success'] != true) {
         final errors = result['errors'];
-        final firstError = errors is Map && errors.isNotEmpty ? errors.values.first : null;
-        final firstMessage = firstError is List && firstError.isNotEmpty ? firstError.first.toString() : null;
+        final firstError = errors is Map && errors.isNotEmpty
+            ? errors.values.first
+            : null;
+        final firstMessage = firstError is List && firstError.isNotEmpty
+            ? firstError.first.toString()
+            : null;
         throw BuyerOrderException(
-          firstMessage ?? result['message']?.toString() ?? 'Could not load ShopHop orders.',
+          firstMessage ??
+              result['message']?.toString() ??
+              'Could not load ShopHop orders.',
           statusCode: response.statusCode,
         );
       }
@@ -145,7 +201,9 @@ class BuyerOrderService {
     } on BuyerOrderException {
       rethrow;
     } catch (_) {
-      throw const BuyerOrderException('Connection unavailable. Please try again.');
+      throw const BuyerOrderException(
+        'Connection unavailable. Please try again.',
+      );
     }
   }
 }

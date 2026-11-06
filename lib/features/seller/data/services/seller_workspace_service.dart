@@ -21,8 +21,11 @@ class SellerWorkspaceService {
   static Future<AuthApiResult> post(String token, String path) =>
       _send('POST', token, path);
 
-  static Future<AuthApiResult> postWithBody(String token, String path, Map<String, dynamic> payload) =>
-      _send('POST', token, path, payload);
+  static Future<AuthApiResult> postWithBody(
+    String token,
+    String path,
+    Map<String, dynamic> payload,
+  ) => _send('POST', token, path, payload);
 
   /// Simple product fields + optional product photos (shared Seller Web database).
   static Future<AuthApiResult> saveProduct({
@@ -33,31 +36,57 @@ class SellerWorkspaceService {
     PlatformFile? video,
     bool removeVideo = false,
   }) async {
-    final path = productId == null ? 'inventory/products' : 'inventory/products/$productId';
+    final path = productId == null
+        ? 'inventory/products'
+        : 'inventory/products/$productId';
     final client = http.Client();
     try {
-      final request = http.MultipartRequest('POST',
-          Uri.parse('${ApiConfig.baseUrl}/seller/$path'));
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('${ApiConfig.baseUrl}/seller/$path'),
+      );
       request.headers['Authorization'] = 'Bearer $token';
       request.headers['Accept'] = 'application/json';
       request.fields.addAll(fields);
       if (removeVideo) request.fields['remove_video'] = '1';
       if (video?.bytes != null) {
-        request.files.add(http.MultipartFile.fromBytes(
-          'video', video!.bytes!, filename: video.name));
+        request.files.add(
+          http.MultipartFile.fromBytes(
+            'video',
+            video!.bytes!,
+            filename: video.name,
+          ),
+        );
       }
       for (var i = 0; i < images.length; i++) {
         final image = images[i];
         if (image.bytes == null) continue;
-        request.files.add(http.MultipartFile.fromBytes('images[$i]', image.bytes!,
-          filename: image.name));
+        request.files.add(
+          http.MultipartFile.fromBytes(
+            'images[$i]',
+            image.bytes!,
+            filename: image.name,
+          ),
+        );
       }
-      final streamed = await client.send(request).timeout(const Duration(seconds: 50));
-      return AuthApiResult.fromResponse(await http.Response.fromStream(streamed));
+      final streamed = await client
+          .send(request)
+          .timeout(const Duration(seconds: 50));
+      return AuthApiResult.fromResponse(
+        await http.Response.fromStream(streamed),
+      );
     } on TimeoutException {
-      return const AuthApiResult(success: false, status: 'timeout', message: 'Product upload timed out. Refresh inventory before retrying.');
+      return const AuthApiResult(
+        success: false,
+        status: 'timeout',
+        message: 'Product upload timed out. Refresh inventory before retrying.',
+      );
     } catch (_) {
-      return const AuthApiResult(success: false, status: 'network_error', message: 'Could not send product. Check your network connection.');
+      return const AuthApiResult(
+        success: false,
+        status: 'network_error',
+        message: 'Could not send product. Check your network connection.',
+      );
     } finally {
       client.close();
     }
@@ -66,10 +95,14 @@ class SellerWorkspaceService {
   static Future<AuthApiResult> _send(
     String method,
     String token,
-    String path, [Map<String, dynamic>? payload]
-  ) async {
+    String path, [
+    Map<String, dynamic>? payload,
+  ]) async {
     try {
-      final request = http.Request(method, Uri.parse('${ApiConfig.baseUrl}/seller/$path'));
+      final request = http.Request(
+        method,
+        Uri.parse('${ApiConfig.baseUrl}/seller/$path'),
+      );
       request.headers.addAll({
         'Accept': 'application/json',
         'Content-Type': 'application/json',
@@ -78,15 +111,28 @@ class SellerWorkspaceService {
       if (payload != null) request.body = jsonEncode(payload);
       final client = http.Client();
       try {
-        final streamed = await client.send(request).timeout(const Duration(seconds: 22));
-        return AuthApiResult.fromResponse(await http.Response.fromStream(streamed));
+        final streamed = await client
+            .send(request)
+            .timeout(const Duration(seconds: 22));
+        return AuthApiResult.fromResponse(
+          await http.Response.fromStream(streamed),
+        );
       } finally {
         client.close();
       }
     } on TimeoutException {
-      return const AuthApiResult(success: false, status: 'timeout', message: 'Request timed out. Please retry.');
+      return const AuthApiResult(
+        success: false,
+        status: 'timeout',
+        message: 'Request timed out. Please retry.',
+      );
     } catch (_) {
-      return const AuthApiResult(success: false, status: 'network_error', message: 'Cannot connect to ShopHop. Check Laravel and your connection.');
+      return const AuthApiResult(
+        success: false,
+        status: 'network_error',
+        message:
+            'Cannot connect to ShopHop. Check Laravel and your connection.',
+      );
     }
   }
 }

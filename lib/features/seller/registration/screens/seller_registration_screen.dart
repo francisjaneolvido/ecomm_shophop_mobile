@@ -14,19 +14,15 @@ import 'package:shophop/features/seller/registration/steps/seller_verification_s
 import 'package:shophop/features/seller/registration/widgets/seller_registration_widgets.dart';
 import 'package:shophop/features/seller/registration/widgets/seller_ui.dart';
 
-class SellerRegistrationScreen
-    extends StatefulWidget {
-  const SellerRegistrationScreen({
-    super.key,
-  });
+class SellerRegistrationScreen extends StatefulWidget {
+  const SellerRegistrationScreen({super.key});
 
   @override
   State<SellerRegistrationScreen> createState() =>
       _SellerRegistrationScreenState();
 }
 
-class _SellerRegistrationScreenState
-    extends State<SellerRegistrationScreen> {
+class _SellerRegistrationScreenState extends State<SellerRegistrationScreen> {
   final _scrollController = ScrollController();
 
   final _personalFormKey = GlobalKey<FormState>();
@@ -100,22 +96,14 @@ class _SellerRegistrationScreenState
 
     final now = DateTime.now();
 
-    final initial = _selectedBirthday ??
-        DateTime(
-          now.year - 18,
-          now.month,
-          now.day,
-        );
+    final initial =
+        _selectedBirthday ?? DateTime(now.year - 18, now.month, now.day);
 
     final picked = await showDatePicker(
       context: context,
       initialDate: initial,
       firstDate: DateTime(1900, 1, 1),
-      lastDate: DateTime(
-        now.year - 18,
-        now.month,
-        now.day,
-      ),
+      lastDate: DateTime(now.year - 18, now.month, now.day),
       helpText: 'Select your birthday',
       cancelText: 'Cancel',
       confirmText: 'Select',
@@ -145,8 +133,7 @@ class _SellerRegistrationScreenState
 
     final birthdayNotReached =
         now.month < picked.month ||
-            (now.month == picked.month &&
-                now.day < picked.day);
+        (now.month == picked.month && now.day < picked.day);
 
     if (birthdayNotReached) {
       age--;
@@ -170,21 +157,13 @@ class _SellerRegistrationScreenState
     bool valid = false;
 
     if (_currentStep == 1) {
-      valid =
-          _personalFormKey.currentState?.validate() ??
-              false;
+      valid = _personalFormKey.currentState?.validate() ?? false;
     } else if (_currentStep == 2) {
-      valid =
-          _addressFormKey.currentState?.validate() ??
-              false;
+      valid = _addressFormKey.currentState?.validate() ?? false;
     } else if (_currentStep == 3) {
-      valid =
-          _businessFormKey.currentState?.validate() ??
-              false;
+      valid = _businessFormKey.currentState?.validate() ?? false;
     } else if (_currentStep == 4) {
-      valid =
-          _verificationFormKey.currentState?.validate() ??
-              false;
+      valid = _verificationFormKey.currentState?.validate() ?? false;
     }
 
     if (!valid) {
@@ -246,15 +225,19 @@ class _SellerRegistrationScreenState
       _showMessage('Please complete your business details.');
       return;
     }
-    if (_provinceCode == null || _provinceName == null ||
-        _municipalityCode == null || _municipalityName == null ||
-        _barangayCode == null || _barangayName == null ||
+    if (_provinceCode == null ||
+        _provinceName == null ||
+        _municipalityCode == null ||
+        _municipalityName == null ||
+        _barangayCode == null ||
+        _barangayName == null ||
         _streetAddressController.text.trim().isEmpty) {
       _goToStep(2);
       _showMessage('Please complete the delivery address.');
       return;
     }
-    if (_selectedSex == null || _birthdayController.text.isEmpty ||
+    if (_selectedSex == null ||
+        _birthdayController.text.isEmpty ||
         _firstNameController.text.trim().isEmpty ||
         _lastNameController.text.trim().isEmpty ||
         _emailController.text.trim().isEmpty ||
@@ -384,9 +367,7 @@ class _SellerRegistrationScreenState
           backgroundColor: AppColors.navy,
           behavior: SnackBarBehavior.floating,
           margin: const EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       );
   }
@@ -411,9 +392,7 @@ class _SellerRegistrationScreenState
                   children: [
                     const SellerRegistrationHeader(),
                     const SizedBox(height: 22),
-                    SellerRegistrationProgress(
-                      currentStep: _currentStep,
-                    ),
+                    SellerRegistrationProgress(currentStep: _currentStep),
                     const SizedBox(height: 20),
                     _buildCurrentStep(),
                   ],
@@ -454,8 +433,7 @@ class _SellerRegistrationScreenState
         child: PersonalDetailsStep(
           firstNameController: _firstNameController,
           lastNameController: _lastNameController,
-          middleInitialController:
-              _middleInitialController,
+          middleInitialController: _middleInitialController,
           emailController: _emailController,
           contactController: _contactController,
           birthdayController: _birthdayController,
@@ -478,8 +456,7 @@ class _SellerRegistrationScreenState
       child: Form(
         key: _addressFormKey,
         child: AddressStep(
-          streetAddressController:
-              _streetAddressController,
+          streetAddressController: _streetAddressController,
           provinceCode: _provinceCode,
           municipalityCode: _municipalityCode,
           barangayCode: _barangayCode,
@@ -492,8 +469,7 @@ class _SellerRegistrationScreenState
           onProvinceChanged: (code, name) {
             setState(() {
               _provinceCode = code;
-              _provinceName =
-                  name.isEmpty ? null : name;
+              _provinceName = name.isEmpty ? null : name;
 
               _municipalityCode = null;
               _municipalityName = null;
@@ -505,8 +481,7 @@ class _SellerRegistrationScreenState
           onMunicipalityChanged: (code, name) {
             setState(() {
               _municipalityCode = code;
-              _municipalityName =
-                  name.isEmpty ? null : name;
+              _municipalityName = name.isEmpty ? null : name;
 
               _barangayCode = null;
               _barangayName = null;
@@ -515,8 +490,7 @@ class _SellerRegistrationScreenState
           onBarangayChanged: (code, name) {
             setState(() {
               _barangayCode = code;
-              _barangayName =
-                  name.isEmpty ? null : name;
+              _barangayName = name.isEmpty ? null : name;
             });
           },
         ),
@@ -529,10 +503,8 @@ class _SellerRegistrationScreenState
       child: Form(
         key: _businessFormKey,
         child: SellerBusinessStep(
-          businessNameController:
-              _businessNameController,
-          businessCategoryController:
-              _businessCategoryController,
+          businessNameController: _businessNameController,
+          businessCategoryController: _businessCategoryController,
         ),
       ),
     );
@@ -566,8 +538,7 @@ class _SellerRegistrationScreenState
         key: _securityFormKey,
         child: SellerSecurityStep(
           passwordController: _passwordController,
-          confirmPasswordController:
-              _confirmPasswordController,
+          confirmPasswordController: _confirmPasswordController,
           termsAccepted: _termsAccepted,
           onTermsChanged: (value) {
             setState(() {
@@ -580,31 +551,24 @@ class _SellerRegistrationScreenState
             );
           },
           onPrivacyTap: () {
-            _showMessage(
-              'Privacy Policy screen will be connected later.',
-            );
+            _showMessage('Privacy Policy screen will be connected later.');
           },
         ),
       ),
     );
   }
 
-  Widget _stepCard({
-    required Widget child,
-  }) {
+  Widget _stepCard({required Widget child}) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: AppColors.grayBorder,
-        ),
+        border: Border.all(color: AppColors.grayBorder),
         boxShadow: [
           BoxShadow(
-            color:
-                AppColors.navy.withValues(alpha: 0.035),
+            color: AppColors.navy.withValues(alpha: 0.035),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -630,9 +594,7 @@ class _SellerRegistrationScreenState
                 height: 44,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: AppColors.grayBorder,
-                  ),
+                  border: Border.all(color: AppColors.grayBorder),
                 ),
                 child: const Icon(
                   Icons.arrow_back_ios_new_rounded,
@@ -673,10 +635,7 @@ class _SellerRegistrationScreenState
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(
-          top: BorderSide(
-            color:
-                AppColors.grayBorder.withValues(alpha: 0.8),
-          ),
+          top: BorderSide(color: AppColors.grayBorder.withValues(alpha: 0.8)),
         ),
       ),
       child: SafeArea(
@@ -690,23 +649,15 @@ class _SellerRegistrationScreenState
                   onPressed: _isSubmitting ? null : _previousStep,
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.navy,
-                    side: const BorderSide(
-                      color: AppColors.grayBorder,
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 17,
-                    ),
+                    side: const BorderSide(color: AppColors.grayBorder),
+                    padding: const EdgeInsets.symmetric(horizontal: 17),
                     shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(
-                        Icons.arrow_back_rounded,
-                        size: 18,
-                      ),
+                      const Icon(Icons.arrow_back_rounded, size: 18),
                       const SizedBox(width: 6),
                       Text(
                         'Back',
@@ -729,15 +680,14 @@ class _SellerRegistrationScreenState
                   onPressed: _isSubmitting
                       ? null
                       : isFinalStep
-                          ? _createAccount
-                          : _nextStep,
+                      ? _createAccount
+                      : _nextStep,
                   style: ElevatedButton.styleFrom(
                     elevation: 0,
                     backgroundColor: AppColors.teal,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                   ),
                   child: _isSubmitting
@@ -750,28 +700,25 @@ class _SellerRegistrationScreenState
                           ),
                         )
                       : Row(
-                    mainAxisAlignment:
-                        MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        isFinalStep
-                            ? 'Create Account'
-                            : 'Continue',
-                        style: SellerUi.text(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              isFinalStep ? 'Create Account' : 'Continue',
+                              style: SellerUi.text(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Icon(
+                              isFinalStep
+                                  ? Icons.person_add_alt_1_rounded
+                                  : Icons.arrow_forward_rounded,
+                              size: 19,
+                            ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Icon(
-                        isFinalStep
-                            ? Icons.person_add_alt_1_rounded
-                            : Icons.arrow_forward_rounded,
-                        size: 19,
-                      ),
-                    ],
-                  ),
                 ),
               ),
             ),

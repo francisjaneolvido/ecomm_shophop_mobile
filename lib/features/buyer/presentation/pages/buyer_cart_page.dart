@@ -101,10 +101,8 @@ class _BuyerCartPageState extends State<BuyerCartPage> {
       .where((item) => _selected.contains(item.lineKey))
       .toList(growable: false);
 
-  double get _selectedSubtotal => _selectedItems.fold<double>(
-        0,
-        (sum, item) => sum + item.lineTotal,
-      );
+  double get _selectedSubtotal =>
+      _selectedItems.fold<double>(0, (sum, item) => sum + item.lineTotal);
 
   bool get _allAvailableSelected =>
       _availableItems.isNotEmpty && _selected.length == _availableItems.length;
@@ -275,10 +273,7 @@ class _BuyerCartPageState extends State<BuyerCartPage> {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          content: Text(message),
-        ),
+        SnackBar(behavior: SnackBarBehavior.floating, content: Text(message)),
       );
   }
 
@@ -331,9 +326,9 @@ class _BuyerCartPageState extends State<BuyerCartPage> {
               onCheckout: _selectedItems.isEmpty
                   ? null
                   : () => widget.onCheckout(<String, int>{
-                        for (final item in _selectedItems)
-                          item.lineKey: item.quantity,
-                      }),
+                      for (final item in _selectedItems)
+                        item.lineKey: item.quantity,
+                    }),
             )
           : null,
     );
@@ -493,8 +488,8 @@ class _ShopCartCard extends StatelessWidget {
         .where((item) => item.isAvailable)
         .map((item) => item.lineKey)
         .toList(growable: false);
-    final allSelected = selectableKeys.isNotEmpty &&
-        selectableKeys.every(selected.contains);
+    final allSelected =
+        selectableKeys.isNotEmpty && selectableKeys.every(selected.contains);
 
     return Container(
       decoration: BoxDecoration(
@@ -640,10 +635,7 @@ class _CartItemTile extends StatelessWidget {
                 height: 82,
                 color: const Color(0xFFF0F4F4),
                 child: item.image.isEmpty
-                    ? const Icon(
-                        Icons.image_outlined,
-                        color: Color(0xFFB6C1C6),
-                      )
+                    ? const Icon(Icons.image_outlined, color: Color(0xFFB6C1C6))
                     : Image.network(
                         item.image,
                         fit: BoxFit.cover,
@@ -870,7 +862,9 @@ class _VoucherPreview extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          ...vouchers.take(3).map(
+          ...vouchers
+              .take(3)
+              .map(
                 (voucher) => Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Container(
@@ -996,10 +990,7 @@ class _CartSummaryBar extends StatelessWidget {
                 children: [
                   const Text(
                     'Subtotal',
-                    style: TextStyle(
-                      color: Color(0xFF838C95),
-                      fontSize: 9,
-                    ),
+                    style: TextStyle(color: Color(0xFF838C95), fontSize: 9),
                   ),
                   Text(
                     _price(subtotal),
@@ -1132,15 +1123,14 @@ class _CartErrorState extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Color(0xFF737D89),
-                height: 1.4,
-              ),
+              style: const TextStyle(color: Color(0xFF737D89), height: 1.4),
             ),
             const SizedBox(height: 16),
             FilledButton.icon(
               onPressed: onRetry,
-              style: FilledButton.styleFrom(backgroundColor: AppColors.tealDark),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.tealDark,
+              ),
               icon: const Icon(Icons.refresh_rounded),
               label: const Text('Try again'),
             ),

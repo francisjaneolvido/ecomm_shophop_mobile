@@ -33,11 +33,9 @@ class SellerBusinessStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currentCategory =
-        _businessCategories.contains(
-          businessCategoryController.text,
-        )
-            ? businessCategoryController.text
-            : null;
+        _businessCategories.contains(businessCategoryController.text)
+        ? businessCategoryController.text
+        : null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -55,9 +53,7 @@ class SellerBusinessStep extends StatelessWidget {
 
         const SizedBox(height: 18),
 
-        _buildBusinessCategoryField(
-          currentCategory,
-        ),
+        _buildBusinessCategoryField(currentCategory),
 
         const SizedBox(height: 18),
 
@@ -70,19 +66,14 @@ class SellerBusinessStep extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SellerUi.requiredLabel(
-          'Business name',
-        ),
+        SellerUi.requiredLabel('Business name'),
 
         const SizedBox(height: 8),
 
         TextFormField(
-          controller:
-              businessNameController,
-          textCapitalization:
-              TextCapitalization.words,
-          textInputAction:
-              TextInputAction.next,
+          controller: businessNameController,
+          textCapitalization: TextCapitalization.words,
+          textInputAction: TextInputAction.next,
           validator: (value) {
             if (value == null || value.trim().isEmpty) {
               return 'Business name is required.';
@@ -98,27 +89,20 @@ class SellerBusinessStep extends StatelessWidget {
             fontSize: 13,
             fontWeight: FontWeight.w500,
           ),
-          decoration:
-              SellerUi.inputDecoration(
-            hint:
-                'Enter your registered business name',
-            icon:
-                Icons.store_outlined,
+          decoration: SellerUi.inputDecoration(
+            hint: 'Enter your registered business name',
+            icon: Icons.store_outlined,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildBusinessCategoryField(
-    String? currentCategory,
-  ) {
+  Widget _buildBusinessCategoryField(String? currentCategory) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SellerUi.requiredLabel(
-          'Line of Business (Category)',
-        ),
+        SellerUi.requiredLabel('Line of Business (Category)'),
 
         const SizedBox(height: 8),
 
@@ -127,20 +111,13 @@ class SellerBusinessStep extends StatelessWidget {
           isExpanded: true,
           menuMaxHeight: 360,
           icon: Icon(
-            Icons
-                .keyboard_arrow_down_rounded,
-            color: AppColors.navy
-                .withValues(
-              alpha: 0.40,
-            ),
+            Icons.keyboard_arrow_down_rounded,
+            color: AppColors.navy.withValues(alpha: 0.40),
           ),
           hint: Text(
             'Select line of business',
             style: SellerUi.text(
-              color: AppColors.navy
-                  .withValues(
-                alpha: 0.28,
-              ),
+              color: AppColors.navy.withValues(alpha: 0.28),
               fontSize: 12,
             ),
           ),
@@ -149,46 +126,31 @@ class SellerBusinessStep extends StatelessWidget {
             fontSize: 13,
             fontWeight: FontWeight.w500,
           ),
-          decoration:
-              SellerUi.inputDecoration(
-            hint:
-                'Select line of business',
+          decoration: SellerUi.inputDecoration(
+            hint: 'Select line of business',
             icon: Icons.sell_outlined,
-          ).copyWith(
-            hintText: null,
-          ),
-          items:
-              _businessCategories
-                  .map(
-                    (category) =>
-                        DropdownMenuItem<
-                            String>(
-                      value: category,
-                      child: Text(
-                        category,
-                        overflow:
-                            TextOverflow
-                                .ellipsis,
-                        style:
-                            SellerUi.text(
-                          color:
-                              AppColors.navy,
-                          fontSize: 12,
-                          fontWeight:
-                              FontWeight.w500,
-                        ),
-                      ),
+          ).copyWith(hintText: null),
+          items: _businessCategories
+              .map(
+                (category) => DropdownMenuItem<String>(
+                  value: category,
+                  child: Text(
+                    category,
+                    overflow: TextOverflow.ellipsis,
+                    style: SellerUi.text(
+                      color: AppColors.navy,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
                     ),
-                  )
-                  .toList(),
+                  ),
+                ),
+              )
+              .toList(),
           onChanged: (value) {
-            businessCategoryController
-                    .text =
-                value ?? '';
+            businessCategoryController.text = value ?? '';
           },
           validator: (value) {
-            if (value == null ||
-                value.trim().isEmpty) {
+            if (value == null || value.trim().isEmpty) {
               return 'Please select a line of business.';
             }
 
@@ -204,22 +166,12 @@ class SellerBusinessStep extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
-        color: AppColors.tealLight
-            .withValues(
-          alpha: 0.45,
-        ),
-        borderRadius:
-            BorderRadius.circular(8),
-        border: Border.all(
-          color: AppColors.teal
-              .withValues(
-            alpha: 0.14,
-          ),
-        ),
+        color: AppColors.tealLight.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.teal.withValues(alpha: 0.14)),
       ),
       child: Row(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Icon(
             Icons.info_outline_rounded,
@@ -233,10 +185,7 @@ class SellerBusinessStep extends StatelessWidget {
             child: Text(
               'Choose the category that best matches your business. Use the same business information that appears on your supporting documents.',
               style: SellerUi.text(
-                color: AppColors.navy
-                    .withValues(
-                  alpha: 0.55,
-                ),
+                color: AppColors.navy.withValues(alpha: 0.55),
                 fontSize: 10.5,
                 height: 1.5,
               ),

@@ -3,17 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'package:shophop/core/theme/app_colors.dart';
 
-enum AccountReviewRole {
-  buyer,
-  seller,
-  rider,
-}
+enum AccountReviewRole { buyer, seller, rider }
 
-enum AccountAccessStatus {
-  emailUnverified,
-  pendingApproval,
-  rejected,
-}
+enum AccountAccessStatus { emailUnverified, pendingApproval, rejected }
 
 Future<void> showAccountStatusDialog({
   required BuildContext context,
@@ -48,10 +40,7 @@ Future<void> showAccountStatusDialog({
       return FadeTransition(
         opacity: curved,
         child: ScaleTransition(
-          scale: Tween<double>(
-            begin: 0.94,
-            end: 1,
-          ).animate(curved),
+          scale: Tween<double>(begin: 0.94, end: 1).animate(curved),
           child: child,
         ),
       );
@@ -196,17 +185,13 @@ class _AccountStatusDialog extends StatelessWidget {
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(20),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: 410,
-              ),
+              constraints: const BoxConstraints(maxWidth: 410),
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: AppColors.grayBorder,
-                  ),
+                  border: Border.all(color: AppColors.grayBorder),
                   boxShadow: [
                     BoxShadow(
                       color: AppColors.navy.withValues(alpha: 0.20),
@@ -219,10 +204,7 @@ class _AccountStatusDialog extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(
-                      height: 5,
-                      color: AppColors.teal,
-                    ),
+                    Container(height: 5, color: AppColors.teal),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(22, 20, 22, 22),
                       child: Column(
@@ -299,7 +281,9 @@ class _AccountStatusDialog extends StatelessWidget {
                                   _message,
                                   textAlign: TextAlign.center,
                                   style: _text(
-                                    color: AppColors.navy.withValues(alpha: 0.53),
+                                    color: AppColors.navy.withValues(
+                                      alpha: 0.53,
+                                    ),
                                     fontSize: 11.5,
                                     height: 1.55,
                                   ),
@@ -318,9 +302,7 @@ class _AccountStatusDialog extends StatelessWidget {
                               decoration: BoxDecoration(
                                 color: AppColors.grayBg,
                                 borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: AppColors.grayBorder,
-                                ),
+                                border: Border.all(color: AppColors.grayBorder),
                               ),
                               child: Row(
                                 children: [
@@ -373,7 +355,9 @@ class _AccountStatusDialog extends StatelessWidget {
                                     child: Text(
                                       rejectionReason!,
                                       style: _text(
-                                        color: AppColors.navy.withValues(alpha: 0.62),
+                                        color: AppColors.navy.withValues(
+                                          alpha: 0.62,
+                                        ),
                                         fontSize: 10.5,
                                         height: 1.45,
                                       ),
@@ -432,8 +416,9 @@ class _AccountStatusDialog extends StatelessWidget {
                                     'No need to submit another registration.',
                                     textAlign: TextAlign.center,
                                     style: _text(
-                                      color:
-                                          AppColors.navy.withValues(alpha: 0.38),
+                                      color: AppColors.navy.withValues(
+                                        alpha: 0.38,
+                                      ),
                                       fontSize: 9.5,
                                       fontWeight: FontWeight.w500,
                                     ),

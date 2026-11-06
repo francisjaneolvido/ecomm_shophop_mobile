@@ -60,14 +60,10 @@ class _LoginScreenState extends State<LoginScreen> {
       _isSigningIn = true;
     });
 
-    final result =
-        await AuthService.login(
-      email:
-          _emailController.text,
-      password:
-          _passwordController.text,
-      rememberMe:
-          _rememberMe,
+    final result = await AuthService.login(
+      email: _emailController.text,
+      password: _passwordController.text,
+      rememberMe: _rememberMe,
     );
 
     if (!mounted) {
@@ -79,105 +75,70 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     if (!result.success) {
-      _showMessage(
-        result.message,
-      );
+      _showMessage(result.message);
       return;
     }
 
-    final accountType =
-        result.data['account_type']
-            ?.toString();
+    final accountType = result.data['account_type']?.toString();
 
-    final reviewRole =
-        _reviewRoleFromAccountType(
-      accountType,
-    );
+    final reviewRole = _reviewRoleFromAccountType(accountType);
 
     switch (result.status) {
       case 'email_unverified':
         if (reviewRole == null) {
-          _showMessage(
-            result.message,
-          );
+          _showMessage(result.message);
           return;
         }
 
         await showAccountStatusToast(
           context: context,
           role: reviewRole,
-          status:
-              AccountAccessStatus
-                  .emailUnverified,
-          email:
-              _emailController.text
-                  .trim(),
+          status: AccountAccessStatus.emailUnverified,
+          email: _emailController.text.trim(),
           onVerifyEmail: () {
-            _openEmailVerification(
-              accountType,
-            );
+            _openEmailVerification(accountType);
           },
         );
         return;
 
       case 'pending':
         if (reviewRole == null) {
-          _showMessage(
-            result.message,
-          );
+          _showMessage(result.message);
           return;
         }
 
         await showAccountStatusToast(
           context: context,
           role: reviewRole,
-          status:
-              AccountAccessStatus
-                  .pendingApproval,
-          email:
-              _emailController.text
-                  .trim(),
+          status: AccountAccessStatus.pendingApproval,
+          email: _emailController.text.trim(),
         );
         return;
 
       case 'rejected':
         if (reviewRole == null) {
-          _showMessage(
-            result.message,
-          );
+          _showMessage(result.message);
           return;
         }
 
         await showAccountStatusToast(
           context: context,
           role: reviewRole,
-          status:
-              AccountAccessStatus
-                  .rejected,
-          email:
-              _emailController.text
-                  .trim(),
-          rejectionReason:
-              result.data[
-                      'rejection_reason']
-                  ?.toString(),
+          status: AccountAccessStatus.rejected,
+          email: _emailController.text.trim(),
+          rejectionReason: result.data['rejection_reason']?.toString(),
         );
         return;
 
       case 'suspended':
       case 'unavailable':
-        _showMessage(
-          result.message,
-        );
+        _showMessage(result.message);
         return;
 
       case 'approved':
-        final token =
-            result.data['token']
-                ?.toString();
+        final token = result.data['token']?.toString();
 
-        if (token == null ||
-            token.isEmpty) {
+        if (token == null || token.isEmpty) {
           _showMessage(
             'Login succeeded, but no mobile session token was returned.',
           );
@@ -226,69 +187,50 @@ class _LoginScreenState extends State<LoginScreen> {
                 : accountType == 'rider'
                 ? const RiderHomeScreen()
                 : accountType == 'linehaul_driver'
-                    ? const LinehaulDriverHomeScreen()
-                    : (accountType == 'logistics' ||
-                            accountType == 'logistics_staff' ||
-                            accountType == 'branch')
-                        ? const LogisticsScannerScreen()
-                        : const BuyerHomeScreen(),
+                ? const LinehaulDriverHomeScreen()
+                : (accountType == 'logistics' ||
+                      accountType == 'logistics_staff' ||
+                      accountType == 'branch')
+                ? const LogisticsScannerScreen()
+                : const BuyerHomeScreen(),
           ),
           (route) => false,
         );
         return;
 
       default:
-        _showMessage(
-          result.message,
-        );
+        _showMessage(result.message);
     }
   }
 
-  AccountReviewRole?
-      _reviewRoleFromAccountType(
-    String? accountType,
-  ) {
+  AccountReviewRole? _reviewRoleFromAccountType(String? accountType) {
     switch (accountType) {
       case 'buyer':
-        return AccountReviewRole
-            .buyer;
+        return AccountReviewRole.buyer;
       case 'seller':
-        return AccountReviewRole
-            .seller;
+        return AccountReviewRole.seller;
       case 'rider':
-        return AccountReviewRole
-            .rider;
+        return AccountReviewRole.rider;
       default:
         return null;
     }
   }
 
-  RegistrationRole?
-      _verificationRoleFromAccountType(
-    String? accountType,
-  ) {
+  RegistrationRole? _verificationRoleFromAccountType(String? accountType) {
     switch (accountType) {
       case 'buyer':
-        return RegistrationRole
-            .buyer;
+        return RegistrationRole.buyer;
       case 'seller':
-        return RegistrationRole
-            .seller;
+        return RegistrationRole.seller;
       case 'rider':
-        return RegistrationRole
-            .rider;
+        return RegistrationRole.rider;
       default:
         return null;
     }
   }
 
-  void _openEmailVerification(
-    String? accountType,
-  ) {
-    final role =
-        _verificationRoleFromAccountType(
-      accountType,
-    );
+  void _openEmailVerification(String? accountType) {
+    final role = _verificationRoleFromAccountType(accountType);
 
     if (role == null) {
       _showMessage(
@@ -309,16 +251,16 @@ class _LoginScreenState extends State<LoginScreen> {
             final result = role == RegistrationRole.rider
                 ? await AuthService.verifyRiderEmail(email: email, code: code)
                 : role == RegistrationRole.seller
-                    ? await AuthService.verifySellerEmail(email: email, code: code)
-                    : await AuthService.verifyBuyerEmail(email: email, code: code);
+                ? await AuthService.verifySellerEmail(email: email, code: code)
+                : await AuthService.verifyBuyerEmail(email: email, code: code);
             return result.success ? null : result.message;
           },
           onResendCode: () async {
             final result = role == RegistrationRole.rider
                 ? await AuthService.resendRiderVerification(email: email)
                 : role == RegistrationRole.seller
-                    ? await AuthService.resendSellerVerification(email: email)
-                    : await AuthService.resendBuyerVerification(email: email);
+                ? await AuthService.resendSellerVerification(email: email)
+                : await AuthService.resendBuyerVerification(email: email);
             return result.success ? null : result.message;
           },
           onVerified: () {
@@ -346,22 +288,17 @@ class _LoginScreenState extends State<LoginScreen> {
   void _forgotPassword() {
     FocusScope.of(context).unfocus();
 
-    _showMessage(
-      'Forgot password flow will be added next.',
-    );
+    _showMessage('Forgot password flow will be added next.');
   }
 
   void _signUp() {
-  FocusScope.of(context).unfocus();
+    FocusScope.of(context).unfocus();
 
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) =>
-          const AccountTypeScreen(),
-    ),
-  );
-}
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const AccountTypeScreen()),
+    );
+  }
 
   void _showMessage(String message) {
     ScaffoldMessenger.of(context)
@@ -371,9 +308,7 @@ class _LoginScreenState extends State<LoginScreen> {
           content: Text(message),
           behavior: SnackBarBehavior.floating,
           backgroundColor: AppColors.navy,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           margin: const EdgeInsets.all(16),
         ),
       );
@@ -386,9 +321,7 @@ class _LoginScreenState extends State<LoginScreen> {
       return 'Please enter your email address.';
     }
 
-    final emailPattern = RegExp(
-      r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
-    );
+    final emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
 
     if (!emailPattern.hasMatch(email)) {
       return 'Please enter a valid email address.';
@@ -419,7 +352,8 @@ class _LoginScreenState extends State<LoginScreen> {
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 480),
               child: SingleChildScrollView(
-                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
                 padding: EdgeInsets.fromLTRB(24, compact ? 18 : 26, 24, 28),
                 child: AutofillGroup(
                   child: Form(
@@ -492,7 +426,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 child: Text(
                                   'Logistics staff can sign in using their approved account.',
                                   style: TextStyle(
-                                    color: AppColors.navy.withValues(alpha: .72),
+                                    color: AppColors.navy.withValues(
+                                      alpha: .72,
+                                    ),
                                     fontSize: 10.8,
                                     height: 1.45,
                                   ),
@@ -574,14 +510,19 @@ class _LoginScreenState extends State<LoginScreen> {
                             Theme(
                               data: Theme.of(context).copyWith(
                                 checkboxTheme: CheckboxThemeData(
-                                  fillColor: WidgetStateProperty.resolveWith<Color>(
-                                    (states) => states.contains(WidgetState.selected)
-                                        ? AppColors.teal
-                                        : Colors.transparent,
-                                  ),
-                                  checkColor: const WidgetStatePropertyAll<Color>(
-                                    Colors.white,
-                                  ),
+                                  fillColor:
+                                      WidgetStateProperty.resolveWith<Color>(
+                                        (states) =>
+                                            states.contains(
+                                              WidgetState.selected,
+                                            )
+                                            ? AppColors.teal
+                                            : Colors.transparent,
+                                      ),
+                                  checkColor:
+                                      const WidgetStatePropertyAll<Color>(
+                                        Colors.white,
+                                      ),
                                   side: const BorderSide(
                                     color: AppColors.navy,
                                     width: 1.4,
@@ -601,9 +542,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             InkWell(
                               borderRadius: BorderRadius.circular(8),
-                              onTap: () => setState(
-                                () => _rememberMe = !_rememberMe,
-                              ),
+                              onTap: () =>
+                                  setState(() => _rememberMe = !_rememberMe),
                               child: const Padding(
                                 padding: EdgeInsets.symmetric(
                                   horizontal: 2,
@@ -623,7 +563,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               onPressed: _forgotPassword,
                               style: TextButton.styleFrom(
                                 foregroundColor: AppColors.tealDark,
-                                padding: const EdgeInsets.symmetric(horizontal: 4),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                ),
                               ),
                               child: const Text(
                                 'Forgot password?',
@@ -640,8 +582,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             style: FilledButton.styleFrom(
                               backgroundColor: AppColors.teal,
                               foregroundColor: Colors.white,
-                              disabledBackgroundColor:
-                                  AppColors.teal.withValues(alpha: .48),
+                              disabledBackgroundColor: AppColors.teal
+                                  .withValues(alpha: .48),
                               disabledForegroundColor: Colors.white,
                               elevation: 0,
                               shadowColor: Colors.transparent,
@@ -673,7 +615,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               child: Divider(color: AppColors.grayBorder),
                             ),
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
                               child: Text(
                                 'or continue with',
                                 style: TextStyle(
@@ -691,7 +635,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         SizedBox(
                           height: 52,
                           child: OutlinedButton.icon(
-                            onPressed: _isSigningIn ? null : _continueWithGoogle,
+                            onPressed: _isSigningIn
+                                ? null
+                                : _continueWithGoogle,
                             style: OutlinedButton.styleFrom(
                               foregroundColor: AppColors.navy,
                               backgroundColor: Colors.white,
@@ -705,9 +651,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             icon: const _GoogleIcon(),
                             label: const Text(
                               'Continue with Google',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                              ),
+                              style: TextStyle(fontWeight: FontWeight.w600),
                             ),
                           ),
                         ),
@@ -726,7 +670,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               onPressed: _signUp,
                               style: TextButton.styleFrom(
                                 foregroundColor: AppColors.tealDark,
-                                padding: const EdgeInsets.symmetric(horizontal: 7),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 7,
+                                ),
                               ),
                               child: const Text('Create an account'),
                             ),
@@ -743,9 +689,7 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-
 }
-
 
 class _GoogleIcon extends StatelessWidget {
   const _GoogleIcon();
@@ -755,9 +699,7 @@ class _GoogleIcon extends StatelessWidget {
     return SizedBox(
       width: 19,
       height: 19,
-      child: CustomPaint(
-        painter: _GoogleIconPainter(),
-      ),
+      child: CustomPaint(painter: _GoogleIconPainter()),
     );
   }
 }
@@ -786,27 +728,9 @@ class _GoogleIconPainter extends CustomPainter {
       false,
       makePaint(const Color(0xFF4285F4)),
     );
-    canvas.drawArc(
-      rect,
-      0.95,
-      0.80,
-      false,
-      makePaint(const Color(0xFF34A853)),
-    );
-    canvas.drawArc(
-      rect,
-      1.82,
-      0.82,
-      false,
-      makePaint(const Color(0xFFFBBC05)),
-    );
-    canvas.drawArc(
-      rect,
-      2.72,
-      1.20,
-      false,
-      makePaint(const Color(0xFFEA4335)),
-    );
+    canvas.drawArc(rect, 0.95, 0.80, false, makePaint(const Color(0xFF34A853)));
+    canvas.drawArc(rect, 1.82, 0.82, false, makePaint(const Color(0xFFFBBC05)));
+    canvas.drawArc(rect, 2.72, 1.20, false, makePaint(const Color(0xFFEA4335)));
     canvas.drawLine(
       Offset(size.width * 0.55, size.height * 0.52),
       Offset(size.width * 0.92, size.height * 0.52),

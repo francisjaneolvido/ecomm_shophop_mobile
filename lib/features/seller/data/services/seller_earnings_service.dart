@@ -8,15 +8,28 @@ class SellerEarningsService {
 
   static Future<AuthApiResult> load(String token) async {
     try {
-      final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/seller/earnings'),
-        headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
-      ).timeout(const Duration(seconds: 20));
+      final response = await http
+          .get(
+            Uri.parse('${ApiConfig.baseUrl}/seller/earnings'),
+            headers: {
+              'Accept': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+          )
+          .timeout(const Duration(seconds: 20));
       return AuthApiResult.fromResponse(response);
     } on TimeoutException {
-      return const AuthApiResult(success: false, status: 'timeout', message: 'Seller earnings request timed out.');
+      return const AuthApiResult(
+        success: false,
+        status: 'timeout',
+        message: 'Seller earnings request timed out.',
+      );
     } catch (_) {
-      return const AuthApiResult(success: false, status: 'network_error', message: 'Unable to load Seller earnings.');
+      return const AuthApiResult(
+        success: false,
+        status: 'network_error',
+        message: 'Unable to load Seller earnings.',
+      );
     }
   }
 }

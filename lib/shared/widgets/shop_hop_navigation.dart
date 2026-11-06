@@ -29,16 +29,20 @@ class ShopHopNavigation extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         border: const Border(top: BorderSide(color: AppColors.grayBorder)),
-        boxShadow: [BoxShadow(
-          color: AppColors.navy.withValues(alpha: 0.06),
-          blurRadius: 18,
-          offset: const Offset(0, -5),
-        )],
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.navy.withValues(alpha: 0.06),
+            blurRadius: 18,
+            offset: const Offset(0, -5),
+          ),
+        ],
       ),
       child: SafeArea(
         top: false,
         child: BottomNavigationBar(
-          currentIndex: index < 0 ? 0 : (index >= items.length ? items.length - 1 : index),
+          currentIndex: index < 0
+              ? 0
+              : (index >= items.length ? items.length - 1 : index),
           onTap: onChanged,
           type: BottomNavigationBarType.fixed,
           elevation: 0,
@@ -54,7 +58,10 @@ class ShopHopNavigation extends StatelessWidget {
               BottomNavigationBarItem(
                 label: items[i].label,
                 icon: _IconBadge(icon: items[i].icon, count: badges[i] ?? 0),
-                activeIcon: _IconBadge(icon: items[i].activeIcon, count: badges[i] ?? 0),
+                activeIcon: _IconBadge(
+                  icon: items[i].activeIcon,
+                  count: badges[i] ?? 0,
+                ),
               ),
           ],
         ),
@@ -70,33 +77,39 @@ class _IconBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SizedBox(
-        width: 38,
-        height: 30,
-        child: Stack(
-          clipBehavior: Clip.none,
-          alignment: Alignment.center,
-          children: [
-            Icon(icon, size: 24),
-            if (count > 0)
-              Positioned(
-                top: -2,
-                right: -1,
-                child: Container(
-                  constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                  padding: const EdgeInsets.symmetric(horizontal: 3),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE44D57),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.white, width: 1.3),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(count > 99 ? '99+' : '$count',
-                      style: const TextStyle(fontSize: 8, color: Colors.white, fontWeight: FontWeight.w800)),
+    width: 38,
+    height: 30,
+    child: Stack(
+      clipBehavior: Clip.none,
+      alignment: Alignment.center,
+      children: [
+        Icon(icon, size: 24),
+        if (count > 0)
+          Positioned(
+            top: -2,
+            right: -1,
+            child: Container(
+              constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 3),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE44D57),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.white, width: 1.3),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                count > 99 ? '99+' : '$count',
+                style: const TextStyle(
+                  fontSize: 8,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
-          ],
-        ),
-      );
+            ),
+          ),
+      ],
+    ),
+  );
 }
 
 /// Shared confirmation pattern for order, inventory and custody actions.
@@ -110,17 +123,28 @@ Future<bool> shopHopConfirm(
   final result = await showDialog<bool>(
     context: context,
     builder: (dialogContext) => AlertDialog(
-      title: Row(children: [
-        Icon(destructive ? Icons.warning_amber_rounded : Icons.check_circle_outline_rounded,
-            color: destructive ? const Color(0xFFC83939) : AppColors.tealDark),
-        const SizedBox(width: 10),
-        Expanded(child: Text(title)),
-      ]),
+      title: Row(
+        children: [
+          Icon(
+            destructive
+                ? Icons.warning_amber_rounded
+                : Icons.check_circle_outline_rounded,
+            color: destructive ? const Color(0xFFC83939) : AppColors.tealDark,
+          ),
+          const SizedBox(width: 10),
+          Expanded(child: Text(title)),
+        ],
+      ),
       content: Text(message),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancel')),
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext, false),
+          child: const Text('Cancel'),
+        ),
         FilledButton(
-          style: destructive ? FilledButton.styleFrom(backgroundColor: const Color(0xFFC83939)) : null,
+          style: destructive
+              ? FilledButton.styleFrom(backgroundColor: const Color(0xFFC83939))
+              : null,
           onPressed: () => Navigator.pop(dialogContext, true),
           child: Text(confirmLabel),
         ),

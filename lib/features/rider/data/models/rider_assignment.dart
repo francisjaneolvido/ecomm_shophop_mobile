@@ -67,7 +67,8 @@ class RiderAssignment {
 
   bool get isCod => paymentMethod.toLowerCase() == 'cod';
 
-  bool get isTask => canAcceptPickup ||
+  bool get isTask =>
+      canAcceptPickup ||
       canConfirmPickup ||
       canStartDelivery ||
       canCompleteDelivery ||
@@ -81,8 +82,9 @@ class RiderAssignment {
         ? Map<String, dynamic>.from(order['seller'] as Map)
         : <String, dynamic>{};
     final rawItems = order['items'] is List ? order['items'] as List : const [];
-    final rawTransfers =
-        json['center_transfers'] is List ? json['center_transfers'] as List : const [];
+    final rawTransfers = json['center_transfers'] is List
+        ? json['center_transfers'] as List
+        : const [];
 
     RiderSortingCenter? center(String key) {
       final raw = json[key];
@@ -115,13 +117,17 @@ class RiderAssignment {
       sellerAddress: seller['address']?.toString() ?? '',
       items: rawItems
           .whereType<Map>()
-          .map((value) =>
-              RiderAssignmentItem.fromJson(Map<String, dynamic>.from(value)))
+          .map(
+            (value) =>
+                RiderAssignmentItem.fromJson(Map<String, dynamic>.from(value)),
+          )
           .toList(),
       centerTransfers: rawTransfers
           .whereType<Map>()
-          .map((value) =>
-              RiderCenterTransfer.fromJson(Map<String, dynamic>.from(value)))
+          .map(
+            (value) =>
+                RiderCenterTransfer.fromJson(Map<String, dynamic>.from(value)),
+          )
           .toList(),
       isLocalBranchDelivery: json['is_local_branch_delivery'] == true,
       destinationArea: json['destination_area']?.toString(),

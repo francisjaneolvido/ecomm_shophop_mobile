@@ -25,12 +25,10 @@ class EmailVerificationScreen extends StatefulWidget {
   final RegistrationRole role;
 
   /// Return null on success, or an error message on failure.
-  final Future<String?> Function(String code)
-      onVerifyCode;
+  final Future<String?> Function(String code) onVerifyCode;
 
   /// Return null on success, or an error message on failure.
-  final Future<String?> Function()
-      onResendCode;
+  final Future<String?> Function() onResendCode;
 
   final VoidCallback onVerified;
   final VoidCallback? onBack;
@@ -41,10 +39,8 @@ class EmailVerificationScreen extends StatefulWidget {
       _EmailVerificationScreenState();
 }
 
-class _EmailVerificationScreenState
-    extends State<EmailVerificationScreen> {
-  final _codeController =
-      TextEditingController();
+class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
+  final _codeController = TextEditingController();
 
   Timer? _resendTimer;
   int _secondsRemaining = 0;
@@ -55,16 +51,11 @@ class _EmailVerificationScreenState
   String? _errorMessage;
   String? _successMessage;
 
-  bool get _codeIsValid =>
-      RegExp(r'^\d{6}$').hasMatch(
-        _codeController.text,
-      );
+  bool get _codeIsValid => RegExp(r'^\d{6}$').hasMatch(_codeController.text);
 
-  bool get _enabled =>
-      !_isVerifying && !_isResending;
+  bool get _enabled => !_isVerifying && !_isResending;
 
-  bool get _canVerify =>
-      _enabled && _codeIsValid;
+  bool get _canVerify => _enabled && _codeIsValid;
 
   @override
   void initState() {
@@ -83,31 +74,27 @@ class _EmailVerificationScreenState
     _resendTimer?.cancel();
 
     setState(() {
-      _secondsRemaining =
-          widget.resendCooldownSeconds;
+      _secondsRemaining = widget.resendCooldownSeconds;
     });
 
-    _resendTimer = Timer.periodic(
-      const Duration(seconds: 1),
-      (timer) {
-        if (!mounted) {
-          timer.cancel();
-          return;
-        }
+    _resendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
 
-        if (_secondsRemaining <= 1) {
-          timer.cancel();
-          setState(() {
-            _secondsRemaining = 0;
-          });
-          return;
-        }
-
+      if (_secondsRemaining <= 1) {
+        timer.cancel();
         setState(() {
-          _secondsRemaining--;
+          _secondsRemaining = 0;
         });
-      },
-    );
+        return;
+      }
+
+      setState(() {
+        _secondsRemaining--;
+      });
+    });
   }
 
   Future<void> _verify() async {
@@ -121,10 +108,7 @@ class _EmailVerificationScreenState
       _successMessage = null;
     });
 
-    final error =
-        await widget.onVerifyCode(
-      _codeController.text,
-    );
+    final error = await widget.onVerifyCode(_codeController.text);
 
     if (!mounted) return;
 
@@ -142,13 +126,10 @@ class _EmailVerificationScreenState
 
     setState(() {
       _isVerifying = false;
-      _successMessage =
-          'Your email was verified successfully.';
+      _successMessage = 'Your email was verified successfully.';
     });
 
-    await Future<void>.delayed(
-      const Duration(milliseconds: 450),
-    );
+    await Future<void>.delayed(const Duration(milliseconds: 450));
 
     if (mounted) {
       widget.onVerified();
@@ -156,8 +137,7 @@ class _EmailVerificationScreenState
   }
 
   Future<void> _resend() async {
-    if (!_enabled ||
-        _secondsRemaining > 0) {
+    if (!_enabled || _secondsRemaining > 0) {
       return;
     }
 
@@ -169,8 +149,7 @@ class _EmailVerificationScreenState
       _successMessage = null;
     });
 
-    final error =
-        await widget.onResendCode();
+    final error = await widget.onResendCode();
 
     if (!mounted) return;
 
@@ -186,8 +165,7 @@ class _EmailVerificationScreenState
 
     setState(() {
       _isResending = false;
-      _successMessage =
-          'A new verification code was sent to your email.';
+      _successMessage = 'A new verification code was sent to your email.';
     });
 
     _startResendTimer();
@@ -218,37 +196,26 @@ class _EmailVerificationScreenState
                 child: SingleChildScrollView(
                   keyboardDismissBehavior:
                       ScrollViewKeyboardDismissBehavior.onDrag,
-                  padding:
-                      const EdgeInsets.fromLTRB(20, 12, 20, 32),
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
                   child: Center(
                     child: ConstrainedBox(
-                      constraints:
-                          const BoxConstraints(maxWidth: 480),
+                      constraints: const BoxConstraints(maxWidth: 480),
                       child: Column(
                         children: [
                           const SizedBox(height: 12),
-                          VerificationHeader(
-                            role: widget.role,
-                          ),
+                          VerificationHeader(role: widget.role),
                           const SizedBox(height: 24),
                           VerificationCard(
                             email: widget.email,
                             role: widget.role,
-                            codeController:
-                                _codeController,
+                            codeController: _codeController,
                             enabled: _enabled,
-                            canVerify:
-                                _canVerify,
-                            isVerifying:
-                                _isVerifying,
-                            isResending:
-                                _isResending,
-                            secondsRemaining:
-                                _secondsRemaining,
-                            errorMessage:
-                                _errorMessage,
-                            successMessage:
-                                _successMessage,
+                            canVerify: _canVerify,
+                            isVerifying: _isVerifying,
+                            isResending: _isResending,
+                            secondsRemaining: _secondsRemaining,
+                            errorMessage: _errorMessage,
+                            successMessage: _successMessage,
                             onCodeChanged: (_) {
                               setState(() {
                                 _errorMessage = null;
@@ -272,31 +239,21 @@ class _EmailVerificationScreenState
 
   Widget _topBar() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        18,
-        12,
-        18,
-        8,
-      ),
+      padding: const EdgeInsets.fromLTRB(18, 12, 18, 8),
       child: Row(
         children: [
           Material(
             color: Colors.white,
-            borderRadius:
-                BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(8),
             child: InkWell(
               onTap: _back,
-              borderRadius:
-                  BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(8),
               child: Container(
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  borderRadius:
-                      BorderRadius.circular(8),
-                  border: Border.all(
-                    color: AppColors.grayBorder,
-                  ),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.grayBorder),
                 ),
                 child: const Icon(
                   Icons.arrow_back_ios_new_rounded,
@@ -307,11 +264,7 @@ class _EmailVerificationScreenState
             ),
           ),
           const Spacer(),
-          Image.asset(
-            'assets/images/logo.png',
-            width: 30,
-            height: 30,
-          ),
+          Image.asset('assets/images/logo.png', width: 30, height: 30),
           const SizedBox(width: 7),
           Text(
             'ShopHop',

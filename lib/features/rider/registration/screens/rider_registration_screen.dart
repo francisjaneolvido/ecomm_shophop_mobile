@@ -100,10 +100,12 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
     final rawCenters = result.data['centers'];
     final centers = rawCenters is List
         ? rawCenters
-            .whereType<Map>()
-            .map((value) => Map<String, dynamic>.from(value))
-            .where((value) => int.tryParse(value['id']?.toString() ?? '') != null)
-            .toList()
+              .whereType<Map>()
+              .map((value) => Map<String, dynamic>.from(value))
+              .where(
+                (value) => int.tryParse(value['id']?.toString() ?? '') != null,
+              )
+              .toList()
         : <Map<String, dynamic>>[];
 
     setState(() {
@@ -113,8 +115,8 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
         ..addAll(centers);
       _logisticsCentersError = result.success
           ? (centers.isEmpty
-              ? 'No approved Logistics / Sorting Center is available yet.'
-              : null)
+                ? 'No approved Logistics / Sorting Center is available yet.'
+                : null)
           : result.message;
     });
   }
@@ -123,8 +125,7 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
     final now = DateTime.now();
     final picked = await showDatePicker(
       context: context,
-      initialDate:
-          _birthdayDate ?? DateTime(now.year - 18, now.month, now.day),
+      initialDate: _birthdayDate ?? DateTime(now.year - 18, now.month, now.day),
       firstDate: DateTime(1900),
       lastDate: now,
     );
@@ -304,128 +305,124 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        backgroundColor: AppColors.grayBg,
-        body: SafeArea(
-          child: Column(
-            children: [
-              _topBar(),
-              Expanded(
-                child: SingleChildScrollView(
-                  controller: _scroll,
-                  keyboardDismissBehavior:
-                      ScrollViewKeyboardDismissBehavior.onDrag,
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const RiderRegistrationHeader(),
-                      const SizedBox(height: 22),
-                      RiderRegistrationProgress(currentStep: _step),
-                      const SizedBox(height: 20),
-                      _content(),
-                    ],
-                  ),
-                ),
-              ),
-              _bottomBar(),
-            ],
-          ),
-        ),
-      );
-
-  Widget _content() => switch (_step) {
-        1 => _card(
-            Form(
-              key: _personalKey,
-              child: PersonalDetailsStep(
-                firstNameController: _firstName,
-                lastNameController: _lastName,
-                middleInitialController: _middleInitial,
-                emailController: _email,
-                contactController: _contact,
-                birthdayController: _birthday,
-                ageController: _age,
-                selectedSex: _sex,
-                onSexChanged: (value) => setState(() => _sex = value),
-                onBirthdayTap: _selectBirthday,
+    backgroundColor: AppColors.grayBg,
+    body: SafeArea(
+      child: Column(
+        children: [
+          _topBar(),
+          Expanded(
+            child: SingleChildScrollView(
+              controller: _scroll,
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const RiderRegistrationHeader(),
+                  const SizedBox(height: 22),
+                  RiderRegistrationProgress(currentStep: _step),
+                  const SizedBox(height: 20),
+                  _content(),
+                ],
               ),
             ),
           ),
-        2 => _card(
-            Form(
-              key: _addressKey,
-              child: AddressStep(
-                streetAddressController: _street,
-                provinceCode: _provinceCode,
-                municipalityCode: _municipalityCode,
-                barangayCode: _barangayCode,
-                onRegionChanged: (code, name) {
+          _bottomBar(),
+        ],
+      ),
+    ),
+  );
+
+  Widget _content() => switch (_step) {
+    1 => _card(
+      Form(
+        key: _personalKey,
+        child: PersonalDetailsStep(
+          firstNameController: _firstName,
+          lastNameController: _lastName,
+          middleInitialController: _middleInitial,
+          emailController: _email,
+          contactController: _contact,
+          birthdayController: _birthday,
+          ageController: _age,
+          selectedSex: _sex,
+          onSexChanged: (value) => setState(() => _sex = value),
+          onBirthdayTap: _selectBirthday,
+        ),
+      ),
+    ),
+    2 => _card(
+      Form(
+        key: _addressKey,
+        child: AddressStep(
+          streetAddressController: _street,
+          provinceCode: _provinceCode,
+          municipalityCode: _municipalityCode,
+          barangayCode: _barangayCode,
+          onRegionChanged: (code, name) {
             setState(() {
               _regionCode = code;
               _regionName = name.isEmpty ? null : name;
             });
           },
           onProvinceChanged: (code, name) => setState(() {
-                  _provinceCode = code;
-                  _provinceName = name.isEmpty ? null : name;
-                  _municipalityCode = null;
-                  _municipalityName = null;
-                  _barangayCode = null;
-                  _barangayName = null;
-                }),
-                onMunicipalityChanged: (code, name) => setState(() {
-                  _municipalityCode = code;
-                  _municipalityName = name.isEmpty ? null : name;
-                  _barangayCode = null;
-                  _barangayName = null;
-                }),
-                onBarangayChanged: (code, name) => setState(() {
-                  _barangayCode = code;
-                  _barangayName = name.isEmpty ? null : name;
-                }),
-              ),
+            _provinceCode = code;
+            _provinceName = name.isEmpty ? null : name;
+            _municipalityCode = null;
+            _municipalityName = null;
+            _barangayCode = null;
+            _barangayName = null;
+          }),
+          onMunicipalityChanged: (code, name) => setState(() {
+            _municipalityCode = code;
+            _municipalityName = name.isEmpty ? null : name;
+            _barangayCode = null;
+            _barangayName = null;
+          }),
+          onBarangayChanged: (code, name) => setState(() {
+            _barangayCode = code;
+            _barangayName = name.isEmpty ? null : name;
+          }),
+        ),
+      ),
+    ),
+    3 => _card(
+      Form(
+        key: _riderKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _logisticsCenterField(),
+            const SizedBox(height: 24),
+            RiderDetailsStep(
+              vehicleController: _vehicle,
+              plateNumberController: _plate,
+              orCrFile: _orCr,
+              idOrLicenseFile: _idOrLicense,
+              onOrCrChanged: (file) => setState(() => _orCr = file),
+              onIdOrLicenseChanged: (file) =>
+                  setState(() => _idOrLicense = file),
             ),
-          ),
-        3 => _card(
-            Form(
-              key: _riderKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _logisticsCenterField(),
-                  const SizedBox(height: 24),
-                  RiderDetailsStep(
-                    vehicleController: _vehicle,
-                    plateNumberController: _plate,
-                    orCrFile: _orCr,
-                    idOrLicenseFile: _idOrLicense,
-                    onOrCrChanged: (file) => setState(() => _orCr = file),
-                    onIdOrLicenseChanged: (file) =>
-                        setState(() => _idOrLicense = file),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        _ => _card(
-            Form(
-              key: _securityKey,
-              child: RiderSecurityStep(
-                passwordController: _password,
-                confirmPasswordController: _confirmPassword,
-                termsAccepted: _termsAccepted,
-                onTermsChanged: (value) =>
-                    setState(() => _termsAccepted = value),
-                onTermsTap: () => _message(
-                  'Terms and Conditions screen will be connected later.',
-                ),
-                onPrivacyTap: () => _message(
-                  'Privacy Policy screen will be connected later.',
-                ),
-              ),
-            ),
-          ),
-      };
+          ],
+        ),
+      ),
+    ),
+    _ => _card(
+      Form(
+        key: _securityKey,
+        child: RiderSecurityStep(
+          passwordController: _password,
+          confirmPasswordController: _confirmPassword,
+          termsAccepted: _termsAccepted,
+          onTermsChanged: (value) => setState(() => _termsAccepted = value),
+          onTermsTap: () =>
+              _message('Terms and Conditions screen will be connected later.'),
+          onPrivacyTap: () =>
+              _message('Privacy Policy screen will be connected later.'),
+        ),
+      ),
+    ),
+  };
 
   Widget _logisticsCenterField() {
     final query = _partnerSearchQuery.trim().toLowerCase();
@@ -524,9 +521,8 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
         else
           FormField<int>(
             initialValue: _logisticsPartnerId,
-            validator: (value) => value == null
-                ? 'Please choose a Logistics Partner.'
-                : null,
+            validator: (value) =>
+                value == null ? 'Please choose a Logistics Partner.' : null,
             builder: (field) {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -574,18 +570,23 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
                         primary: false,
                         physics: const ClampingScrollPhysics(),
                         itemCount: visiblePartners.length,
-                        separatorBuilder: (context, index) => const SizedBox(height: 8),
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(height: 8),
                         itemBuilder: (context, index) {
                           final partner = visiblePartners[index];
                           final id = int.parse(partner['id'].toString());
                           final selected = field.value == id;
-                          final name = partner['company_name']?.toString() ??
+                          final name =
+                              partner['company_name']?.toString() ??
                               'Logistics Partner';
-                          final location = [
-                            partner['municipality'],
-                            partner['province'],
-                          ].where((v) => v != null && v.toString().trim().isNotEmpty)
-                              .join(', ');
+                          final location =
+                              [partner['municipality'], partner['province']]
+                                  .where(
+                                    (v) =>
+                                        v != null &&
+                                        v.toString().trim().isNotEmpty,
+                                  )
+                                  .join(', ');
                           final description =
                               partner['description']?.toString().trim() ?? '';
                           final logoUrl = partner['logo_url']?.toString();
@@ -629,17 +630,23 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
                                             width: 55,
                                             height: 55,
                                             fit: BoxFit.contain,
-                                            errorBuilder: (context, error, stackTrace) =>
-                                                const Icon(Icons.warehouse_outlined,
-                                                    color: AppColors.tealDark),
+                                            errorBuilder:
+                                                (context, error, stackTrace) =>
+                                                    const Icon(
+                                                      Icons.warehouse_outlined,
+                                                      color: AppColors.tealDark,
+                                                    ),
                                           )
-                                        : const Icon(Icons.warehouse_outlined,
-                                            color: AppColors.tealDark),
+                                        : const Icon(
+                                            Icons.warehouse_outlined,
+                                            color: AppColors.tealDark,
+                                          ),
                                   ),
                                   const SizedBox(width: 10),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           name,
@@ -658,7 +665,9 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                             style: TextStyle(
-                                              color: AppColors.navy.withValues(alpha: .52),
+                                              color: AppColors.navy.withValues(
+                                                alpha: .52,
+                                              ),
                                               fontSize: 10,
                                             ),
                                           ),
@@ -670,7 +679,9 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
                                             maxLines: 2,
                                             overflow: TextOverflow.ellipsis,
                                             style: TextStyle(
-                                              color: AppColors.navy.withValues(alpha: .60),
+                                              color: AppColors.navy.withValues(
+                                                alpha: .60,
+                                              ),
                                               fontSize: 10,
                                             ),
                                           ),
@@ -689,8 +700,12 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
                                   ),
                                   const SizedBox(width: 5),
                                   Icon(
-                                    selected ? Icons.check_circle : Icons.radio_button_unchecked,
-                                    color: selected ? AppColors.tealDark : AppColors.grayBorder,
+                                    selected
+                                        ? Icons.check_circle
+                                        : Icons.radio_button_unchecked,
+                                    color: selected
+                                        ? AppColors.tealDark
+                                        : AppColors.grayBorder,
                                     size: 20,
                                   ),
                                 ],
@@ -702,8 +717,10 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
                     ),
                   if (field.hasError) ...[
                     const SizedBox(height: 7),
-                    Text(field.errorText!,
-                        style: const TextStyle(color: Colors.red, fontSize: 11)),
+                    Text(
+                      field.errorText!,
+                      style: const TextStyle(color: Colors.red, fontSize: 11),
+                    ),
                   ],
                   const SizedBox(height: 10),
                   Text(
@@ -723,22 +740,22 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
   }
 
   Widget _card(Widget child) => Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: AppColors.grayBorder),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.navy.withValues(alpha: 0.035),
-              blurRadius: 18,
-              offset: const Offset(0, 8),
-            ),
-          ],
+    width: double.infinity,
+    padding: const EdgeInsets.all(18),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(8),
+      border: Border.all(color: AppColors.grayBorder),
+      boxShadow: [
+        BoxShadow(
+          color: AppColors.navy.withValues(alpha: 0.035),
+          blurRadius: 18,
+          offset: const Offset(0, 8),
         ),
-        child: child,
-      );
+      ],
+    ),
+    child: child,
+  );
 
   Widget _topBar() {
     return Padding(
@@ -797,9 +814,7 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(
-          top: BorderSide(
-            color: AppColors.grayBorder.withValues(alpha: 0.8),
-          ),
+          top: BorderSide(color: AppColors.grayBorder.withValues(alpha: 0.8)),
         ),
       ),
       child: SafeArea(
@@ -837,8 +852,8 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
                   onPressed: _isSubmitting
                       ? null
                       : isFinalStep
-                          ? _createAccount
-                          : _next,
+                      ? _createAccount
+                      : _next,
                   style: ElevatedButton.styleFrom(
                     elevation: 0,
                     backgroundColor: AppColors.teal,

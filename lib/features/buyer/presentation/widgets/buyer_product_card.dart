@@ -50,13 +50,19 @@ class BuyerProductCard extends StatelessWidget {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    _ProductImage(url: product.image, category: product.category),
+                    _ProductImage(
+                      url: product.image,
+                      category: product.category,
+                    ),
                     if (product.discountPercent > 0)
                       Positioned(
                         left: 0,
                         top: 0,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 4,
+                          ),
                           decoration: const BoxDecoration(
                             color: Color(0xFFF15A5A),
                             borderRadius: BorderRadius.only(
@@ -173,7 +179,9 @@ class BuyerProductCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 3),
                         Text(
-                          product.rating > 0 ? product.rating.toStringAsFixed(1) : 'New',
+                          product.rating > 0
+                              ? product.rating.toStringAsFixed(1)
+                              : 'New',
                           style: TextStyle(
                             color: AppColors.navy.withValues(alpha: 0.6),
                             fontSize: 9.5,
@@ -205,7 +213,8 @@ class BuyerProductCard extends StatelessWidget {
     );
   }
 
-  String _price(double value) => '₱${value.toStringAsFixed(value == value.roundToDouble() ? 0 : 2)}';
+  String _price(double value) =>
+      '₱${value.toStringAsFixed(value == value.roundToDouble() ? 0 : 2)}';
 }
 
 class _ProductImage extends StatelessWidget {
@@ -271,7 +280,6 @@ String buyerPrice(double value) {
   return '₱$formatted';
 }
 
-
 class _ImageUnavailable extends StatelessWidget {
   const _ImageUnavailable({required this.category});
 
@@ -282,7 +290,11 @@ class _ImageUnavailable extends StatelessWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(Icons.image_outlined, color: AppColors.navy.withValues(alpha: .24), size: 32),
+        Icon(
+          Icons.image_outlined,
+          color: AppColors.navy.withValues(alpha: .24),
+          size: 32,
+        ),
         const SizedBox(height: 5),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8),

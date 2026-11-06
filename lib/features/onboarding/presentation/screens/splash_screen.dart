@@ -11,32 +11,16 @@ import 'package:shophop/features/onboarding/presentation/screens/landing_screen.
 import 'package:shophop/features/seller/presentation/screens/seller_workspace_screen.dart';
 import 'package:shophop/features/rider/presentation/screens/rider_home_screen.dart';
 
-
-
 class SplashScreen extends StatefulWidget {
-
-  const SplashScreen({
-    super.key,
-  });
-
+  const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() =>
-      _SplashScreenState();
-
+  State<SplashScreen> createState() => _SplashScreenState();
 }
-
-
-
-
 
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
-
-
   late AnimationController _controller;
-
-
 
   // Logo animations
 
@@ -49,19 +33,11 @@ class _SplashScreenState extends State<SplashScreen>
 
   late Animation<double> _shadowScale;
 
-
-
-
-
   // Effects
 
   late Animation<double> _particleAnimation;
 
   late Animation<double> _glowAnimation;
-
-
-
-
 
   // Text
 
@@ -71,587 +47,168 @@ class _SplashScreenState extends State<SplashScreen>
 
   late Animation<double> _textScale;
 
-
-
-
-
   // ignore: unused_field
   final Random _random = Random();
 
-
-
-
-
   @override
   void initState() {
-
     super.initState();
 
-
-
     _controller = AnimationController(
-
       vsync: this,
 
-      duration:
-          const Duration(
-            milliseconds: 3000,
-          ),
-
+      duration: const Duration(milliseconds: 3000),
     );
-
-
-
-
 
     // ================================
     // LOGO FADE
     // ================================
 
+    _logoOpacity = CurvedAnimation(
+      parent: _controller,
 
-    _logoOpacity =
-        CurvedAnimation(
-
-          parent: _controller,
-
-          curve:
-              const Interval(
-
-                0,
-
-                .2,
-
-                curve:
-                    Curves.easeOut,
-
-              ),
-
-        );
-
-
-
-
-
-
+      curve: const Interval(0, .2, curve: Curves.easeOut),
+    );
 
     // ================================
     // LOGO SCALE POP
     // ================================
 
+    _logoScale = Tween<double>(begin: .55, end: 1).animate(
+      CurvedAnimation(
+        parent: _controller,
 
-    _logoScale =
-        Tween<double>(
-
-          begin:
-              .55,
-
-          end:
-              1,
-
-        ).animate(
-
-          CurvedAnimation(
-
-            parent:
-                _controller,
-
-
-            curve:
-                const Interval(
-
-                  0,
-
-                  .45,
-
-                  curve:
-                      Curves.elasticOut,
-
-                ),
-
-          ),
-
-        );
-
-
-
-
-
-
+        curve: const Interval(0, .45, curve: Curves.elasticOut),
+      ),
+    );
 
     // ================================
     // SLIDE FROM RIGHT
     // ================================
 
+    _logoSlide = Tween<double>(begin: 180, end: 0).animate(
+      CurvedAnimation(
+        parent: _controller,
 
-    _logoSlide =
-        Tween<double>(
-
-          begin:
-              180,
-
-          end:
-              0,
-
-        ).animate(
-
-          CurvedAnimation(
-
-            parent:
-                _controller,
-
-
-            curve:
-                const Interval(
-
-                  0,
-
-                  .45,
-
-                  curve:
-                      Curves.easeOutCubic,
-
-                ),
-
-          ),
-
-        );
-
-
-
-
-
-
-
+        curve: const Interval(0, .45, curve: Curves.easeOutCubic),
+      ),
+    );
 
     // ================================
     // ROTATION ENTRY
     // ================================
 
+    _logoRotate = Tween<double>(begin: .25, end: 0).animate(
+      CurvedAnimation(
+        parent: _controller,
 
-    _logoRotate =
-        Tween<double>(
-
-          begin:
-              .25,
-
-          end:
-              0,
-
-        ).animate(
-
-          CurvedAnimation(
-
-            parent:
-                _controller,
-
-
-            curve:
-                const Interval(
-
-                  0,
-
-                  .45,
-
-                  curve:
-                      Curves.easeOut,
-
-                ),
-
-          ),
-
-        );
-
-
-
-
-
-
-
-
+        curve: const Interval(0, .45, curve: Curves.easeOut),
+      ),
+    );
 
     // ================================
     // EXTRA BOUNCE
     // ================================
 
-
     _bounce =
         TweenSequence<double>([
-
-
-
           TweenSequenceItem<double>(
+            tween: Tween<double>(
+              begin: 0,
 
-            tween:
+              end: -25,
+            ).chain(CurveTween(curve: Curves.easeOut)),
 
-                Tween<double>(
-
-                  begin:
-                      0,
-
-                  end:
-                      -25,
-
-                ).chain(
-
-                  CurveTween(
-
-                    curve:
-                        Curves.easeOut,
-
-                  ),
-
-                ),
-
-
-            weight:
-                35,
-
+            weight: 35,
           ),
 
-
-
-
-
           TweenSequenceItem<double>(
+            tween: Tween<double>(
+              begin: -25,
 
-            tween:
+              end: 8,
+            ).chain(CurveTween(curve: Curves.bounceOut)),
 
-                Tween<double>(
-
-                  begin:
-                      -25,
-
-                  end:
-                      8,
-
-                ).chain(
-
-                  CurveTween(
-
-                    curve:
-                        Curves.bounceOut,
-
-                  ),
-
-                ),
-
-
-            weight:
-                35,
-
+            weight: 35,
           ),
 
-
-
-
-
           TweenSequenceItem<double>(
+            tween: Tween<double>(
+              begin: 8,
 
-            tween:
+              end: 0,
+            ).chain(CurveTween(curve: Curves.easeOut)),
 
-                Tween<double>(
-
-                  begin:
-                      8,
-
-                  end:
-                      0,
-
-                ).chain(
-
-                  CurveTween(
-
-                    curve:
-                        Curves.easeOut,
-
-                  ),
-
-                ),
-
-
-            weight:
-                30,
-
+            weight: 30,
           ),
-
-
-
         ]).animate(
-
-          CurvedAnimation(
-
-            parent:
-                _controller,
-
-
-            curve:
-                const Interval(
-
-                  .25,
-
-                  .75,
-
-                ),
-
-          ),
-
+          CurvedAnimation(parent: _controller, curve: const Interval(.25, .75)),
         );
-
-
-
-
-
-
-
 
     // ================================
     // SHADOW IMPACT
     // ================================
 
+    _shadowScale = Tween<double>(begin: .25, end: 1).animate(
+      CurvedAnimation(
+        parent: _controller,
 
-    _shadowScale =
-        Tween<double>(
-
-          begin:
-              .25,
-
-          end:
-              1,
-
-        ).animate(
-
-          CurvedAnimation(
-
-            parent:
-                _controller,
-
-
-            curve:
-                const Interval(
-
-                  .3,
-
-                  .75,
-
-                  curve:
-                      Curves.easeOut,
-
-                ),
-
-          ),
-
-        );
-
-
-
-
-
-
-
-
+        curve: const Interval(.3, .75, curve: Curves.easeOut),
+      ),
+    );
 
     // ================================
     // PARTICLES
     // ================================
 
+    _particleAnimation = CurvedAnimation(
+      parent: _controller,
 
-    _particleAnimation =
-        CurvedAnimation(
-
-          parent:
-              _controller,
-
-
-          curve:
-              const Interval(
-
-                .45,
-
-                .8,
-
-                curve:
-                    Curves.elasticOut,
-
-              ),
-
-        );
-
-
-
-
-
+      curve: const Interval(.45, .8, curve: Curves.elasticOut),
+    );
 
     // ================================
     // LOGO GLOW
     // ================================
 
+    _glowAnimation = Tween<double>(begin: .2, end: 1).animate(
+      CurvedAnimation(
+        parent: _controller,
 
-    _glowAnimation =
-        Tween<double>(
-
-          begin:
-              .2,
-
-          end:
-              1,
-
-        ).animate(
-
-          CurvedAnimation(
-
-            parent:
-                _controller,
-
-
-            curve:
-                const Interval(
-
-                  .35,
-
-                  .8,
-
-                  curve:
-                      Curves.easeInOut,
-
-                ),
-
-          ),
-
-        );
-
-
-
-
+        curve: const Interval(.35, .8, curve: Curves.easeInOut),
+      ),
+    );
 
     // ================================
     // TEXT
     // ================================
 
+    _textOpacity = CurvedAnimation(
+      parent: _controller,
 
-    _textOpacity =
-        CurvedAnimation(
+      curve: const Interval(.7, 1, curve: Curves.easeOut),
+    );
 
-          parent:
-              _controller,
+    _textSlide = Tween<double>(begin: 35, end: 0).animate(
+      CurvedAnimation(
+        parent: _controller,
 
+        curve: const Interval(.7, 1, curve: Curves.easeOut),
+      ),
+    );
 
-          curve:
-              const Interval(
+    _textScale = Tween<double>(begin: .7, end: 1).animate(
+      CurvedAnimation(
+        parent: _controller,
 
-                .7,
-
-                1,
-
-                curve:
-                    Curves.easeOut,
-
-              ),
-
-        );
-
-
-
-
-    _textSlide =
-        Tween<double>(
-
-          begin:
-              35,
-
-          end:
-              0,
-
-        ).animate(
-
-          CurvedAnimation(
-
-            parent:
-                _controller,
-
-
-            curve:
-                const Interval(
-
-                  .7,
-
-                  1,
-
-                  curve:
-                      Curves.easeOut,
-
-                ),
-
-          ),
-
-        );
-
-
-
-
-
-    _textScale =
-        Tween<double>(
-
-          begin:
-              .7,
-
-          end:
-              1,
-
-        ).animate(
-
-          CurvedAnimation(
-
-            parent:
-                _controller,
-
-
-            curve:
-                const Interval(
-
-                  .7,
-
-                  1,
-
-                  curve:
-                      Curves.elasticOut,
-
-                ),
-
-          ),
-
-        );
-
-
-
-
-
+        curve: const Interval(.7, 1, curve: Curves.elasticOut),
+      ),
+    );
 
     _controller.forward();
 
-
-
-
-
-    Future.delayed(
-
-      const Duration(
-
-        milliseconds:
-            3500,
-
-      ),
-
-      _openNextScreen,
-
-    );
-
+    Future.delayed(const Duration(milliseconds: 3500), _openNextScreen);
   }
-
-
-
-
-
 
   Future<void> _openNextScreen() async {
     final rememberedSession = await AuthSessionService.readRememberedSession();
@@ -687,866 +244,280 @@ class _SplashScreenState extends State<SplashScreen>
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 700),
         pageBuilder: (_, animation, __) {
-          return FadeTransition(
-            opacity: animation,
-            child: nextScreen,
-          );
+          return FadeTransition(opacity: animation, child: nextScreen);
         },
       ),
     );
   }
 
-
-
   @override
-  void dispose(){
-
+  void dispose() {
     _controller.dispose();
 
     super.dispose();
-
   }
 
-    // ================================
+  // ================================
   // PARTICLE WIDGET
   // ================================
 
-  Widget _particle(
-      double x,
-      double y,
-      double size,
-  ) {
-
+  Widget _particle(double x, double y, double size) {
     return AnimatedBuilder(
+      animation: _particleAnimation,
 
-      animation:
-          _particleAnimation,
-
-
-      builder:
-          (_, child) {
-
-
+      builder: (_, child) {
         return Positioned(
+          left: x,
 
-          left:
-              x,
+          top: y,
 
-          top:
-              y,
-
-
-          child:
-
-          Transform.scale(
-
-            scale:
-                _particleAnimation.value,
-
-
-            child:
-                child,
-
-
-          ),
-
-
+          child: Transform.scale(scale: _particleAnimation.value, child: child),
         );
-
-
       },
 
+      child: Container(
+        width: size,
 
-      child:
+        height: size,
 
-      Container(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
 
-        width:
-            size,
+          color: AppColors.teal,
 
-        height:
-            size,
-
-
-        decoration:
-
-        BoxDecoration(
-
-
-          shape:
-              BoxShape.circle,
-
-
-          color:
-              AppColors.teal,
-
-
-          boxShadow:[
-
+          boxShadow: [
             BoxShadow(
+              color: AppColors.teal.withValues(alpha: .7),
 
-              color:
-                  AppColors.teal
-                      .withValues(
-                        alpha:
-                            .7,
-                      ),
-
-
-              blurRadius:
-                  12,
-
+              blurRadius: 12,
             ),
-
           ],
-
-
         ),
-
       ),
-
-
     );
-
   }
 
-
-
-
-
-
-
-  Widget _particles(){
-
-
+  Widget _particles() {
     return SizedBox(
+      width: 180,
 
-      width:
-          180,
+      height: 120,
 
-      height:
-          120,
+      child: Stack(
+        children: [
+          _particle(20, 45, 6),
 
+          _particle(150, 40, 5),
 
-      child:
+          _particle(80, 5, 4),
 
-      Stack(
+          _particle(90, 95, 5),
 
-        children:[
+          _particle(45, 80, 3),
 
-
-          _particle(
-            20,
-            45,
-            6,
-          ),
-
-
-          _particle(
-            150,
-            40,
-            5,
-          ),
-
-
-          _particle(
-            80,
-            5,
-            4,
-          ),
-
-
-          _particle(
-            90,
-            95,
-            5,
-          ),
-
-
-          _particle(
-            45,
-            80,
-            3,
-          ),
-
-
-          _particle(
-            130,
-            75,
-            4,
-          ),
-
-
+          _particle(130, 75, 4),
         ],
-
       ),
-
     );
-
-
   }
-
-
-
-
-
-
-
-
 
   @override
-  Widget build(BuildContext context){
-
-
+  Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.navy,
 
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
 
-      backgroundColor:
-          AppColors.navy,
-
-
-
-      body:
-
-
-      Center(
-
-
-        child:
-
-        Column(
-
-          mainAxisSize:
-              MainAxisSize.min,
-
-
-          children:[
-
-
-
-
-
-
+          children: [
             // ================================
             // LOGO AREA
             // ================================
-
-
             SizedBox(
+              height: 220,
 
-              height:
-                  220,
+              child: Stack(
+                alignment: Alignment.center,
 
-
-              child:
-
-              Stack(
-
-                alignment:
-                    Alignment.center,
-
-
-                children:[
-
-
-
-
+                children: [
                   // particles
-
                   _particles(),
 
-
-
-
-
-
                   // logo glow
-
                   AnimatedBuilder(
+                    animation: _glowAnimation,
 
-                    animation:
-                        _glowAnimation,
-
-
-                    builder:
-                        (_, child){
-
-
+                    builder: (_, child) {
                       return Container(
-
-
-                        decoration:
-
-                        BoxDecoration(
-
-
-                          boxShadow:[
-
-
+                        decoration: BoxDecoration(
+                          boxShadow: [
                             BoxShadow(
-
-                              color:
-
-                              AppColors.teal
-                                  .withValues(
-
-                                    alpha:
-
-                                    .25 *
-                                    _glowAnimation.value,
-
-                                  ),
-
-
-                              blurRadius:
-
-                                  55,
-
-                            ),
-
-
-                          ],
-
-
-                        ),
-
-
-
-                        child:
-                            child,
-
-
-                      );
-
-
-                    },
-
-
-
-                    child:
-
-                    AnimatedBuilder(
-
-                      animation:
-                          _controller,
-
-
-                      builder:
-                          (_, child){
-
-
-
-                        return Transform.translate(
-
-
-                          offset:
-
-                          Offset(
-
-                            _logoSlide.value,
-
-                            _bounce.value,
-
-                          ),
-
-
-
-                          child:
-
-                          Transform.rotate(
-
-
-                            angle:
-
-                            _logoRotate.value,
-
-
-
-                            child:
-
-                            Transform.scale(
-
-
-                              scale:
-
-                              _logoScale.value,
-
-
-
-                              child:
-
-
-                              Opacity(
-
-
-                                opacity:
-
-                                _logoOpacity.value,
-
-
-                                child:
-                                    child,
-
-
+                              color: AppColors.teal.withValues(
+                                alpha: .25 * _glowAnimation.value,
                               ),
 
-
-
+                              blurRadius: 55,
                             ),
+                          ],
+                        ),
 
+                        child: child,
+                      );
+                    },
 
+                    child: AnimatedBuilder(
+                      animation: _controller,
+
+                      builder: (_, child) {
+                        return Transform.translate(
+                          offset: Offset(_logoSlide.value, _bounce.value),
+
+                          child: Transform.rotate(
+                            angle: _logoRotate.value,
+
+                            child: Transform.scale(
+                              scale: _logoScale.value,
+
+                              child: Opacity(
+                                opacity: _logoOpacity.value,
+
+                                child: child,
+                              ),
+                            ),
                           ),
-
-
                         );
-
-
                       },
 
-
-
-                      child:
-
-                      Image.asset(
-
-                        'assets/images/logo.png',
-
-
-                        width:
-                            150,
-
-
-                      ),
-
-
+                      child: Image.asset('assets/images/logo.png', width: 150),
                     ),
-
-
                   ),
-
-
-
                 ],
-
-
               ),
-
-
             ),
-
-
-
-
-
-
-
 
             // ================================
             // SHADOW
             // ================================
-
-
             AnimatedBuilder(
+              animation: _shadowScale,
 
-              animation:
-                  _shadowScale,
-
-
-              builder:
-                  (_, __){
-
-
+              builder: (_, __) {
                 return Transform.scale(
+                  scaleX: _shadowScale.value,
 
-                  scaleX:
-                      _shadowScale.value,
+                  child: Container(
+                    width: 75,
 
+                    height: 9,
 
-                  child:
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: .28),
 
-
-                  Container(
-
-                    width:
-                        75,
-
-                    height:
-                        9,
-
-
-                    decoration:
-
-                    BoxDecoration(
-
-
-                      color:
-
-                          Colors.black
-                              .withValues(
-
-                                alpha:
-                                    .28,
-
-                              ),
-
-
-                      borderRadius:
-
-                          BorderRadius.circular(
-                            50,
-                          ),
-
-
+                      borderRadius: BorderRadius.circular(50),
                     ),
-
-
                   ),
-
-
                 );
-
-
               },
-
             ),
 
-
-
-
-
-
-
-            const SizedBox(
-
-              height:
-                  35,
-
-            ),
-
-
-
-
-
-
-
+            const SizedBox(height: 35),
 
             // ================================
             // WORDMARK
             // ================================
-
-
             AnimatedBuilder(
+              animation: _textOpacity,
 
-              animation:
-                  _textOpacity,
-
-
-              builder:
-                  (_, child){
-
-
+              builder: (_, child) {
                 return Opacity(
+                  opacity: _textOpacity.value,
 
+                  child: Transform.translate(
+                    offset: Offset(0, _textSlide.value),
 
-                  opacity:
+                    child: Transform.scale(
+                      scale: _textScale.value,
 
-                  _textOpacity.value,
-
-
-
-                  child:
-
-                  Transform.translate(
-
-
-                    offset:
-
-                    Offset(
-
-                      0,
-
-                      _textSlide.value,
-
+                      child: child,
                     ),
-
-
-
-                    child:
-
-
-                    Transform.scale(
-
-                      scale:
-
-                      _textScale.value,
-
-
-                      child:
-                          child,
-
-
-                    ),
-
-
                   ),
-
-
                 );
-
-
               },
 
-
-
-
-              child:
-
-              Column(
-
-
-                children:[
-
-
-
-
-
+              child: Column(
+                children: [
                   RichText(
-
-                    text:
-
-
-                    TextSpan(
-
-                      children:[
-
-
-
+                    text: TextSpan(
+                      children: [
                         TextSpan(
+                          text: "Shop",
 
-                          text:
-                              "Shop",
+                          style: TextStyle(
+                            color: Colors.white,
 
+                            fontSize: 32,
 
-                          style:
+                            fontWeight: FontWeight.w800,
 
-                          TextStyle(
-
-
-                            color:
-                                Colors.white,
-
-
-                            fontSize:
-                                32,
-
-
-                            fontWeight:
-                                FontWeight.w800,
-
-
-                            letterSpacing:
-                                .5,
-
-
+                            letterSpacing: .5,
                           ),
-
-
                         ),
 
-
-
-
-
                         TextSpan(
+                          text: "Hop",
 
-                          text:
-                              "Hop",
+                          style: TextStyle(
+                            color: AppColors.teal,
 
+                            fontSize: 32,
 
-                          style:
-
-                          TextStyle(
-
-
-                            color:
-                                AppColors.teal,
-
-
-                            fontSize:
-                                32,
-
-
-                            fontWeight:
-                                FontWeight.w800,
-
-
+                            fontWeight: FontWeight.w800,
                           ),
-
-
                         ),
-
-
-
                       ],
-
-
                     ),
-
                   ),
 
-
-
-
-
-
-
-
-                  const SizedBox(
-
-                    height:
-                        8,
-
-                  ),
-
-
-
-
-
+                  const SizedBox(height: 8),
 
                   Text(
-
                     "HOP IN. SHOP MORE.",
 
+                    style: TextStyle(
+                      color: AppColors.teal,
 
+                      fontSize: 11,
 
-                    style:
+                      fontWeight: FontWeight.w700,
 
-                    TextStyle(
-
-
-                      color:
-
-                          AppColors.teal,
-
-
-                      fontSize:
-                          11,
-
-
-                      fontWeight:
-                          FontWeight.w700,
-
-
-                      letterSpacing:
-                          2.8,
-
-
+                      letterSpacing: 2.8,
                     ),
-
-
                   ),
 
-
-
-
-
-
-                  const SizedBox(
-
-                    height:
-                        35,
-
-                  ),
-
-
-
-
-
-
+                  const SizedBox(height: 35),
 
                   SizedBox(
+                    width: 55,
 
-                    width:
-                        55,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
 
+                      child: LinearProgressIndicator(
+                        minHeight: 4,
 
-                    child:
+                        backgroundColor: Colors.white.withValues(alpha: .15),
 
-                    ClipRRect(
-
-                      borderRadius:
-
-                          BorderRadius.circular(
-                            20,
-                          ),
-
-
-                      child:
-
-                      LinearProgressIndicator(
-
-
-                        minHeight:
-                            4,
-
-
-
-                        backgroundColor:
-
-                            Colors.white
-                                .withValues(
-
-                                  alpha:
-                                      .15,
-
-                                ),
-
-
-
-                        valueColor:
-
-                        AlwaysStoppedAnimation(
-
-                          AppColors.teal,
-
-                        ),
-
-
+                        valueColor: AlwaysStoppedAnimation(AppColors.teal),
                       ),
-
-
                     ),
-
-
                   ),
-
-
-
-
-
                 ],
-
               ),
-
-
             ),
-
-
-
-
-
           ],
-
-
         ),
-
-
       ),
-
-
     );
-
-
   }
-
 }

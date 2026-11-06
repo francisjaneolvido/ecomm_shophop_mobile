@@ -62,20 +62,14 @@ class RiderUi {
       ),
       filled: true,
       fillColor: Colors.white,
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 14,
-        vertical: 15,
-      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
         borderSide: const BorderSide(color: AppColors.grayBorder),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(
-          color: Color(0xFF087968),
-          width: 1.5,
-        ),
+        borderSide: const BorderSide(color: Color(0xFF087968), width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
@@ -83,10 +77,7 @@ class RiderUi {
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(
-          color: Color(0xFFDB5757),
-          width: 1.5,
-        ),
+        borderSide: const BorderSide(color: Color(0xFFDB5757), width: 1.5),
       ),
       errorStyle: text(
         color: const Color(0xFFDB5757),

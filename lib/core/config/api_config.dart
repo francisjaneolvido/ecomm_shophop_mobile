@@ -41,7 +41,8 @@ class ApiConfig {
       final host = parsed.host.toLowerCase();
       const localHosts = {'127.0.0.1', 'localhost', '10.0.2.2'};
       final isLocal = localHosts.contains(host);
-      final isInsecureSameHost = parsed.scheme == 'http' &&
+      final isInsecureSameHost =
+          parsed.scheme == 'http' &&
           origin.scheme == 'https' &&
           host == origin.host.toLowerCase();
 

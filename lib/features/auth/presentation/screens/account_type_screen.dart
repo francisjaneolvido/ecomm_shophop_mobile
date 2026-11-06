@@ -58,12 +58,7 @@ class _AccountTypeScreenState extends State<AccountTypeScreen> {
               children: [
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: EdgeInsets.fromLTRB(
-                      20,
-                      compact ? 18 : 24,
-                      20,
-                      20,
-                    ),
+                    padding: EdgeInsets.fromLTRB(20, compact ? 18 : 24, 20, 20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -161,7 +156,9 @@ class _AccountTypeScreenState extends State<AccountTypeScreen> {
                                   style: TextStyle(
                                     fontSize: 11,
                                     height: 1.5,
-                                    color: AppColors.navy.withValues(alpha: .62),
+                                    color: AppColors.navy.withValues(
+                                      alpha: .62,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -189,15 +186,13 @@ class _AccountTypeScreenState extends State<AccountTypeScreen> {
                           width: double.infinity,
                           height: 52,
                           child: FilledButton(
-                            onPressed:
-                                _selectedRole == null ? null : _continue,
+                            onPressed: _selectedRole == null ? null : _continue,
                             style: FilledButton.styleFrom(
                               backgroundColor: AppColors.teal,
                               foregroundColor: Colors.white,
-                              disabledBackgroundColor:
-                                  const Color(0xFFE7EBEE),
-                              disabledForegroundColor:
-                                  AppColors.navy.withValues(alpha: .48),
+                              disabledBackgroundColor: const Color(0xFFE7EBEE),
+                              disabledForegroundColor: AppColors.navy
+                                  .withValues(alpha: .48),
                               elevation: 0,
                               shadowColor: Colors.transparent,
                               shape: RoundedRectangleBorder(
@@ -225,12 +220,12 @@ class _AccountTypeScreenState extends State<AccountTypeScreen> {
                               ),
                             ),
                             TextButton(
-                              onPressed: () => Navigator.of(context)
-                                  .pushReplacement(
-                                MaterialPageRoute(
-                                  builder: (_) => const LoginScreen(),
-                                ),
-                              ),
+                              onPressed: () =>
+                                  Navigator.of(context).pushReplacement(
+                                    MaterialPageRoute(
+                                      builder: (_) => const LoginScreen(),
+                                    ),
+                                  ),
                               style: TextButton.styleFrom(
                                 foregroundColor: AppColors.tealDark,
                                 padding: const EdgeInsets.symmetric(
@@ -238,8 +233,7 @@ class _AccountTypeScreenState extends State<AccountTypeScreen> {
                                   vertical: 7,
                                 ),
                                 minimumSize: Size.zero,
-                                tapTargetSize:
-                                    MaterialTapTargetSize.shrinkWrap,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                               ),
                               child: const Text(
                                 'Sign in',
@@ -313,10 +307,7 @@ class _RoleOption extends StatelessWidget {
             onTap: onTap,
             borderRadius: BorderRadius.circular(8),
             child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 15,
-                vertical: 16,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 16),
               child: Row(
                 children: [
                   AnimatedContainer(
@@ -332,8 +323,7 @@ class _RoleOption extends StatelessWidget {
                     child: Icon(
                       icon,
                       size: 22,
-                      color:
-                          selected ? AppColors.tealDark : AppColors.tealDark,
+                      color: selected ? AppColors.tealDark : AppColors.tealDark,
                     ),
                   ),
                   const SizedBox(width: 13),

@@ -33,9 +33,8 @@ class BuyerCartData {
   final double subtotal;
   final int unavailableCount;
 
-  List<BuyerCartItemData> get items => groups
-      .expand((group) => group.items)
-      .toList(growable: false);
+  List<BuyerCartItemData> get items =>
+      groups.expand((group) => group.items).toList(growable: false);
 
   factory BuyerCartData.fromJson(Map<String, dynamic> json) {
     return BuyerCartData(
@@ -50,10 +49,7 @@ class BuyerCartData {
 }
 
 class BuyerCartGroupData {
-  const BuyerCartGroupData({
-    required this.shop,
-    required this.items,
-  });
+  const BuyerCartGroupData({required this.shop, required this.items});
 
   final BuyerCartShopData shop;
   final List<BuyerCartItemData> items;
@@ -123,9 +119,7 @@ class BuyerCartItemData {
     return BuyerCartItemData(
       lineKey: json['line_key']?.toString() ?? '',
       productId: _asInt(json['product_id']),
-      variantId: json['variant_id'] == null
-          ? null
-          : _asInt(json['variant_id']),
+      variantId: json['variant_id'] == null ? null : _asInt(json['variant_id']),
       variant: json['variant']?.toString() ?? 'Standard',
       name: json['name']?.toString() ?? 'ShopHop Product',
       image: ApiConfig.resolveMediaUrl(json['image']?.toString()),
@@ -173,19 +167,16 @@ class BuyerCartVoucherData {
       sellerId: json['seller_id'] == null ? null : _asInt(json['seller_id']),
       productIds: json['product_ids'] is List
           ? (json['product_ids'] as List)
-              .map(_asInt)
-              .where((id) => id > 0)
-              .toList(growable: false)
+                .map(_asInt)
+                .where((id) => id > 0)
+                .toList(growable: false)
           : const <int>[],
     );
   }
 }
 
 class BuyerCartMutationData {
-  const BuyerCartMutationData({
-    required this.cartCount,
-    this.lineKey,
-  });
+  const BuyerCartMutationData({required this.cartCount, this.lineKey});
 
   final int cartCount;
   final String? lineKey;
@@ -202,11 +193,7 @@ class BuyerCartService {
   BuyerCartService._();
 
   static Future<BuyerCartData> getCart({required String token}) async {
-    final body = await _request(
-      '/buyer/cart',
-      token: token,
-      method: 'GET',
-    );
+    final body = await _request('/buyer/cart', token: token, method: 'GET');
     return BuyerCartData.fromJson(_requireDataMap(body, 'cart'));
   }
 
@@ -266,7 +253,10 @@ class BuyerCartService {
       token: token,
       method: 'POST',
       body: {
-        'keys': lineKeys.map((key) => int.tryParse(key) ?? 0).where((id) => id > 0).toList(),
+        'keys': lineKeys
+            .map((key) => int.tryParse(key) ?? 0)
+            .where((id) => id > 0)
+            .toList(),
       },
     );
     return BuyerCartMutationData.fromJson(_requireDataMap(body, 'cart update'));
@@ -330,7 +320,8 @@ class BuyerCartService {
         // Use the status fallback below when Laravel did not return JSON.
       }
 
-      final successful = response.statusCode >= 200 && response.statusCode < 300;
+      final successful =
+          response.statusCode >= 200 && response.statusCode < 300;
       if (!successful || decoded['success'] == false) {
         throw BuyerCartException(
           _messageFromResponse(decoded, response.statusCode),
@@ -399,10 +390,7 @@ class BuyerCartService {
   }
 }
 
-List<T> _mapList<T>(
-  dynamic value,
-  T Function(Map<String, dynamic>) parser,
-) {
+List<T> _mapList<T>(dynamic value, T Function(Map<String, dynamic>) parser) {
   if (value is! List) {
     return <T>[];
   }

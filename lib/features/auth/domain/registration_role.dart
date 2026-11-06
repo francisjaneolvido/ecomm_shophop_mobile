@@ -1,8 +1,4 @@
-enum RegistrationRole {
-  buyer,
-  seller,
-  rider,
-}
+enum RegistrationRole { buyer, seller, rider }
 
 extension RegistrationRoleUi on RegistrationRole {
   String get eyebrow {

@@ -7,9 +7,9 @@ class LandingScreen extends StatelessWidget {
   const LandingScreen({super.key});
 
   void _getStarted(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const LoginScreen()));
   }
 
   @override
@@ -272,9 +272,7 @@ class _FloatingBubble extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         shape: BoxShape.circle,
-        border: Border.all(
-          color: AppColors.grayBorder.withValues(alpha: .9),
-        ),
+        border: Border.all(color: AppColors.grayBorder.withValues(alpha: .9)),
         boxShadow: [
           BoxShadow(
             color: AppColors.navy.withValues(alpha: .07),
@@ -283,11 +281,7 @@ class _FloatingBubble extends StatelessWidget {
           ),
         ],
       ),
-      child: Icon(
-        icon,
-        size: size * .43,
-        color: iconColor,
-      ),
+      child: Icon(icon, size: size * .43, color: iconColor),
     );
   }
 }

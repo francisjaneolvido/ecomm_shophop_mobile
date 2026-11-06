@@ -119,6 +119,8 @@ class BuyerProductData {
     required this.discountPercent,
     required this.stock,
     required this.image,
+    this.videoUrl = '',
+    this.videoFirst = false,
     required this.rating,
     required this.reviews,
     required this.sold,
@@ -136,6 +138,8 @@ class BuyerProductData {
   final int discountPercent;
   final int stock;
   final String image;
+  final String videoUrl;
+  final bool videoFirst;
   final double rating;
   final int reviews;
   final int sold;
@@ -160,6 +164,8 @@ class BuyerProductData {
       discountPercent: _asInt(json['discount_percent']),
       stock: _asInt(json['stock']),
       image: _productImageUrl(json),
+      videoUrl: ApiConfig.resolveMediaUrl(json['video_url']?.toString()),
+      videoFirst: json['media_first'] == 'video' || json['is_video_first'] == true,
       rating: _asDouble(json['rating']),
       reviews: _asInt(json['reviews']),
       sold: _asInt(json['sold']),
@@ -172,10 +178,7 @@ class BuyerProductData {
     );
   }
 
-  BuyerProductData copyWith({
-    bool? isLiked,
-    bool? isAvailable,
-  }) {
+  BuyerProductData copyWith({bool? isLiked, bool? isAvailable}) {
     return BuyerProductData(
       id: id,
       name: name,
@@ -185,6 +188,8 @@ class BuyerProductData {
       discountPercent: discountPercent,
       stock: stock,
       image: image,
+      videoUrl: videoUrl,
+      videoFirst: videoFirst,
       rating: rating,
       reviews: reviews,
       sold: sold,
@@ -217,10 +222,7 @@ class BuyerProductSellerData {
 }
 
 class BuyerLikesData {
-  const BuyerLikesData({
-    required this.items,
-    required this.count,
-  });
+  const BuyerLikesData({required this.items, required this.count});
 
   final List<BuyerProductData> items;
   final int count;
@@ -234,10 +236,7 @@ class BuyerLikesData {
 }
 
 class BuyerProductListData {
-  const BuyerProductListData({
-    required this.items,
-    required this.pagination,
-  });
+  const BuyerProductListData({required this.items, required this.pagination});
 
   final List<BuyerProductData> items;
   final BuyerPaginationData pagination;
@@ -338,10 +337,13 @@ class BuyerProductDetailData {
       product: BuyerProductData.fromJson(json),
       description: json['description']?.toString().trim() ?? '',
       videoUrl: ApiConfig.resolveMediaUrl(json['video_url']?.toString()),
-      mediaFirst: json['media_first']?.toString() == 'video' ? 'video' : 'image',
-      media: _mapList(json['media'], BuyerMediaItem.fromJson)
-          .where((item) => item.url.isNotEmpty)
-          .toList(growable: false),
+      mediaFirst: json['media_first']?.toString() == 'video'
+          ? 'video'
+          : 'image',
+      media: _mapList(
+        json['media'],
+        BuyerMediaItem.fromJson,
+      ).where((item) => item.url.isNotEmpty).toList(growable: false),
       gallery: _stringList(json['gallery'])
           .map(ApiConfig.resolveMediaUrl)
           .where((url) => url.isNotEmpty)
@@ -486,9 +488,7 @@ class BuyerSellerDetailData {
 class BuyerCatalogService {
   BuyerCatalogService._();
 
-  static Future<BuyerHomeData> getHome({
-    required String token,
-  }) async {
+  static Future<BuyerHomeData> getHome({required String token}) async {
     final body = await _get('/buyer/home', token: token);
     final data = _requireDataMap(body, 'Buyer Home');
     return BuyerHomeData.fromJson(data);
@@ -535,9 +535,7 @@ class BuyerCatalogService {
     return BuyerProductDetailData.fromJson(data);
   }
 
-  static Future<BuyerLikesData> getLikes({
-    required String token,
-  }) async {
+  static Future<BuyerLikesData> getLikes({required String token}) async {
     final body = await _get('/buyer/likes', token: token);
     final data = _requireDataMap(body, 'likes');
     return BuyerLikesData.fromJson(data);
@@ -615,7 +613,8 @@ class BuyerCatalogService {
         // The status-based fallback below is more useful than a JSON error.
       }
 
-      final successful = response.statusCode >= 200 && response.statusCode < 300;
+      final successful =
+          response.statusCode >= 200 && response.statusCode < 300;
       if (!successful || body['success'] == false) {
         throw BuyerCatalogException(
           body['message']?.toString() ?? _statusMessage(response.statusCode),
@@ -666,10 +665,7 @@ class BuyerCatalogService {
   }
 }
 
-List<T> _mapList<T>(
-  dynamic value,
-  T Function(Map<String, dynamic>) parser,
-) {
+List<T> _mapList<T>(dynamic value, T Function(Map<String, dynamic>) parser) {
   if (value is! List) {
     return <T>[];
   }

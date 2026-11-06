@@ -36,8 +36,9 @@ class RiderDetailsStep extends StatelessWidget {
           label: 'Vehicle',
           hint: 'Enter your vehicle type',
           icon: Icons.two_wheeler_rounded,
-          validator: (value) =>
-              value == null || value.trim().isEmpty ? 'Vehicle is required.' : null,
+          validator: (value) => value == null || value.trim().isEmpty
+              ? 'Vehicle is required.'
+              : null,
         ),
         const SizedBox(height: 18),
         _field(
@@ -77,47 +78,47 @@ class RiderDetailsStep extends StatelessWidget {
   }
 
   Widget _header() => Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: AppColors.tealLight,
-              borderRadius: BorderRadius.circular(8),
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: AppColors.tealLight,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Icon(
+          Icons.delivery_dining_outlined,
+          color: AppColors.tealDark,
+        ),
+      ),
+      const SizedBox(width: 13),
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Rider details',
+              style: TextStyle(
+                color: AppColors.navy,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
             ),
-            child: const Icon(
-              Icons.delivery_dining_outlined,
-              color: AppColors.tealDark,
+            const SizedBox(height: 4),
+            Text(
+              'Tell us about your vehicle and upload the required rider documents.',
+              style: TextStyle(
+                color: AppColors.navy.withValues(alpha: 0.45),
+                fontSize: 12,
+                height: 1.45,
+              ),
             ),
-          ),
-          const SizedBox(width: 13),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Rider details',
-                  style: TextStyle(
-                    color: AppColors.navy,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Tell us about your vehicle and upload the required rider documents.',
-                  style: TextStyle(
-                    color: AppColors.navy.withValues(alpha: 0.45),
-                    fontSize: 12,
-                    height: 1.45,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      );
+          ],
+        ),
+      ),
+    ],
+  );
 
   Widget _field({
     required TextEditingController controller,
@@ -127,59 +128,54 @@ class RiderDetailsStep extends StatelessWidget {
     required String? Function(String?) validator,
     TextCapitalization capitalization = TextCapitalization.words,
     List<TextInputFormatter>? inputFormatters,
-  }) =>
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          RiderUi.requiredLabel(label),
-          const SizedBox(height: 8),
-          TextFormField(
-            controller: controller,
-            textCapitalization: capitalization,
-            inputFormatters: inputFormatters,
-            validator: validator,
-            style: RiderUi.text(
-              color: AppColors.navy,
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-            ),
-            decoration: RiderUi.inputDecoration(
-              hint: hint,
-              icon: icon,
-            ),
-          ),
-        ],
-      );
+  }) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      RiderUi.requiredLabel(label),
+      const SizedBox(height: 8),
+      TextFormField(
+        controller: controller,
+        textCapitalization: capitalization,
+        inputFormatters: inputFormatters,
+        validator: validator,
+        style: RiderUi.text(
+          color: AppColors.navy,
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
+        decoration: RiderUi.inputDecoration(hint: hint, icon: icon),
+      ),
+    ],
+  );
 
   Widget _notice() => Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(13),
-        decoration: BoxDecoration(
-          color: AppColors.tealLight.withValues(alpha: 0.45),
-          borderRadius: BorderRadius.circular(8),
-          border:
-              Border.all(color: AppColors.teal.withValues(alpha: 0.14)),
+    width: double.infinity,
+    padding: const EdgeInsets.all(13),
+    decoration: BoxDecoration(
+      color: AppColors.tealLight.withValues(alpha: 0.45),
+      borderRadius: BorderRadius.circular(8),
+      border: Border.all(color: AppColors.teal.withValues(alpha: 0.14)),
+    ),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Icon(
+          Icons.info_outline_rounded,
+          color: AppColors.tealDark,
+          size: 18,
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Icon(
-              Icons.info_outline_rounded,
-              color: AppColors.tealDark,
-              size: 18,
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            'Make sure your vehicle details and uploaded documents are clear and correct before continuing.',
+            style: TextStyle(
+              color: AppColors.navy.withValues(alpha: 0.55),
+              fontSize: 10.5,
+              height: 1.45,
             ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'Make sure your vehicle details and uploaded documents are clear and correct before continuing.',
-                style: TextStyle(
-                  color: AppColors.navy.withValues(alpha: 0.55),
-                  fontSize: 10.5,
-                  height: 1.45,
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
-      );
+      ],
+    ),
+  );
 }

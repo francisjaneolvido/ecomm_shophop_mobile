@@ -46,21 +46,13 @@ class RiderRegistrationHeader extends StatelessWidget {
 }
 
 class RiderRegistrationProgress extends StatelessWidget {
-  const RiderRegistrationProgress({
-    super.key,
-    required this.currentStep,
-  });
+  const RiderRegistrationProgress({super.key, required this.currentStep});
 
   final int currentStep;
 
   @override
   Widget build(BuildContext context) {
-    const labels = [
-      'Personal',
-      'Address',
-      'Rider',
-      'Security',
-    ];
+    const labels = ['Personal', 'Address', 'Rider', 'Security'];
 
     return Container(
       width: double.infinity,
@@ -122,7 +114,9 @@ class RiderRegistrationProgress extends StatelessWidget {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: completed || active ? const Color(0xFF087968) : Colors.white,
+                  color: completed || active
+                      ? const Color(0xFF087968)
+                      : Colors.white,
                   border: Border.all(
                     color: completed || active
                         ? const Color(0xFF087968)
@@ -165,8 +159,7 @@ class RiderRegistrationProgress extends StatelessWidget {
                         ? AppColors.navy
                         : AppColors.navy.withValues(alpha: 0.27),
                     fontSize: 10,
-                    fontWeight:
-                        reached ? FontWeight.w600 : FontWeight.w500,
+                    fontWeight: reached ? FontWeight.w600 : FontWeight.w500,
                   ),
                 ),
               );

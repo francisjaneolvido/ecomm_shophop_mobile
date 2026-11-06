@@ -13,44 +13,83 @@ class RiderReturnService {
 
   static Future<AuthApiResult> tasks(String token) async {
     try {
-      final r = await http.get(Uri.parse('${ApiConfig.baseUrl}/rider/returns'),
-        headers: headers(token)).timeout(const Duration(seconds: 20));
+      final r = await http
+          .get(
+            Uri.parse('${ApiConfig.baseUrl}/rider/returns'),
+            headers: headers(token),
+          )
+          .timeout(const Duration(seconds: 20));
       return AuthApiResult.fromResponse(r);
     } catch (_) {
-      return const AuthApiResult(success: false, status: 'network_error',
-        message: 'Cannot load return tasks. Please retry.');
+      return const AuthApiResult(
+        success: false,
+        status: 'network_error',
+        message: 'Cannot load return tasks. Please retry.',
+      );
     }
   }
 
   static Future<AuthApiResult> collect(String token, int id) async {
     try {
-      final r = await http.post(Uri.parse('${ApiConfig.baseUrl}/rider/returns/$id/pickup'),
-        headers: headers(token)).timeout(const Duration(seconds: 20));
+      final r = await http
+          .post(
+            Uri.parse('${ApiConfig.baseUrl}/rider/returns/$id/pickup'),
+            headers: headers(token),
+          )
+          .timeout(const Duration(seconds: 20));
       return AuthApiResult.fromResponse(r);
     } catch (_) {
-      return const AuthApiResult(success: false, status: 'network_error',
-        message: 'Unable to confirm collection. Please retry.');
+      return const AuthApiResult(
+        success: false,
+        status: 'network_error',
+        message: 'Unable to confirm collection. Please retry.',
+      );
     }
   }
 
-  static Future<AuthApiResult> handover(String token, int id, PlatformFile proof) async {
+  static Future<AuthApiResult> handover(
+    String token,
+    int id,
+    PlatformFile proof,
+  ) async {
     try {
-      final request = http.MultipartRequest('POST',
-        Uri.parse('${ApiConfig.baseUrl}/rider/returns/$id/handover'));
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('${ApiConfig.baseUrl}/rider/returns/$id/handover'),
+      );
       request.headers.addAll(headers(token));
       if (proof.bytes != null) {
-        request.files.add(http.MultipartFile.fromBytes('proof', proof.bytes!, filename: proof.name));
+        request.files.add(
+          http.MultipartFile.fromBytes(
+            'proof',
+            proof.bytes!,
+            filename: proof.name,
+          ),
+        );
       } else if (proof.path != null && proof.path!.isNotEmpty) {
-        request.files.add(await http.MultipartFile.fromPath('proof', proof.path!, filename: proof.name));
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'proof',
+            proof.path!,
+            filename: proof.name,
+          ),
+        );
       } else {
-        return const AuthApiResult(success: false, status: 'file_error', message: 'Cannot read selected photo.');
+        return const AuthApiResult(
+          success: false,
+          status: 'file_error',
+          message: 'Cannot read selected photo.',
+        );
       }
       final stream = await request.send().timeout(const Duration(seconds: 30));
       final response = await http.Response.fromStream(stream);
       return AuthApiResult.fromResponse(response);
     } catch (_) {
-      return const AuthApiResult(success: false, status: 'network_error',
-        message: 'Photo upload failed. Please retry.');
+      return const AuthApiResult(
+        success: false,
+        status: 'network_error',
+        message: 'Photo upload failed. Please retry.',
+      );
     }
   }
 }

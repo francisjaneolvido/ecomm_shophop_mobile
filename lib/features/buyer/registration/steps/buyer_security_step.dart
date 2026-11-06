@@ -30,11 +30,14 @@ class _BuyerSecurityStepState extends State<BuyerSecurityStep> {
 
   bool get _hasMinimumLength => widget.passwordController.text.length >= 8;
 
-  bool get _hasUppercase => RegExp(r'[A-Z]').hasMatch(widget.passwordController.text);
+  bool get _hasUppercase =>
+      RegExp(r'[A-Z]').hasMatch(widget.passwordController.text);
 
-  bool get _hasLowercase => RegExp(r'[a-z]').hasMatch(widget.passwordController.text);
+  bool get _hasLowercase =>
+      RegExp(r'[a-z]').hasMatch(widget.passwordController.text);
 
-  bool get _hasNumber => RegExp(r'[0-9]').hasMatch(widget.passwordController.text);
+  bool get _hasNumber =>
+      RegExp(r'[0-9]').hasMatch(widget.passwordController.text);
 
   bool get _hasSpecial =>
       RegExp(r'[^A-Za-z0-9]').hasMatch(widget.passwordController.text);
@@ -177,26 +180,27 @@ class _BuyerSecurityStepState extends State<BuyerSecurityStep> {
             fontSize: 13,
             fontWeight: FontWeight.w500,
           ),
-          decoration: _inputDecoration(
-            hint: 'Create a strong password',
-            icon: Icons.lock_outline_rounded,
-          ).copyWith(
-            suffixIcon: IconButton(
-              tooltip: _obscurePassword ? 'Show password' : 'Hide password',
-              onPressed: () {
-                setState(() {
-                  _obscurePassword = !_obscurePassword;
-                });
-              },
-              icon: Icon(
-                _obscurePassword
-                    ? Icons.visibility_outlined
-                    : Icons.visibility_off_outlined,
-                size: 20,
-                color: AppColors.navy.withValues(alpha: 0.38),
+          decoration:
+              _inputDecoration(
+                hint: 'Create a strong password',
+                icon: Icons.lock_outline_rounded,
+              ).copyWith(
+                suffixIcon: IconButton(
+                  tooltip: _obscurePassword ? 'Show password' : 'Hide password',
+                  onPressed: () {
+                    setState(() {
+                      _obscurePassword = !_obscurePassword;
+                    });
+                  },
+                  icon: Icon(
+                    _obscurePassword
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
+                    size: 20,
+                    color: AppColors.navy.withValues(alpha: 0.38),
+                  ),
+                ),
               ),
-            ),
-          ),
         ),
       ],
     );
@@ -220,26 +224,29 @@ class _BuyerSecurityStepState extends State<BuyerSecurityStep> {
             fontSize: 13,
             fontWeight: FontWeight.w500,
           ),
-          decoration: _inputDecoration(
-            hint: 'Re-enter your password',
-            icon: Icons.lock_reset_rounded,
-          ).copyWith(
-            suffixIcon: IconButton(
-              tooltip: _obscureConfirmation ? 'Show password' : 'Hide password',
-              onPressed: () {
-                setState(() {
-                  _obscureConfirmation = !_obscureConfirmation;
-                });
-              },
-              icon: Icon(
-                _obscureConfirmation
-                    ? Icons.visibility_outlined
-                    : Icons.visibility_off_outlined,
-                size: 20,
-                color: AppColors.navy.withValues(alpha: 0.38),
+          decoration:
+              _inputDecoration(
+                hint: 'Re-enter your password',
+                icon: Icons.lock_reset_rounded,
+              ).copyWith(
+                suffixIcon: IconButton(
+                  tooltip: _obscureConfirmation
+                      ? 'Show password'
+                      : 'Hide password',
+                  onPressed: () {
+                    setState(() {
+                      _obscureConfirmation = !_obscureConfirmation;
+                    });
+                  },
+                  icon: Icon(
+                    _obscureConfirmation
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
+                    size: 20,
+                    color: AppColors.navy.withValues(alpha: 0.38),
+                  ),
+                ),
               ),
-            ),
-          ),
         ),
       ],
     );
@@ -290,11 +297,7 @@ class _BuyerSecurityStepState extends State<BuyerSecurityStep> {
     );
   }
 
-  Widget _requirement(
-    String text,
-    bool satisfied, {
-    bool optional = false,
-  }) {
+  Widget _requirement(String text, bool satisfied, {bool optional = false}) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -311,11 +314,7 @@ class _BuyerSecurityStepState extends State<BuyerSecurityStep> {
             ),
           ),
           child: satisfied
-              ? const Icon(
-                  Icons.check_rounded,
-                  size: 11,
-                  color: Colors.white,
-                )
+              ? const Icon(Icons.check_rounded, size: 11, color: Colors.white)
               : null,
         ),
         const SizedBox(width: 9),
@@ -337,50 +336,42 @@ class _BuyerSecurityStepState extends State<BuyerSecurityStep> {
   }
 
   Widget _buildApprovalNotice() {
-  return Container(
-    width: double.infinity,
-    padding: const EdgeInsets.all(13),
-    decoration: BoxDecoration(
-      color: AppColors.tealLight.withValues(
-        alpha: 0.45,
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(13),
+      decoration: BoxDecoration(
+        color: AppColors.tealLight.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.teal.withValues(alpha: 0.15)),
       ),
-      borderRadius: BorderRadius.circular(8),
-      border: Border.all(
-        color: AppColors.teal.withValues(
-          alpha: 0.15,
-        ),
-      ),
-    ),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Icon(
-          Icons.info_outline_rounded,
-          size: 18,
-          color: AppColors.tealDark,
-        ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.info_outline_rounded,
+            size: 18,
+            color: AppColors.tealDark,
+          ),
 
-        const SizedBox(width: 10),
+          const SizedBox(width: 10),
 
-        Expanded(
-          child: Text(
-            'After creating your account, we’ll send a '
-            '6-digit verification code to your email. '
-            'Once your email is verified, your registration '
-            'will be submitted for administrator approval.',
-            style: TextStyle(
-              color: AppColors.navy.withValues(
-                alpha: 0.55,
+          Expanded(
+            child: Text(
+              'After creating your account, we’ll send a '
+              '6-digit verification code to your email. '
+              'Once your email is verified, your registration '
+              'will be submitted for administrator approval.',
+              style: TextStyle(
+                color: AppColors.navy.withValues(alpha: 0.55),
+                fontSize: 10.5,
+                height: 1.5,
               ),
-              fontSize: 10.5,
-              height: 1.5,
             ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 
   Widget _buildTermsField() {
     return FormField<bool>(
@@ -414,8 +405,8 @@ class _BuyerSecurityStepState extends State<BuyerSecurityStep> {
                     color: field.hasError
                         ? const Color(0xFFDB5757)
                         : checked
-                            ? AppColors.teal.withValues(alpha: 0.60)
-                            : AppColors.grayBorder,
+                        ? AppColors.teal.withValues(alpha: 0.60)
+                        : AppColors.grayBorder,
                   ),
                 ),
                 child: Row(
@@ -540,20 +531,14 @@ class _BuyerSecurityStepState extends State<BuyerSecurityStep> {
       ),
       filled: true,
       fillColor: Colors.white,
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 14,
-        vertical: 15,
-      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
         borderSide: const BorderSide(color: AppColors.grayBorder),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(
-          color: AppColors.teal,
-          width: 1.5,
-        ),
+        borderSide: const BorderSide(color: AppColors.teal, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
@@ -561,15 +546,9 @@ class _BuyerSecurityStepState extends State<BuyerSecurityStep> {
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(
-          color: Color(0xFFDB5757),
-          width: 1.5,
-        ),
+        borderSide: const BorderSide(color: Color(0xFFDB5757), width: 1.5),
       ),
-      errorStyle: const TextStyle(
-        fontSize: 10,
-        height: 1.3,
-      ),
+      errorStyle: const TextStyle(fontSize: 10, height: 1.3),
     );
   }
 }

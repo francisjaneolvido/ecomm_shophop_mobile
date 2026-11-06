@@ -41,7 +41,7 @@ class AuthApiResult {
         message: response.statusCode >= 500
             ? 'ShopHop is temporarily unavailable. Please try again later.'
             : 'ShopHop returned a non-API response. Check your connection '
-                'and app server settings.',
+                  'and app server settings.',
         statusCode: response.statusCode,
       );
     }
@@ -50,13 +50,16 @@ class AuthApiResult {
     final errors = rawErrors is Map
         ? Map<String, dynamic>.from(rawErrors)
         : <String, dynamic>{};
-    final isHttpSuccess = response.statusCode >= 200 && response.statusCode < 300;
+    final isHttpSuccess =
+        response.statusCode >= 200 && response.statusCode < 300;
 
     return AuthApiResult(
       success: isHttpSuccess && body['success'] == true,
-      status: body['status']?.toString() ??
+      status:
+          body['status']?.toString() ??
           (isHttpSuccess && body['success'] == true ? 'ok' : 'error'),
-      message: body['message']?.toString() ??
+      message:
+          body['message']?.toString() ??
           _firstValidationMessage(errors) ??
           'Something went wrong. Please try again.',
       data: body['data'] is Map<String, dynamic>
@@ -207,8 +210,11 @@ class AuthService {
       });
 
       final validIdAttached = await _attachFile(request, 'valid_id', validId);
-      final permitAttached =
-          await _attachFile(request, 'business_permit', businessPermit);
+      final permitAttached = await _attachFile(
+        request,
+        'business_permit',
+        businessPermit,
+      );
       if (!validIdAttached || !permitAttached) {
         return const AuthApiResult(
           success: false,
@@ -290,8 +296,11 @@ class AuthService {
       });
 
       final orCrAttached = await _attachFile(request, 'or_cr', orCr);
-      final idAttached =
-          await _attachFile(request, 'id_or_license', idOrLicense);
+      final idAttached = await _attachFile(
+        request,
+        'id_or_license',
+        idOrLicense,
+      );
       if (!orCrAttached || !idAttached) {
         return const AuthApiResult(
           success: false,
@@ -311,14 +320,11 @@ class AuthService {
     required String password,
     required bool rememberMe,
   }) {
-    return _postJson(
-      '${ApiConfig.baseUrl}/login',
-      {
-        'email': email.trim(),
-        'password': password,
-        'remember': rememberMe,
-      },
-    );
+    return _postJson('${ApiConfig.baseUrl}/login', {
+      'email': email.trim(),
+      'password': password,
+      'remember': rememberMe,
+    });
   }
 
   static Future<AuthApiResult> me({required String token}) async {
@@ -363,57 +369,54 @@ class AuthService {
     required String email,
     required String code,
   }) {
-    return _postJson(
-      '${ApiConfig.baseUrl}/buyer/verify-email',
-      {'email': email.trim(), 'code': code.trim()},
-    );
+    return _postJson('${ApiConfig.baseUrl}/buyer/verify-email', {
+      'email': email.trim(),
+      'code': code.trim(),
+    });
   }
 
   static Future<AuthApiResult> resendBuyerVerification({
     required String email,
   }) {
-    return _postJson(
-      '${ApiConfig.baseUrl}/buyer/verify-email/resend',
-      {'email': email.trim()},
-    );
+    return _postJson('${ApiConfig.baseUrl}/buyer/verify-email/resend', {
+      'email': email.trim(),
+    });
   }
 
   static Future<AuthApiResult> verifySellerEmail({
     required String email,
     required String code,
   }) {
-    return _postJson(
-      '${ApiConfig.baseUrl}/seller/verify-email',
-      {'email': email.trim().toLowerCase(), 'code': code.trim()},
-    );
+    return _postJson('${ApiConfig.baseUrl}/seller/verify-email', {
+      'email': email.trim().toLowerCase(),
+      'code': code.trim(),
+    });
   }
 
   static Future<AuthApiResult> resendSellerVerification({
     required String email,
   }) {
-    return _postJson(
-      '${ApiConfig.baseUrl}/seller/verify-email/resend',
-      {'email': email.trim().toLowerCase()},
-    );
+    return _postJson('${ApiConfig.baseUrl}/seller/verify-email/resend', {
+      'email': email.trim().toLowerCase(),
+    });
   }
 
   static Future<AuthApiResult> verifyRiderEmail({
     required String email,
     required String code,
   }) {
-    return _postJson(
-      '${ApiConfig.baseUrl}/rider/verify-email',
-      {'email': email.trim(), 'code': code.trim()},
-    );
+    return _postJson('${ApiConfig.baseUrl}/rider/verify-email', {
+      'email': email.trim(),
+      'code': code.trim(),
+    });
   }
 
   static Future<AuthApiResult> resendRiderVerification({
     required String email,
   }) {
-    return _postJson(
-      '${ApiConfig.baseUrl}/rider/verify-email/resend',
-      {'email': email.trim()},
-    );
+    return _postJson('${ApiConfig.baseUrl}/rider/verify-email/resend', {
+      'email': email.trim(),
+    });
   }
 
   static Future<bool> _attachFile(
@@ -423,11 +426,7 @@ class AuthService {
   ) async {
     if (file.bytes != null) {
       request.files.add(
-        http.MultipartFile.fromBytes(
-          field,
-          file.bytes!,
-          filename: file.name,
-        ),
+        http.MultipartFile.fromBytes(field, file.bytes!, filename: file.name),
       );
       return true;
     }
