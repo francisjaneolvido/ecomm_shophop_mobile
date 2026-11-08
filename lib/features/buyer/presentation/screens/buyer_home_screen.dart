@@ -8,6 +8,7 @@ import 'package:shophop/features/buyer/data/services/buyer_catalog_service.dart'
 import 'package:shophop/features/buyer/presentation/pages/buyer_account_page.dart';
 import 'package:shophop/features/buyer/presentation/pages/buyer_cart_page.dart';
 import 'package:shophop/features/buyer/presentation/pages/buyer_catalog_page.dart';
+import 'package:shophop/features/buyer/presentation/pages/buyer_categories_page.dart';
 import 'package:shophop/features/buyer/presentation/pages/buyer_checkout_page.dart';
 import 'package:shophop/features/buyer/presentation/pages/buyer_empty_feature_page.dart';
 import 'package:shophop/features/buyer/presentation/pages/buyer_home_page.dart';
@@ -175,14 +176,42 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
     );
   }
 
-  void _openCategory(BuyerCategoryData category) {
+  void _openCategory(BuyerCategoryData category, {String? subcategory}) {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => BuyerCatalogPage(
           token: _token,
           category: category,
+          initialSubcategory: subcategory,
           onSessionExpired: _expireSession,
           onOpenProduct: _openProduct,
+        ),
+      ),
+    );
+  }
+
+  void _openAllCategories() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => BuyerCategoriesPage(
+          token: _token,
+          onSessionExpired: _expireSession,
+          onOpenCategory: (category, subcategory) =>
+              _openCategory(category, subcategory: subcategory),
+        ),
+      ),
+    );
+  }
+
+  void _openCollection(String collection) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => BuyerCatalogPage(
+          token: _token,
+          onSessionExpired: _expireSession,
+          onOpenProduct: _openProduct,
+          collection: collection,
+          initialSort: collection == 'top' ? 'top_sales' : 'latest',
         ),
       ),
     );
@@ -283,12 +312,14 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
 
     final pages = <Widget>[
       BuyerHomePage(
-        key: ValueKey<String>('buyer-home-$_homeRefreshVersion'),
+        key: ValueKey<String>('buyer-marketplace-v2-$_homeRefreshVersion'),
         isActive: _currentIndex == 0,
         token: _token,
         onSessionExpired: _expireSession,
         onOpenSearch: _openSearch,
         onOpenCategory: _openCategory,
+        onOpenAllCategories: _openAllCategories,
+        onOpenCollection: _openCollection,
         onOpenProduct: _openProduct,
         onOpenCart: () => _openCart(),
         onOpenOrders: () => _openTab(2),

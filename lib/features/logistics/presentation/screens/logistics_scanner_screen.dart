@@ -1,3 +1,7 @@
+import 'package:shophop/shared/widgets/shop_hop_scanner.dart';
+import 'package:shophop/shared/widgets/shop_hop_scan_feedback.dart';
+import 'package:shophop/shared/widgets/shop_hop_role_layout.dart';
+import 'package:shophop/shared/realtime/foreground_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:shophop/core/theme/app_colors.dart';
 import 'package:shophop/shared/widgets/shop_hop_navigation.dart';
@@ -39,6 +43,34 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
   int? _branchId;
   String _company = 'ShopHop Logistics';
   String _search = '';
+  final _reviewKey = GlobalKey();
+  void _revealReview() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final target = _reviewKey.currentContext;
+      if (target == null) return;
+      Scrollable.ensureVisible(
+        target,
+        alignment: 0,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+      );
+    });
+  }
+
+  final _scanScroll = ScrollController();
+  void _showResult() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scanScroll.hasClients) return;
+      _scanScroll.animateTo(
+        0,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+      );
+    });
+  }
+
+  bool _needsRecheck = false;
   bool _moreBranches = false;
   String _operator = '';
   String? _message;
@@ -46,14 +78,26 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
   bool _branchLocked = false;
   bool _busy = false;
   bool _scanning = false;
-  int _tab = 0; // 0 Home, 1 Scan, 2 Activity, 3 Account
-  bool get _showHistory => _tab == 2;
+  late final ForegroundRefresh _liveRefresh;
+  int _tab = 0; // Home, Manifests, Scan, Activity, Account
+  bool get _showHistory => _tab == 3;
   int _requestGeneration = 0;
 
   @override
   void initState() {
     super.initState();
     _load();
+    _liveRefresh = ForegroundRefresh(
+      refresh: () => _load(silent: true),
+      canRefresh: () =>
+          mounted &&
+          _requestFuture == null &&
+          !_busy &&
+          !_scanning &&
+          _preview == null &&
+          (_tab == 0 || _tab == 3) &&
+          (ModalRoute.of(context)?.isCurrent ?? true),
+    );
   }
 
   List<Map<String, dynamic>> _rows(dynamic value) => value is List
@@ -92,7 +136,24 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
     }
   }
 
-  Future<void> _load() async {
+  Future<void>? _requestFuture;
+
+  Future<void> _load({bool silent = false}) {
+    final pending = _requestFuture;
+    if (pending != null) {
+      if (silent) return pending;
+      return pending.then(
+        (_) => mounted ? _load(silent: silent) : Future<void>.value(),
+      );
+    }
+    final request = _fetch(silent: silent).whenComplete(() {
+      if (mounted) setState(() => _requestFuture = null);
+    });
+    _requestFuture = request;
+    return request;
+  }
+
+  Future<void> _fetch({bool silent = false}) async {
     final generation = ++_requestGeneration;
     final session = await AuthSessionService.readSession();
     if (!mounted || generation != _requestGeneration) return;
@@ -105,10 +166,12 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
     }
 
     setState(() {
-      _busy = true;
+      _busy = !silent;
       _token = session.token;
-      _preview = null;
-      _message = null;
+      if (!silent) {
+        _preview = null;
+        _message = null;
+      }
     });
     final response = await LogisticsScanService.branches(
       session.token,
@@ -206,6 +269,12 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
     final tracking = code.trim().toUpperCase();
     if (_busy || _branchId == null || _token == null) return;
     if (!_validCode(tracking)) {
+      ShopHopScanFeedback.instance.notify(
+        ScanFeedbackEvent.error,
+        reference: tracking,
+      );
+      await _stopScanner();
+      if (!mounted) return;
       setState(() {
         _preview = null;
         _message =
@@ -238,19 +307,31 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
     }
     setState(() {
       _busy = false;
+      _needsRecheck = false;
       _preview = response.success && response.data['parcel'] is Map
           ? Map<String, dynamic>.from(response.data['parcel'] as Map)
           : null;
       _message = response.success ? null : response.message;
       _messageSuccess = false;
     });
+    if (_preview != null) _revealReview();
+    ShopHopScanFeedback.instance.notify(
+      _preview != null ? ScanFeedbackEvent.verified : ScanFeedbackEvent.error,
+      reference: tracking,
+    );
   }
 
   Future<void> _confirmReceipt() async {
     final parcel = _preview;
     final token = _token;
     final branchId = _branchId;
-    if (_busy || parcel == null || token == null || branchId == null) return;
+    if (_busy ||
+        _needsRecheck ||
+        parcel == null ||
+        token == null ||
+        branchId == null) {
+      return;
+    }
     final tracking = parcel['tracking_code']?.toString() ?? '';
     if (!_validCode(tracking)) return;
 
@@ -287,10 +368,16 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
     if (!mounted || generation != _requestGeneration) return;
     setState(() {
       _busy = false;
-      _preview = null; // Never allow resubmitting an old preview.
+      _preview = response.success ? null : parcel;
+      _needsRecheck = !response.success;
       _message = response.message;
       _messageSuccess = response.success;
     });
+    ShopHopScanFeedback.instance.notify(
+      response.success ? ScanFeedbackEvent.complete : ScanFeedbackEvent.error,
+      reference: tracking,
+    );
+    _showResult();
     if (response.success) await _loadHistory(branchId, generation);
   }
 
@@ -313,7 +400,9 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
       _preview = null;
       _message = null;
       _scanning = true;
-      _tab = 1;
+      _messageSuccess = false;
+      _needsRecheck = false;
+      _tab = 2;
     });
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted || !_scanning) return;
@@ -334,6 +423,8 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
 
   @override
   void dispose() {
+    _scanScroll.dispose();
+    _liveRefresh.dispose();
     ++_requestGeneration;
     _tracking.dispose();
     _branchSearch.dispose();
@@ -341,27 +432,25 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
     super.dispose();
   }
 
-  Widget _surface(Widget child) =>
-      ShopHopSurface(padding: const EdgeInsets.all(14), child: child);
-
-  Widget _notice(String text, {required bool success}) => Container(
+  Widget _surface(Widget child) => SizedBox(
     width: double.infinity,
-    padding: const EdgeInsets.all(13),
-    decoration: BoxDecoration(
-      color: success ? const Color(0xFFE7F9F1) : const Color(0xFFFFF3E8),
-      borderRadius: BorderRadius.circular(8),
-    ),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(
-          success ? Icons.check_circle_outline : Icons.info_outline,
-          color: success ? const Color(0xFF087966) : const Color(0xFF9B5718),
-        ),
-        const SizedBox(width: 10),
-        Expanded(child: Text(text, style: const TextStyle(fontSize: 13))),
-      ],
-    ),
+    child: ShopHopSurface(padding: const EdgeInsets.all(12), child: child),
+  );
+
+  Widget _notice(String text, {required bool success}) => ShopHopScanNotice(
+    message: text,
+    success: success,
+    onNext: _busy
+        ? null
+        : success && _tab == 2
+        ? () {
+            _tracking.clear();
+            _setScanner(true);
+          }
+        : _needsRecheck && _preview != null
+        ? () => _previewParcel(_tracking.text)
+        : null,
+    nextLabel: success ? 'Scan next' : 'Recheck parcel',
   );
 
   // Keep physical location selection out of the camera workflow.
@@ -371,7 +460,7 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
       children: [
         const Text(
           'Current receiving facility',
-          style: TextStyle(fontWeight: FontWeight.w800, color: _navy),
+          style: TextStyle(fontWeight: FontWeight.w600, color: _navy),
         ),
         const SizedBox(height: 6),
         Text(
@@ -454,9 +543,11 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
               children: [
                 Icon(Icons.lock_outline, size: 15, color: _teal),
                 SizedBox(width: 5),
-                Text(
-                  'Branch-locked staff access',
-                  style: TextStyle(color: _teal, fontSize: 12),
+                Expanded(
+                  child: Text(
+                    'Branch-locked staff access',
+                    style: TextStyle(color: _teal, fontSize: 12),
+                  ),
                 ),
               ],
             ),
@@ -468,102 +559,111 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
   Widget _receiveContent() => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      _surface(
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              '1  Scan parcel · verify',
-              style: TextStyle(fontWeight: FontWeight.w800, color: _navy),
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'The QR is checked first. Scanning alone will NOT mark the parcel as received.',
-              style: TextStyle(fontSize: 12, color: Color(0xFF65748A)),
-            ),
-            const SizedBox(height: 14),
-            if (_scanning) ...[
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: SizedBox(
-                  height: 210,
-                  child: MobileScanner(
-                    controller: _camera,
-                    onDetect: (capture) {
-                      if (_busy || !_scanning) return;
-                      for (final barcode in capture.barcodes) {
-                        final value = barcode.rawValue;
-                        if (value != null && value.trim().isNotEmpty) {
-                          _previewParcel(value);
-                          break;
-                        }
-                      }
-                    },
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-            ],
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: _busy || _branchId == null
-                    ? null
-                    : () => _setScanner(!_scanning),
-                icon: Icon(
-                  _scanning
-                      ? Icons.stop_circle_outlined
-                      : Icons.qr_code_scanner_rounded,
-                ),
-                label: Text(_scanning ? 'Stop camera' : 'Scan parcel QR'),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Manual tracking entry',
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _tracking,
-              enabled: !_busy,
-              textCapitalization: TextCapitalization.characters,
-              onChanged: (_) {
-                if (_preview != null) setState(() => _preview = null);
-              },
-              decoration: const InputDecoration(
-                hintText: 'SHP-20261015-000001',
-                prefixIcon: Icon(Icons.local_shipping_outlined),
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                style: FilledButton.styleFrom(backgroundColor: _teal),
-                onPressed: _busy || _branchId == null
-                    ? null
-                    : () => _previewParcel(_tracking.text),
-                child: const Text('Check parcel details'),
-              ),
-            ),
-          ],
-        ),
+      ShopHopScanSteps(
+        step: _messageSuccess
+            ? 2
+            : _preview != null
+            ? 1
+            : 0,
       ),
-      if (_preview != null) ...[
-        const SizedBox(height: 12),
+      if (_preview == null)
         _surface(
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const Text(
+                '1  Scan parcel · verify',
+                style: TextStyle(fontWeight: FontWeight.w600, color: _navy),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'The QR is checked first. Scanning alone will NOT mark the parcel as received.',
+                style: TextStyle(fontSize: 12, color: Color(0xFF65748A)),
+              ),
+              const SizedBox(height: 14),
+              ShopHopCameraPanel(
+                controller: _camera,
+                scanning: _scanning,
+                busy: _busy,
+                instruction: 'Scan the parcel QR at your receiving facility',
+                onToggle: () => _setScanner(!_scanning),
+                onDetect: (capture) {
+                  if (_busy || !_scanning) return;
+                  for (final barcode in capture.barcodes) {
+                    final code = barcode.rawValue;
+                    if (code != null && code.trim().isNotEmpty) {
+                      _previewParcel(code);
+                      break;
+                    }
+                  }
+                },
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Manual tracking entry',
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _tracking,
+                enabled: !_busy,
+                textCapitalization: TextCapitalization.characters,
+                onChanged: (_) {
+                  if (_preview != null) setState(() => _preview = null);
+                },
+                decoration: const InputDecoration(
+                  hintText: 'SHP-20261015-000001',
+                  prefixIcon: Icon(Icons.local_shipping_outlined),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  style: FilledButton.styleFrom(backgroundColor: _teal),
+                  onPressed: _busy || _branchId == null
+                      ? null
+                      : () => _previewParcel(_tracking.text),
+                  child: const Text('Check parcel details'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      if (_preview != null) ...[
+        const SizedBox(height: 12),
+        _surface(
+          Column(
+            key: _reviewKey,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: _busy
+                      ? null
+                      : () {
+                          _tracking.clear();
+                          _setScanner(true);
+                        },
+                  icon: const Icon(Icons.qr_code_scanner, size: 18),
+                  label: const Text('Scan another parcel'),
+                ),
+              ),
               const Row(
                 children: [
                   Icon(Icons.fact_check_outlined, color: _teal),
                   SizedBox(width: 8),
-                  Text(
-                    '2  Review & confirm receipt',
-                    style: TextStyle(fontWeight: FontWeight.w800, color: _navy),
+                  Expanded(
+                    child: Text(
+                      '2  Review & confirm receipt',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: _navy,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -571,7 +671,7 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
               Text(
                 '${_preview!['tracking_code']}',
                 style: const TextStyle(
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w600,
                   fontSize: 17,
                 ),
               ),
@@ -603,7 +703,7 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
                         'PARCEL ROUTE · PREVIEW',
                         style: TextStyle(
                           fontSize: 10,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w600,
                           color: Color(0xFF087D6A),
                         ),
                       ),
@@ -640,7 +740,7 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
                           'VERIFIED NETWORK · ${(((_preview!['route'] as Map)['network_path'] as Map)['status'] ?? 'unavailable').toString().toUpperCase()}',
                           style: const TextStyle(
                             fontSize: 10,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w600,
                             color: Color(0xFF087D6A),
                           ),
                         ),
@@ -669,7 +769,7 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
                 width: double.infinity,
                 child: FilledButton.icon(
                   style: FilledButton.styleFrom(backgroundColor: _teal),
-                  onPressed: _busy ? null : _confirmReceipt,
+                  onPressed: _busy || _needsRecheck ? null : _confirmReceipt,
                   icon: const Icon(Icons.inventory_2_outlined),
                   label: const Text('Confirm parcel received'),
                 ),
@@ -690,7 +790,7 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
             const Expanded(
               child: Text(
                 'Recent custody events for this branch',
-                style: TextStyle(fontWeight: FontWeight.w800, color: _navy),
+                style: TextStyle(fontWeight: FontWeight.w600, color: _navy),
               ),
             ),
             IconButton(
@@ -801,7 +901,7 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
               _selectedBranchName,
               style: const TextStyle(
                 fontSize: 17,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w600,
                 color: _navy,
               ),
             ),
@@ -842,7 +942,7 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
         title: 'Scan individual parcel',
         subtitle: 'Review an exception and confirm a physical handoff',
         enabled: !_busy && _branchId != null,
-        onTap: () => setState(() => _tab = 1),
+        onTap: () => setState(() => _tab = 2),
       ),
       const SizedBox(height: 18),
       ShopHopOpsHeading(
@@ -853,7 +953,7 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
           onPressed: _branchId == null
               ? null
               : () {
-                  setState(() => _tab = 2);
+                  setState(() => _tab = 3);
                   _loadHistory(_branchId!, _requestGeneration);
                 },
           child: const Text('View all'),
@@ -917,7 +1017,7 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
             const SizedBox(height: 4),
             Text(
               _operator.isNotEmpty ? _operator : _company,
-              style: const TextStyle(fontWeight: FontWeight.w800, color: _navy),
+              style: const TextStyle(fontWeight: FontWeight.w600, color: _navy),
             ),
             const SizedBox(height: 12),
             SizedBox(
@@ -934,9 +1034,49 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
     ],
   );
 
+  Widget _manifestsContent() => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      ShopHopWorkflowHeader(
+        title: 'Manifest operations',
+        subtitle: _selectedBranchName,
+        icon: Icons.inventory_2_outlined,
+        badge: 'Receive inbound / prepare outbound',
+      ),
+      const SizedBox(height: 14),
+      ShopHopOpsAction(
+        icon: Icons.move_to_inbox_outlined,
+        title: 'Receive inbound manifest',
+        subtitle: 'Verify arrival and receive the physical parcel count',
+        enabled: !_busy && _branchId != null,
+        onTap: _openManifestReceiving,
+      ),
+      const SizedBox(height: 10),
+      ShopHopOpsAction(
+        icon: Icons.local_shipping_outlined,
+        title: 'Load outbound manifest',
+        subtitle: 'Review the load before handing custody to Linehaul',
+        enabled: !_busy && _branchId != null,
+        onTap: _openManifestLoading,
+      ),
+      const SizedBox(height: 14),
+      const Text(
+        'For missing parcels or count mismatches, use individual Parcel Scan for exception reconciliation.',
+        style: TextStyle(
+          fontSize: 12,
+          height: 1.5,
+          fontWeight: FontWeight.w400,
+          color: AppColors.textMuted,
+        ),
+      ),
+    ],
+  );
+
   Widget _page() {
     switch (_tab) {
       case 1:
+        return _manifestsContent();
+      case 2:
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -949,7 +1089,7 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
             _receiveContent(),
           ],
         );
-      case 2:
+      case 3:
         return Column(
           children: [
             const ShopHopWorkflowHeader(
@@ -961,7 +1101,7 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
             _historyContent(),
           ],
         );
-      case 3:
+      case 4:
         return _accountContent();
       default:
         return _homeContent();
@@ -969,66 +1109,51 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: _background,
-    appBar: AppBar(
-      backgroundColor: Colors.white,
-      title: const Text(
-        'ShopHop Logistics',
-        style: TextStyle(fontWeight: FontWeight.w800, color: _navy),
+  Widget build(BuildContext context) {
+    final content = ListView(
+      controller: _scanScroll,
+      key: PageStorageKey('logistics-$_tab'),
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 20),
+      children: [
+        if (_busy) const LinearProgressIndicator(minHeight: 3),
+        if (_message != null) ...[
+          _notice(_message!, success: _messageSuccess),
+          const SizedBox(height: 10),
+        ],
+        _page(),
+      ],
+    );
+    return Scaffold(
+      backgroundColor: _background,
+      appBar: ShopHopRoleAppBar(
+        role: ShopHopRole.logistics,
+        index: _tab,
+        refreshing: _requestFuture != null,
+        onRefresh: _busy || _scanning || _preview != null || _tab == 2
+            ? null
+            : _load,
       ),
-      actions: [
-        IconButton(
-          tooltip: 'Refresh operations',
-          onPressed: _busy ? null : _load,
-          icon: const Icon(Icons.refresh),
-        ),
-      ],
-    ),
-    body: SafeArea(
-      child: _busy && _branches.isEmpty
-          ? const Center(child: CircularProgressIndicator())
-          : ListView(
-              padding: const EdgeInsets.fromLTRB(14, 14, 14, 96),
-              children: [
-                if (_busy)
-                  const LinearProgressIndicator(minHeight: 3, color: _teal),
-                if (_message != null) ...[
-                  _notice(_message!, success: _messageSuccess),
-                  const SizedBox(height: 12),
-                ],
-                _page(),
-              ],
-            ),
-    ),
-    bottomNavigationBar: ShopHopNavigation(
-      index: _tab,
-      onChanged: (value) {
-        if (value == _tab) return;
-        _stopScanner();
-        setState(() => _tab = value);
-        if (value == 2 && _branchId != null) {
-          _loadHistory(_branchId!, _requestGeneration);
-        }
-      },
-      items: const [
-        ShopHopNavItem('Home', Icons.home_outlined, Icons.home_rounded),
-        ShopHopNavItem(
-          'Scan',
-          Icons.qr_code_scanner_rounded,
-          Icons.qr_code_scanner_rounded,
-        ),
-        ShopHopNavItem(
-          'Activity',
-          Icons.history_outlined,
-          Icons.history_rounded,
-        ),
-        ShopHopNavItem(
-          'Account',
-          Icons.person_outline_rounded,
-          Icons.person_rounded,
-        ),
-      ],
-    ),
-  );
+      body: SafeArea(
+        child: _busy && _branches.isEmpty
+            ? const Center(child: CircularProgressIndicator())
+            : _tab == 2
+            ? content
+            : RefreshIndicator(onRefresh: _load, child: content),
+      ),
+      bottomNavigationBar: ShopHopNavigation(
+        raisedIndex: 2,
+        index: _tab,
+        onChanged: (value) {
+          if (value == _tab) return;
+          _stopScanner();
+          setState(() => _tab = value);
+          if (value == 3 && _branchId != null) {
+            _loadHistory(_branchId!, _requestGeneration);
+          }
+        },
+        items: ShopHopRole.logistics.destinations,
+      ),
+    );
+  }
 }

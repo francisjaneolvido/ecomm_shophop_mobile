@@ -24,6 +24,10 @@ class BuyerHomeData {
     required this.dealProducts,
     required this.newArrivals,
     required this.cartCount,
+    this.banners = const [],
+    this.topProducts = const [],
+    this.discoverProducts = const [],
+    this.hasCompletedSales = false,
   });
 
   final List<BuyerCategoryData> categories;
@@ -32,6 +36,10 @@ class BuyerHomeData {
   final List<BuyerProductData> dealProducts;
   final List<BuyerProductData> newArrivals;
   final int cartCount;
+  final List<BuyerBannerData> banners;
+  final List<BuyerProductData> topProducts;
+  final List<BuyerProductData> discoverProducts;
+  final bool hasCompletedSales;
 
   factory BuyerHomeData.fromJson(Map<String, dynamic> json) {
     return BuyerHomeData(
@@ -47,8 +55,45 @@ class BuyerHomeData {
       dealProducts: _mapList(json['deal_products'], BuyerProductData.fromJson),
       newArrivals: _mapList(json['new_arrivals'], BuyerProductData.fromJson),
       cartCount: _asInt(json['cart_count']),
+      banners: _mapList(json['banners'], BuyerBannerData.fromJson),
+      topProducts: _mapList(
+        json['top_products'] ?? json['trending_products'],
+        BuyerProductData.fromJson,
+      ),
+      discoverProducts: _mapList(
+        json['discover_products'] ?? json['recommended_products'],
+        BuyerProductData.fromJson,
+      ),
+      hasCompletedSales: json['has_completed_sales'] == true,
     );
   }
+}
+
+class BuyerBannerData {
+  const BuyerBannerData({
+    required this.eyebrow,
+    required this.heading,
+    required this.description,
+    required this.image,
+    required this.target,
+    required this.linkLabel,
+  });
+  final String eyebrow;
+  final String heading;
+  final String description;
+  final String image;
+  final String target;
+  final String linkLabel;
+
+  factory BuyerBannerData.fromJson(Map<String, dynamic> json) =>
+      BuyerBannerData(
+        eyebrow: json['eyebrow']?.toString() ?? '',
+        heading: json['heading']?.toString() ?? '',
+        description: json['description']?.toString() ?? '',
+        image: ApiConfig.resolveMediaUrl(json['image']?.toString()),
+        target: json['target']?.toString() ?? 'categories',
+        linkLabel: json['link_label']?.toString() ?? 'Explore',
+      );
 }
 
 class BuyerCategoryData {
@@ -60,6 +105,7 @@ class BuyerCategoryData {
     required this.subcategories,
     required this.images,
     required this.coverImage,
+    this.productCount = 0,
   });
 
   final String name;
@@ -69,6 +115,7 @@ class BuyerCategoryData {
   final List<String> subcategories;
   final List<String> images;
   final String coverImage;
+  final int productCount;
 
   factory BuyerCategoryData.fromJson(Map<String, dynamic> json) {
     final rawImages = _stringList(json['images'])
@@ -77,6 +124,7 @@ class BuyerCategoryData {
         .toList(growable: false);
 
     return BuyerCategoryData(
+      productCount: _asInt(json['product_count']),
       name: json['name']?.toString() ?? '',
       slug: json['slug']?.toString() ?? '',
       folder: json['folder']?.toString() ?? '',
@@ -165,7 +213,8 @@ class BuyerProductData {
       stock: _asInt(json['stock']),
       image: _productImageUrl(json),
       videoUrl: ApiConfig.resolveMediaUrl(json['video_url']?.toString()),
-      videoFirst: json['media_first'] == 'video' || json['is_video_first'] == true,
+      videoFirst:
+          json['media_first'] == 'video' || json['is_video_first'] == true,
       rating: _asDouble(json['rating']),
       reviews: _asInt(json['reviews']),
       sold: _asInt(json['sold']),
@@ -508,6 +557,8 @@ class BuyerCatalogService {
     required String token,
     String? query,
     String? category,
+    String? subcategory,
+    String? collection,
     String sort = 'popular',
     int page = 1,
     int perPage = 20,
@@ -519,6 +570,10 @@ class BuyerCatalogService {
         if (query != null && query.trim().isNotEmpty) 'q': query.trim(),
         if (category != null && category.trim().isNotEmpty)
           'category': category.trim(),
+        if (subcategory != null && subcategory.isNotEmpty)
+          'subcategory': subcategory,
+        if (collection != null && collection.isNotEmpty)
+          'collection': collection,
         'sort': sort,
         'page': '$page',
         'per_page': '$perPage',

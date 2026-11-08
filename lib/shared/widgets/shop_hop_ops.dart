@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shophop/core/theme/app_colors.dart';
+import 'package:shophop/shared/widgets/shop_hop_role_layout.dart';
 
 /// Compact, touch-friendly building blocks shared by logistics, branch, hub,
 /// rider and linehaul. Counters are supplied by the caller (never fabricated).
@@ -51,7 +52,7 @@ class ShopHopOpsAction extends StatelessWidget {
                   Text(
                     title,
                     style: const TextStyle(
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w600,
                       color: AppColors.navy,
                       fontSize: 13,
                     ),
@@ -105,7 +106,7 @@ class ShopHopOpsHeading extends StatelessWidget {
               title,
               style: const TextStyle(
                 fontSize: 16,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w600,
                 color: AppColors.navy,
               ),
             ),
@@ -136,31 +137,6 @@ class ShopHopOpsCount extends StatelessWidget {
   final IconData icon;
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      border: Border.all(color: AppColors.grayBorder),
-      borderRadius: BorderRadius.circular(8),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, color: AppColors.tealDark, size: 19),
-        const SizedBox(height: 8),
-        Text(
-          value,
-          style: const TextStyle(
-            color: AppColors.navy,
-            fontSize: 22,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        Text(
-          label,
-          style: const TextStyle(color: Color(0xFF607084), fontSize: 11),
-        ),
-      ],
-    ),
-  );
+  Widget build(BuildContext context) =>
+      ShopHopRoleMetric(label: label, value: value, icon: icon);
 }

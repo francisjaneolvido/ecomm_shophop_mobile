@@ -2,9 +2,10 @@ import 'dart:async';
 import 'package:shophop/shared/realtime/foreground_refresh.dart';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:shophop/shared/widgets/shop_hop_ui.dart';
 
 import 'package:shophop/features/buyer/data/services/buyer_catalog_service.dart';
-import 'package:shophop/core/theme/app_colors.dart';
 import 'package:shophop/features/buyer/presentation/widgets/buyer_product_card.dart';
 
 class BuyerCatalogPage extends StatefulWidget {
@@ -15,6 +16,9 @@ class BuyerCatalogPage extends StatefulWidget {
     required this.onOpenProduct,
     this.category,
     this.initialQuery = '',
+    this.initialSubcategory,
+    this.collection,
+    this.initialSort = 'popular',
   });
 
   final String token;
@@ -22,6 +26,9 @@ class BuyerCatalogPage extends StatefulWidget {
   final ValueChanged<BuyerProductData> onOpenProduct;
   final BuyerCategoryData? category;
   final String initialQuery;
+  final String? initialSubcategory;
+  final String? collection;
+  final String initialSort;
 
   bool get isCategoryPage => category != null;
 
@@ -44,11 +51,12 @@ class _BuyerCatalogPageState extends State<BuyerCatalogPage> {
   bool _loadingMore = false;
   bool _refreshing = false;
   String _sort = 'popular';
+  String? _subcategory;
 
   static const _sortOptions = <String, String>{
     'popular': 'Popular',
     'latest': 'Latest',
-    'top_sales': 'Top Sales',
+    'top_sales': 'Best Sellers',
     'price_low': 'Price: Low',
     'price_high': 'Price: High',
   };
@@ -57,11 +65,18 @@ class _BuyerCatalogPageState extends State<BuyerCatalogPage> {
   void initState() {
     super.initState();
     _searchController = TextEditingController(text: widget.initialQuery);
+    _subcategory = widget.initialSubcategory;
+    _sort = _sortOptions.containsKey(widget.initialSort)
+        ? widget.initialSort
+        : 'popular';
     _scrollController.addListener(_handleScroll);
     _loadProducts(reset: true);
     _liveRefresh = ForegroundRefresh(
       refresh: () => _loadProducts(reset: true, silent: true),
-      canRefresh: () => mounted && !_requestBusy && !(_debounce?.isActive ?? false) &&
+      canRefresh: () =>
+          mounted &&
+          !_requestBusy &&
+          !(_debounce?.isActive ?? false) &&
           (ModalRoute.of(context)?.isCurrent ?? true),
     );
   }
@@ -86,6 +101,10 @@ class _BuyerCatalogPageState extends State<BuyerCatalogPage> {
   }
 
   Future<void> _loadProducts({required bool reset, bool silent = false}) async {
+    if (!reset &&
+        (_loadingMore || _pagination == null || !_pagination!.hasMore)) {
+      return;
+    }
     final requestId = ++_requestId;
     _requestBusy = true;
     if (reset) {
@@ -93,7 +112,8 @@ class _BuyerCatalogPageState extends State<BuyerCatalogPage> {
         setState(() => _refreshing = false);
       }
       setState(() {
-        _loading = _products.isEmpty;
+        _loading = _products.isEmpty || !silent;
+        _loadingMore = false;
         _error = null;
       });
     } else {
@@ -109,6 +129,8 @@ class _BuyerCatalogPageState extends State<BuyerCatalogPage> {
         token: widget.token,
         query: _searchController.text,
         category: widget.category?.slug,
+        subcategory: _subcategory,
+        collection: widget.collection,
         sort: _sort,
         page: nextPage,
         perPage: 20,
@@ -118,8 +140,14 @@ class _BuyerCatalogPageState extends State<BuyerCatalogPage> {
       if (silent) {
         for (var page = 2; page <= pages && result.pagination.hasMore; page++) {
           result = await BuyerCatalogService.getProducts(
-            token: widget.token, query: _searchController.text,
-            category: widget.category?.slug, sort: _sort, page: page, perPage: 20,
+            token: widget.token,
+            query: _searchController.text,
+            category: widget.category?.slug,
+            subcategory: _subcategory,
+            collection: widget.collection,
+            sort: _sort,
+            page: page,
+            perPage: 20,
           );
           refreshed.addAll(result.items);
         }
@@ -183,12 +211,14 @@ class _BuyerCatalogPageState extends State<BuyerCatalogPage> {
 
   void _clearSearch() {
     if (_searchController.text.isEmpty) return;
+    _debounce?.cancel();
     _searchController.clear();
     _loadProducts(reset: true);
   }
 
   void _changeSort(String value) {
     if (_sort == value) return;
+    _debounce?.cancel();
     setState(() => _sort = value);
     _loadProducts(reset: true);
   }
@@ -257,460 +287,294 @@ class _BuyerCatalogPageState extends State<BuyerCatalogPage> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final total = _pagination?.total ?? _products.length;
-    final title = widget.category?.name ?? 'Search ShopHop';
+  void _changeSubcategory(String? value) {
+    if (_subcategory == value) return;
+    _debounce?.cancel();
+    setState(() => _subcategory = value);
+    _loadProducts(reset: true);
+  }
 
-    return Scaffold(
-      backgroundColor: AppColors.grayBg,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          onPressed: () => Navigator.of(context).maybePop(),
-          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.navy),
-        ),
-        titleSpacing: 0,
-        title: Text(
-          title,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            color: AppColors.navy,
-            fontSize: 17,
-            fontWeight: FontWeight.w900,
+  void _showSortOptions() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Sort products',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 12),
+                for (final entry in _sortOptions.entries)
+                  ListTile(
+                    title: Text(entry.value),
+                    trailing: _sort == entry.key
+                        ? Icon(
+                            CupertinoIcons.checkmark,
+                            color: Theme.of(context).colorScheme.primary,
+                          )
+                        : null,
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      _changeSort(entry.key);
+                    },
+                  ),
+              ],
+            ),
           ),
         ),
       ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final total = _pagination?.total ?? 0;
+    final title =
+        widget.category?.name ??
+        switch (widget.collection) {
+          'deals' => 'Flash Deals',
+          'top' => 'Top Products',
+          'discover' => 'Daily Discover',
+          _ => 'Explore Products',
+        };
+    final scale = MediaQuery.textScalerOf(context).scale(12) / 12;
+    return Scaffold(
+      appBar: AppBar(
+        toolbarHeight: 72,
+        titleSpacing: 0,
+        leading: IconButton(
+          tooltip: 'Back',
+          onPressed: () => Navigator.of(context).maybePop(),
+          icon: const Icon(CupertinoIcons.arrow_left),
+        ),
+        title: TextField(
+          controller: _searchController,
+          onChanged: _onSearchChanged,
+          onSubmitted: (_) {
+            _debounce?.cancel();
+            _loadProducts(reset: true);
+            FocusScope.of(context).unfocus();
+          },
+          maxLength: 100,
+          textInputAction: TextInputAction.search,
+          style: theme.textTheme.bodySmall,
+          decoration: InputDecoration(
+            hintText: 'Search products',
+            counterText: '',
+            prefixIcon: const Icon(CupertinoIcons.search, size: 18),
+            suffixIcon: ValueListenableBuilder<TextEditingValue>(
+              valueListenable: _searchController,
+              builder: (context, value, _) => value.text.isEmpty
+                  ? const SizedBox.shrink()
+                  : IconButton(
+                      tooltip: 'Clear search',
+                      onPressed: _clearSearch,
+                      icon: const Icon(CupertinoIcons.xmark, size: 16),
+                    ),
+            ),
+          ),
+        ),
+        actions: [
+          IconButton(
+            tooltip: 'Sort products',
+            onPressed: _showSortOptions,
+            icon: const Icon(CupertinoIcons.slider_horizontal_3),
+          ),
+          const SizedBox(width: 4),
+        ],
+      ),
       body: RefreshIndicator(
-        color: AppColors.teal,
         onRefresh: _refresh,
         child: CustomScrollView(
           controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverToBoxAdapter(
-              child: _CatalogHeader(
-                category: widget.category,
-                controller: _searchController,
-                onChanged: _onSearchChanged,
-                onClear: _clearSearch,
+              child: ColoredBox(
+                color: colors.surface,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                      child: Text(title, style: theme.textTheme.titleSmall),
+                    ),
+                    SizedBox(
+                      height: 48 + (scale - 1) * 16,
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        children: [
+                          for (final entry in _sortOptions.entries)
+                            Container(
+                              decoration: BoxDecoration(
+                                border: Border(
+                                  bottom: BorderSide(
+                                    color: _sort == entry.key
+                                        ? colors.primary
+                                        : Colors.transparent,
+                                    width: 2,
+                                  ),
+                                ),
+                              ),
+                              child: TextButton(
+                                onPressed: () => _changeSort(entry.key),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: _sort == entry.key
+                                      ? colors.primary
+                                      : colors.onSurfaceVariant,
+                                ),
+                                child: Text(entry.value),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    if (widget.category != null &&
+                        widget.category!.subcategories.isNotEmpty)
+                      SizedBox(
+                        height: 64 + (scale - 1) * 16,
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: ChoiceChip(
+                                label: const Text('All'),
+                                selected: _subcategory == null,
+                                onSelected: (_) => _changeSubcategory(null),
+                              ),
+                            ),
+                            for (final sub in widget.category!.subcategories)
+                              Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: ChoiceChip(
+                                  label: Text(sub),
+                                  selected: _subcategory == sub,
+                                  onSelected: (_) => _changeSubcategory(sub),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
-            SliverPersistentHeader(
-              pinned: true,
-              delegate: _SortHeaderDelegate(
-                sort: _sort,
-                options: _sortOptions,
-                onChanged: _changeSort,
-                resultCount: total,
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 2),
+                child: Text(
+                  _loading
+                      ? 'Finding products...'
+                      : '$total product${total == 1 ? '' : 's'}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colors.onSurfaceVariant,
+                  ),
+                ),
               ),
             ),
+            if (_error != null && _products.isNotEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    _error!.message,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colors.error,
+                    ),
+                  ),
+                ),
+              ),
             if (_loading)
               const SliverFillRemaining(
                 hasScrollBody: false,
-                child: Center(
-                  child: CircularProgressIndicator(color: AppColors.teal),
-                ),
+                child: Center(child: CircularProgressIndicator()),
               )
             else if (_error != null && _products.isEmpty)
-              SliverFillRemaining(
-                hasScrollBody: false,
-                child: _CatalogErrorState(
-                  message: _error!.message,
-                  onRetry: () => _loadProducts(reset: true),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: ShopHopEmptyState(
+                    icon: CupertinoIcons.wifi_exclamationmark,
+                    title: 'Unable to load products',
+                    description: _error!.message,
+                    actionLabel: 'Try again',
+                    onAction: () => _loadProducts(reset: true),
+                  ),
                 ),
               )
             else if (_products.isEmpty)
-              SliverFillRemaining(
-                hasScrollBody: false,
-                child: _EmptyCatalogState(
-                  query: _searchController.text,
-                  categoryName: widget.category?.name,
-                  onClearSearch: _clearSearch,
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: ShopHopEmptyState(
+                    icon: CupertinoIcons.search,
+                    title: 'No products found',
+                    description: _searchController.text.isNotEmpty
+                        ? 'Try another product name or keyword.'
+                        : 'Approved, available products will appear here.',
+                    actionLabel: _searchController.text.isNotEmpty
+                        ? 'Clear search'
+                        : null,
+                    onAction: _searchController.text.isNotEmpty
+                        ? _clearSearch
+                        : null,
+                  ),
                 ),
               )
             else ...[
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+                padding: const EdgeInsets.all(16),
                 sliver: SliverLayoutBuilder(
-                  builder: (context, constraints) {
-                    final width = constraints.crossAxisExtent;
-                    final columns = width >= 1050
-                        ? 5
-                        : width >= 780
-                        ? 4
-                        : width >= 560
-                        ? 3
-                        : 2;
-
-                    return SliverGrid(
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: columns,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                        childAspectRatio: width < 340
-                            ? 0.50
-                            : width < 430
-                            ? 0.59
-                            : 0.65,
-                      ),
-                      delegate: SliverChildBuilderDelegate((context, index) {
-                        final product = _products[index];
-                        return BuyerProductCard(
-                          product: product,
-                          onTap: () {
-                            FocusScope.of(context).unfocus();
-                            widget.onOpenProduct(product);
-                          },
-                          onLike: () => _toggleLike(product),
-                        );
-                      }, childCount: _products.length),
-                    );
-                  },
+                  builder: (context, constraints) => SliverGrid(
+                    gridDelegate: BuyerProductCard.gridDelegate(
+                      context,
+                      constraints.crossAxisExtent,
+                    ),
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final product = _products[index];
+                      return BuyerProductCard(
+                        product: product,
+                        onLike: () => _toggleLike(product),
+                        onTap: () {
+                          FocusScope.of(context).unfocus();
+                          widget.onOpenProduct(product);
+                        },
+                      );
+                    }, childCount: _products.length),
+                  ),
                 ),
               ),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 28),
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                   child: Center(
                     child: _loadingMore
-                        ? const Padding(
-                            padding: EdgeInsets.all(10),
-                            child: CircularProgressIndicator(
-                              color: AppColors.teal,
-                              strokeWidth: 2.5,
-                            ),
-                          )
+                        ? const CircularProgressIndicator()
                         : (_pagination?.hasMore ?? false)
                         ? OutlinedButton.icon(
                             onPressed: () => _loadProducts(reset: false),
-                            icon: const Icon(Icons.expand_more_rounded),
+                            icon: const Icon(CupertinoIcons.chevron_down),
                             label: const Text('Load more'),
                           )
                         : Text(
                             'You reached the end of the catalog.',
-                            style: TextStyle(
-                              color: AppColors.navy.withValues(alpha: 0.46),
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w600,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colors.onSurfaceVariant,
                             ),
                           ),
                   ),
                 ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CatalogHeader extends StatelessWidget {
-  const _CatalogHeader({
-    required this.category,
-    required this.controller,
-    required this.onChanged,
-    required this.onClear,
-  });
-
-  final BuyerCategoryData? category;
-  final TextEditingController controller;
-  final ValueChanged<String> onChanged;
-  final VoidCallback onClear;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: Colors.white,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 6, 14, 14),
-            child: TextField(
-              controller: controller,
-              autofocus: false,
-              onChanged: onChanged,
-              onSubmitted: (_) => FocusScope.of(context).unfocus(),
-              textInputAction: TextInputAction.search,
-              decoration: InputDecoration(
-                hintText: category == null
-                    ? 'Search products, categories, or keywords'
-                    : 'Search within ${category!.name}',
-                prefixIcon: const Icon(
-                  Icons.search_rounded,
-                  color: AppColors.tealDark,
-                ),
-                suffixIcon: ValueListenableBuilder<TextEditingValue>(
-                  valueListenable: controller,
-                  builder: (context, value, _) {
-                    if (value.text.isEmpty) return const SizedBox.shrink();
-                    return IconButton(
-                      onPressed: onClear,
-                      icon: const Icon(Icons.close_rounded),
-                    );
-                  },
-                ),
-                filled: true,
-                fillColor: const Color(0xFFF5F8F8),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 13,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide.none,
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: Color(0xFFE7EEEC)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(
-                    color: AppColors.teal,
-                    width: 1.5,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          if (category != null) ...[
-            SizedBox(
-              height: 92,
-              child: ListView.separated(
-                padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-                scrollDirection: Axis.horizontal,
-                itemCount: category!.subcategories.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
-                itemBuilder: (context, index) {
-                  final subcategory = category!.subcategories[index];
-                  return Container(
-                    width: 122,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Color(0xFFF5FFFC),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFFD7EEE8)),
-                    ),
-                    child: Center(
-                      child: Text(
-                        subcategory,
-                        textAlign: TextAlign.center,
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: AppColors.navy,
-                          fontSize: 10.5,
-                          height: 1.15,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _SortHeaderDelegate extends SliverPersistentHeaderDelegate {
-  _SortHeaderDelegate({
-    required this.sort,
-    required this.options,
-    required this.onChanged,
-    required this.resultCount,
-  });
-
-  final String sort;
-  final Map<String, String> options;
-  final ValueChanged<String> onChanged;
-  final int resultCount;
-
-  @override
-  double get minExtent => 78;
-
-  @override
-  double get maxExtent => 78;
-
-  @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) {
-    return Material(
-      color: Colors.white,
-      elevation: overlapsContent ? 2 : 0,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 8, 14, 4),
-            child: Text(
-              '$resultCount product${resultCount == 1 ? '' : 's'}',
-              style: const TextStyle(
-                color: Color(0xFF7B8490),
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          SizedBox(
-            height: 44,
-            child: ListView.separated(
-              padding: const EdgeInsets.fromLTRB(12, 2, 12, 8),
-              scrollDirection: Axis.horizontal,
-              itemCount: options.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 7),
-              itemBuilder: (context, index) {
-                final entry = options.entries.elementAt(index);
-                final selected = sort == entry.key;
-                return ChoiceChip(
-                  selected: selected,
-                  onSelected: (_) => onChanged(entry.key),
-                  label: Text(entry.value),
-                  showCheckmark: false,
-                  selectedColor: AppColors.tealLight,
-                  backgroundColor: const Color(0xFFF5F7F8),
-                  side: BorderSide(
-                    color: selected ? AppColors.teal : const Color(0xFFE4E8EB),
-                  ),
-                  labelStyle: TextStyle(
-                    color: selected ? AppColors.tealDark : AppColors.navy,
-                    fontSize: 11,
-                    fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  bool shouldRebuild(covariant _SortHeaderDelegate oldDelegate) {
-    return oldDelegate.sort != sort || oldDelegate.resultCount != resultCount;
-  }
-}
-
-class _CatalogErrorState extends StatelessWidget {
-  const _CatalogErrorState({required this.message, required this.onRetry});
-
-  final String message;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.cloud_off_rounded,
-              color: AppColors.tealDark,
-              size: 52,
-            ),
-            const SizedBox(height: 14),
-            const Text(
-              'Could not load products',
-              style: TextStyle(
-                color: AppColors.navy,
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(height: 7),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Color(0xFF737D89), height: 1.4),
-            ),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: onRetry,
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.tealDark,
-              ),
-              icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Try again'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _EmptyCatalogState extends StatelessWidget {
-  const _EmptyCatalogState({
-    required this.query,
-    required this.categoryName,
-    required this.onClearSearch,
-  });
-
-  final String query;
-  final String? categoryName;
-  final VoidCallback onClearSearch;
-
-  @override
-  Widget build(BuildContext context) {
-    final hasQuery = query.trim().isNotEmpty;
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.search_off_rounded,
-              size: 56,
-              color: Color(0xFFA8B2BC),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              hasQuery ? 'No matching products' : 'No products available yet',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppColors.navy,
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(height: 7),
-            Text(
-              hasQuery
-                  ? 'Try another keyword${categoryName == null ? '' : ' inside $categoryName'}.'
-                  : categoryName == null
-                  ? 'Approved seller products will appear here automatically.'
-                  : 'There are no approved products under $categoryName yet.',
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Color(0xFF7A8490), height: 1.4),
-            ),
-            if (hasQuery) ...[
-              const SizedBox(height: 14),
-              TextButton.icon(
-                onPressed: onClearSearch,
-                icon: const Icon(Icons.close_rounded),
-                label: const Text('Clear search'),
               ),
             ],
           ],

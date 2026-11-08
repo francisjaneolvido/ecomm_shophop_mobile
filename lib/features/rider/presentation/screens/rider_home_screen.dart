@@ -1,3 +1,8 @@
+import 'package:shophop/features/rider/presentation/screens/rider_application_status_screen.dart';
+import 'package:shophop/features/rider/data/services/rider_batch_service.dart';
+import 'package:shophop/features/rider/presentation/screens/rider_batch_detail_screen.dart';
+import 'package:shophop/shared/widgets/shop_hop_role_layout.dart';
+import 'package:shophop/shared/realtime/foreground_refresh.dart';
 import 'dart:async';
 
 import 'package:file_picker/file_picker.dart';
@@ -53,12 +58,20 @@ class RiderHomeScreen extends StatefulWidget {
 }
 
 class _RiderHomeScreenState extends State<RiderHomeScreen> {
+  final List<Map<String, dynamic>> _batches = [];
+  final Set<int> _batchedDeliveryIds = {};
+  final Set<int> _failedBatchPickupIds = {};
+  int _batchPages = 1;
+  bool _batchMore = false;
+  bool _batchesEnabled = false;
   final List<RiderAssignment> _assignments = [];
   final List<Map<String, dynamic>> _transfers = [];
   final List<Map<String, dynamic>> _returns = [];
   final List<Map<String, dynamic>> _codCollections = [];
   final List<Map<String, dynamic>> _earnings = [];
 
+  late final ForegroundRefresh _liveRefresh;
+  String _taskSearch = '';
   bool _loading = true;
   bool _profileLoaded = false;
   int? _busyDeliveryId;
@@ -86,6 +99,23 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
   void initState() {
     super.initState();
     _load();
+    _liveRefresh = ForegroundRefresh(
+      refresh: () => _load(showLoader: false, silent: true),
+      canRefresh: () =>
+          mounted &&
+          _requestFuture == null &&
+          _tab != 2 &&
+          _busyDeliveryId == null &&
+          _busyReturnId == null &&
+          _busyCodDeliveryId == null &&
+          (ModalRoute.of(context)?.isCurrent ?? true),
+    );
+  }
+
+  @override
+  void dispose() {
+    _liveRefresh.dispose();
+    super.dispose();
   }
 
   List<Map<String, dynamic>> _rows(dynamic source) => source is List
@@ -100,10 +130,31 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
 
   int? _id(dynamic value) => int.tryParse(value?.toString() ?? '');
 
-  Future<void> _load({bool showLoader = true}) async {
+  Future<void>? _requestFuture;
+
+  Future<void> _load({bool showLoader = true, bool silent = false}) {
+    final pending = _requestFuture;
+    if (pending != null) {
+      if (silent) return pending;
+      return pending.then(
+        (_) => mounted
+            ? _load(showLoader: showLoader, silent: silent)
+            : Future<void>.value(),
+      );
+    }
+    final request = _fetch(showLoader: showLoader, silent: silent).whenComplete(
+      () {
+        if (mounted) setState(() => _requestFuture = null);
+      },
+    );
+    _requestFuture = request;
+    return request;
+  }
+
+  Future<void> _fetch({bool showLoader = true, bool silent = false}) async {
     if (mounted) {
       setState(() {
-        if (showLoader) _loading = true;
+        if (showLoader && !_profileLoaded) _loading = true;
         _error = null;
       });
     }
@@ -127,15 +178,24 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
       if (!mounted) return;
 
       if (!me.success) {
-        if (me.statusCode == 401) {
+        if (me.statusCode == 401 || me.statusCode == 403) {
           await _leaveSession();
           return;
         }
 
         setState(() {
-          _profileLoaded = false;
           _error = me.message;
         });
+        return;
+      }
+
+      if (me.status == 'rider_application') {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (_) => const RiderApplicationStatusScreen(),
+          ),
+          (_) => false,
+        );
         return;
       }
 
@@ -181,6 +241,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
         RiderReturnService.tasks(session.token),
         RiderDeliveryService.codCollections(token: session.token),
         RiderTransitService.earnings(session.token),
+        RiderBatchService.batches(session.token, pages: _batchPages),
       ]).timeout(const Duration(seconds: 30));
       if (!mounted) return;
 
@@ -188,6 +249,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
       final returnResult = results[1];
       final codResult = results[2];
       final earningsResult = results[3];
+      final batchResult = results[4];
 
       final rawAssignments = assignmentResult.data['assignments'];
       final assignments = rawAssignments is List
@@ -208,8 +270,34 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
       if (!codResult.success) syncErrors.add(codResult.message);
       if (!earningsResult.success) syncErrors.add(earningsResult.message);
 
+      if (!batchResult.success && batchResult.statusCode != 404) {
+        syncErrors.add(batchResult.message);
+      }
       setState(() {
+        if (batchResult.success) {
+          _batchesEnabled = batchResult.data['enabled'] == true;
+          _batches
+            ..clear()
+            ..addAll(_rows(batchResult.data['batches']));
+          _batchMore = batchResult.data['next_page'] != null;
+        }
         if (assignmentResult.success) {
+          _batchedDeliveryIds
+            ..clear()
+            ..addAll(
+              _rows(rawAssignments)
+                  .where((row) => row['rider_batch_id'] != null)
+                  .map((row) => _id(row['id']))
+                  .whereType<int>(),
+            );
+          _failedBatchPickupIds
+            ..clear()
+            ..addAll(
+              _rows(rawAssignments)
+                  .where((row) => row['rider_batch_pickup_failed'] == true)
+                  .map((row) => _id(row['id']))
+                  .whereType<int>(),
+            );
           _assignments
             ..clear()
             ..addAll(assignments);
@@ -517,6 +605,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
     final tasks = <_RiderTask>[];
 
     for (final assignment in _deliveryTasks) {
+      if (_failedBatchPickupIds.contains(assignment.id)) continue;
       final pickup = assignment.assignmentType == 'pickup';
       final seller = assignment.sellerBusinessName.trim().isNotEmpty
           ? assignment.sellerBusinessName.trim()
@@ -646,73 +735,48 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.grayBg,
-      appBar: AppBar(
-        backgroundColor: AppColors.tealDark,
-        surfaceTintColor: AppColors.tealDark,
-        elevation: 0,
-        titleSpacing: 14,
-        title: Row(
-          children: [
-            Image.asset('assets/images/logo.png', width: 27, height: 27),
-            const SizedBox(width: 9),
-            const Expanded(
-              child: Text(
-                'ShopHop Rider',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            tooltip: 'Refresh Rider data',
-            onPressed: _loading ? null : () => _load(showLoader: false),
-            icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-          ),
-          const SizedBox(width: 4),
-        ],
+      appBar: ShopHopRoleAppBar(
+        role: ShopHopRole.rider,
+        index: _tab,
+        refreshing: _requestFuture != null,
+        onRefresh:
+            _tab == 2 ||
+                _busyDeliveryId != null ||
+                _busyReturnId != null ||
+                _busyCodDeliveryId != null
+            ? null
+            : () => _load(showLoader: false),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : (!_profileLoaded && _error != null)
           ? _loadErrorPage()
-          : RefreshIndicator(
-              onRefresh: () => _load(showLoader: false),
-              child: _pageForTab(),
+          : Column(
+              children: [
+                if (_error != null && _tab != 0)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                    child: _notice(_error!, Icons.sync_problem_rounded),
+                  ),
+                Expanded(
+                  child: _tab == 2
+                      ? _pageForTab()
+                      : RefreshIndicator(
+                          onRefresh: () => _load(showLoader: false),
+                          child: _pageForTab(),
+                        ),
+                ),
+              ],
             ),
       bottomNavigationBar: ShopHopNavigation(
+        raisedIndex: 2,
         index: _tab,
         onChanged: (value) {
           setState(() => _tab = value);
           if (value == 3 && !_loading) _load(showLoader: false);
         },
-        items: const [
-          ShopHopNavItem('Today', Icons.home_outlined, Icons.home_rounded),
-          ShopHopNavItem(
-            'Tasks',
-            Icons.assignment_outlined,
-            Icons.assignment_rounded,
-          ),
-          ShopHopNavItem(
-            'Scan',
-            Icons.qr_code_scanner_rounded,
-            Icons.qr_code_scanner_rounded,
-          ),
-          ShopHopNavItem(
-            'Wallet',
-            Icons.account_balance_wallet_outlined,
-            Icons.account_balance_wallet_rounded,
-          ),
-          ShopHopNavItem(
-            'Account',
-            Icons.person_outline_rounded,
-            Icons.person_rounded,
-          ),
-        ],
+        items: ShopHopRole.rider.destinations,
+        badges: {1: _todayTasks.length, 3: _codToRemit.length},
       ),
     );
   }
@@ -741,7 +805,8 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
 
   Widget _todayPage() {
     final allTasks = _todayTasks;
-    final nextTask = allTasks.isEmpty ? null : allTasks.first;
+    final legacyTasks = allTasks.where((t) => !_isBatchTask(t)).toList();
+    final nextTask = legacyTasks.isEmpty ? null : legacyTasks.first;
     final pickup = allTasks
         .where((t) => t.kind == _RiderTaskKind.pickup)
         .length;
@@ -753,7 +818,8 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
         .length;
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(14, 16, 14, 90),
+      key: PageStorageKey('rider-$_tab-$_tasksCompleted'),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 20),
       children: [
         _todayHeader(allTasks.length),
         if (_error != null) ...[
@@ -793,18 +859,20 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
           ],
         ),
         const SizedBox(height: 22),
-        _sectionHeader(
-          title: 'Next action',
-          subtitle: 'Only the highest priority assigned task is shown here.',
-        ),
+        if (_batches.isNotEmpty) ..._batchCards(),
+        if (_batches.isEmpty || legacyTasks.isNotEmpty)
+          _sectionHeader(
+            title: 'Next action',
+            subtitle: 'Only the highest priority assigned task is shown here.',
+          ),
         const SizedBox(height: 9),
-        if (nextTask == null)
+        if (nextTask == null && _batches.isEmpty)
           _empty(
             icon: Icons.check_circle_outline_rounded,
             title: 'No active assignments',
             text: 'Pull down to refresh when new work is assigned.',
           )
-        else
+        else if (nextTask != null)
           _taskCard(nextTask, emphasized: true),
         const SizedBox(height: 12),
         SizedBox(
@@ -831,42 +899,43 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
     );
   }
 
-  Widget _taskSummary(String label, int value, IconData icon) => Container(
-    padding: const EdgeInsets.all(11),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      border: Border.all(color: AppColors.grayBorder),
-      borderRadius: BorderRadius.circular(8),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 18, color: AppColors.tealDark),
-        const SizedBox(height: 8),
-        Text(
-          '$value',
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w800,
-            color: AppColors.navy,
-          ),
-        ),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 10.5, color: Color(0xFF607084)),
-        ),
-      ],
-    ),
-  );
+  Widget _taskSummary(String label, int value, IconData icon) =>
+      ShopHopRoleMetric(
+        label: label,
+        value: '$value',
+        icon: icon,
+        onTap: () => setState(() {
+          _tab = 1;
+          _tasksCompleted = false;
+          _taskSearch = '';
+          _taskFilter = switch (label) {
+            'Pickups' => 'pickup',
+            'Deliveries' => 'delivery',
+            _ => 'return',
+          };
+        }),
+      );
 
   Widget _tasksPage() {
     if (_tasksCompleted) {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(14, 16, 14, 90),
+        key: PageStorageKey('rider-$_tab-$_tasksCompleted'),
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 20),
         children: [
           _taskModeSwitch(),
           const SizedBox(height: 12),
+          if (_batchesEnabled && _token != null)
+            OutlinedButton.icon(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => RiderBatchHistoryScreen(token: _token!),
+                ),
+              ),
+              icon: const Icon(Icons.route_outlined),
+              label: const Text('View batch history'),
+            ),
           // Reuse the existing history renderer without duplicating its records.
           _historyInline(),
         ],
@@ -874,6 +943,13 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
     }
     final tasks = _todayTasks;
     final filtered = tasks.where((task) {
+      if (_isBatchTask(task)) return false;
+      final query = _taskSearch.trim().toLowerCase();
+      final assignment = task.assignment;
+      final searchable =
+          '${task.trackingCode} ${task.from} ${task.to} '
+          '${assignment?.deliveryAddress ?? ''} ${assignment?.sellerAddress ?? ''}';
+      if (!searchable.toLowerCase().contains(query)) return false;
       if (_taskFilter == 'pickup') return task.kind == _RiderTaskKind.pickup;
       if (_taskFilter == 'delivery') {
         return task.kind == _RiderTaskKind.delivery;
@@ -885,10 +961,22 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
     }).toList();
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(14, 16, 14, 90),
+      key: PageStorageKey('rider-$_tab-$_tasksCompleted'),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 20),
       children: [
         _taskModeSwitch(),
-        const SizedBox(height: 12),
+        if (_batchesEnabled) ..._batchCards(),
+        const SizedBox(height: 10),
+        TextFormField(
+          key: const ValueKey('rider-task-search'),
+          initialValue: _taskSearch,
+          decoration: const InputDecoration(
+            hintText: 'Search tracking, name or address',
+            prefixIcon: Icon(Icons.search, size: 20),
+          ),
+          onChanged: (value) => setState(() => _taskSearch = value),
+        ),
+        const SizedBox(height: 10),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
@@ -916,7 +1004,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
           ),
         ),
         const SizedBox(height: 12),
-        if (filtered.isEmpty)
+        if (filtered.isEmpty && _batches.isEmpty)
           _empty(
             icon: Icons.assignment_turned_in_outlined,
             title: 'No matching tasks',
@@ -927,6 +1015,89 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
     );
   }
 
+  bool _isBatchTask(_RiderTask task) =>
+      task.assignment != null &&
+      (_batchedDeliveryIds.contains(task.assignment!.id) ||
+          _batches.any(
+            (batch) => _rows(
+              batch['items'],
+            ).any((item) => _id(item['delivery_id']) == task.assignment!.id),
+          ));
+
+  List<Widget> _batchCards() {
+    final query = _taskSearch.trim().toLowerCase();
+    final shown = _batches.where((batch) {
+      if (_tab == 1 && _taskFilter != 'all' && _taskFilter != batch['type']) {
+        return false;
+      }
+      return query.isEmpty ||
+          '${batch['code']} ${batch['type']} ${batch['items']}'
+              .toLowerCase()
+              .contains(query);
+    }).toList();
+    return [
+      const SizedBox(height: 12),
+      if (shown.isNotEmpty)
+        const Padding(
+          padding: EdgeInsets.only(bottom: 8),
+          child: Text(
+            'Assigned routes',
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          ),
+        ),
+      for (final batch in shown)
+        RiderBatchCard(batch: batch, onTap: () => _openBatch(batch)),
+      if (_batches.isEmpty)
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 8),
+          child: Text(
+            'No assigned batches. New Branch routes appear here.',
+            style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+          ),
+        ),
+      if (_batchMore)
+        TextButton(
+          onPressed: _requestFuture != null
+              ? null
+              : () {
+                  _batchPages++;
+                  _load(showLoader: false);
+                },
+          child: const Text('Load more routes'),
+        ),
+    ];
+  }
+
+  Future<void> _openBatch(Map<String, dynamic> batch) async {
+    if (_token == null) return;
+    final action = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => RiderBatchDetailScreen(token: _token!, initial: batch),
+      ),
+    );
+    if (!mounted) return;
+    await _load(showLoader: false);
+    if (!mounted) return;
+    if (action == 'scan') {
+      setState(() => _tab = 2);
+      return;
+    }
+    if (action?.startsWith('parcel:') == true) {
+      final id = int.tryParse(action!.substring(7));
+      final task = _todayTasks.where((t) => t.assignment?.id == id).firstOrNull;
+      if (task != null) {
+        await _showTaskDetails(task);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Parcel status changed. Refresh this route.'),
+          ),
+        );
+      }
+    }
+  }
+
   Widget _taskModeSwitch() => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
@@ -934,7 +1105,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
         _tasksCompleted ? 'Completed / history' : 'Active tasks',
         style: const TextStyle(
           fontSize: 18,
-          fontWeight: FontWeight.w800,
+          fontWeight: FontWeight.w600,
           color: AppColors.navy,
         ),
       ),
@@ -1011,117 +1182,17 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
         ? _sortingCenterName!.trim()
         : _logisticsCenter;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '$_greeting, $_name',
-          style: const TextStyle(
-            color: AppColors.navy,
-            fontSize: 22,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          branch,
-          style: TextStyle(
-            color: AppColors.navy.withValues(alpha: 0.58),
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 14),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.grayBorder),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: AppColors.tealLight,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.two_wheeler_rounded,
-                  color: AppColors.tealDark,
-                  size: 25,
-                ),
-              ),
-              const SizedBox(width: 13),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '$taskCount task${taskCount == 1 ? '' : 's'} remaining',
-                      style: const TextStyle(
-                        color: AppColors.navy,
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Seller → Branch → Branch → Buyer / Seller',
-                      style: TextStyle(
-                        color: AppColors.navy.withValues(alpha: 0.52),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 7,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE8F7F3),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.circle, size: 8, color: AppColors.tealDark),
-                    SizedBox(width: 6),
-                    Text(
-                      'Active',
-                      style: TextStyle(
-                        color: AppColors.tealDark,
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 10),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            if (_sortingCenterCode?.trim().isNotEmpty == true)
-              _softChip(Icons.location_on_outlined, _sortingCenterCode!.trim()),
-            if (_operationalAreaSummary.isNotEmpty)
-              _softChip(Icons.map_outlined, _operationalAreaSummary)
-            else if (_coverageArea?.trim().isNotEmpty == true)
-              _softChip(Icons.map_outlined, _coverageArea!.trim()),
-          ],
-        ),
-      ],
+    return ShopHopRoleIntro(
+      title: '$_greeting, $_name',
+      subtitle: [
+        branch,
+        if (_operationalAreaSummary.isNotEmpty)
+          _operationalAreaSummary
+        else if (_coverageArea?.trim().isNotEmpty == true)
+          _coverageArea!.trim(),
+      ].join(' / '),
+      icon: Icons.two_wheeler_outlined,
+      badge: '$taskCount assigned task${taskCount == 1 ? '' : 's'} remaining',
     );
   }
 
@@ -1149,7 +1220,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
                     style: const TextStyle(
                       color: AppColors.navy,
                       fontSize: 13,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -1215,7 +1286,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
                     task.title,
                     style: const TextStyle(
                       fontSize: 12,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w600,
                       color: AppColors.navy,
                     ),
                   ),
@@ -1230,7 +1301,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 fontSize: 14,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w600,
                 color: AppColors.navy,
               ),
             ),
@@ -1479,7 +1550,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
           style: TextStyle(
             color: AppColors.navy,
             fontSize: 22,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w600,
           ),
         ),
         const SizedBox(height: 4),
@@ -1555,7 +1626,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 30,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -1676,7 +1747,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
                   style: const TextStyle(
                     color: AppColors.navy,
                     fontSize: 13,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -1689,7 +1760,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
             style: const TextStyle(
               color: AppColors.navy,
               fontSize: 20,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w700,
             ),
           ),
           if (canRemit) ...[
@@ -1729,7 +1800,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
             style: const TextStyle(
               color: AppColors.navy,
               fontSize: 18,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 2),
@@ -1798,7 +1869,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
             style: const TextStyle(
               color: AppColors.navy,
               fontSize: 12,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],
@@ -1862,7 +1933,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
                   style: const TextStyle(
                     color: AppColors.navy,
                     fontSize: 12.5,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 3),
@@ -1887,7 +1958,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
               style: const TextStyle(
                 color: AppColors.tealDark,
                 fontSize: 10,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
@@ -1906,7 +1977,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
           style: TextStyle(
             color: AppColors.navy,
             fontSize: 22,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w600,
           ),
         ),
         const SizedBox(height: 14),
@@ -1942,7 +2013,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
                       style: const TextStyle(
                         color: AppColors.navy,
                         fontSize: 17,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 3),
@@ -1959,7 +2030,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
                       style: TextStyle(
                         color: AppColors.tealDark,
                         fontSize: 10.5,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -1970,6 +2041,19 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
         ),
         const SizedBox(height: 14),
         _branchSummary(),
+        const SizedBox(height: 12),
+        OutlinedButton.icon(
+          onPressed: () async {
+            await Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const RiderApplicationStatusScreen(),
+              ),
+            );
+            if (mounted) await _load(showLoader: false);
+          },
+          icon: const Icon(Icons.assignment_ind_outlined),
+          label: const Text('Availability, schedules & rider status'),
+        ),
         if (_operationalAreaSummary.isNotEmpty) ...[
           const SizedBox(height: 12),
           _accountInfoCard(
@@ -2100,7 +2184,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
                 style: const TextStyle(
                   color: AppColors.navy,
                   fontSize: 20,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
               const SizedBox(height: 4),
@@ -2241,7 +2325,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
           style: const TextStyle(
             color: AppColors.navy,
             fontSize: 16,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w600,
           ),
         ),
         if (subtitle != null) ...[
@@ -2308,36 +2392,6 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
     );
   }
 
-  Widget _softChip(IconData icon, String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: AppColors.grayBorder),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 13, color: AppColors.tealDark),
-          const SizedBox(width: 5),
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 180),
-            child: Text(
-              label,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: AppColors.navy,
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _loadErrorPage() {
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -2367,7 +2421,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
                     style: TextStyle(
                       color: AppColors.navy,
                       fontSize: 18,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -2454,7 +2508,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
             style: const TextStyle(
               color: AppColors.navy,
               fontSize: 15,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w600,
             ),
           ),
           const SizedBox(height: 5),
@@ -2497,7 +2551,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
                 style: TextStyle(
                   color: AppColors.navy,
                   fontSize: 12,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
@@ -2517,7 +2571,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
               style: const TextStyle(
                 color: AppColors.navy,
                 fontSize: 13,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w600,
               ),
             ),
             if (code != null && code.isNotEmpty) ...[

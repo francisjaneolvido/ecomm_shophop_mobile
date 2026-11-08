@@ -42,6 +42,7 @@ class ShopHopProductThumbnail extends StatelessWidget {
                 if (image.isNotEmpty)
                   Image.network(
                     image,
+                    webHtmlElementStrategy: WebHtmlElementStrategy.fallback,
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => const _MediaPlaceholder(),
                   )

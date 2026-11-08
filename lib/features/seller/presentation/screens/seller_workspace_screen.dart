@@ -1,4 +1,8 @@
+import 'package:shophop/shared/widgets/shop_hop_role_layout.dart';
 import 'package:flutter/material.dart';
+import 'package:shophop/shared/realtime/foreground_refresh.dart';
+import 'package:shophop/features/seller/presentation/screens/seller_account_screen.dart';
+import 'package:shophop/features/seller/presentation/screens/seller_feedback_screen.dart';
 
 import 'package:shophop/core/session/auth_session_service.dart';
 import 'package:shophop/core/theme/app_colors.dart';
@@ -22,13 +26,16 @@ class SellerWorkspaceScreen extends StatefulWidget {
 }
 
 class _SellerWorkspaceScreenState extends State<SellerWorkspaceScreen> {
+  late final ForegroundRefresh _liveRefresh;
   int _tab = 0;
   bool _loading = true;
   bool _saving = false;
   String? _error;
   String? _token;
-  String _search = '';
+  String _orderSearch = '';
+  String _productSearch = '';
   String _orderFilter = 'All';
+  String _inventoryFilter = 'All';
   Map<String, dynamic> _dashboard = {};
   Map<String, dynamic> _earnings = {};
   Map<String, dynamic> _reports = {};
@@ -36,30 +43,25 @@ class _SellerWorkspaceScreenState extends State<SellerWorkspaceScreen> {
   List<Map<String, dynamic>> _orders = [];
   List<Map<String, dynamic>> _products = [];
 
-  static const _nav = [
-    ShopHopNavItem('Home', Icons.home_outlined, Icons.home_rounded),
-    ShopHopNavItem(
-      'Orders',
-      Icons.receipt_long_outlined,
-      Icons.receipt_long_rounded,
-    ),
-    ShopHopNavItem(
-      'Products',
-      Icons.inventory_2_outlined,
-      Icons.inventory_2_rounded,
-    ),
-    ShopHopNavItem(
-      'Earnings',
-      Icons.account_balance_wallet_outlined,
-      Icons.account_balance_wallet_rounded,
-    ),
-    ShopHopNavItem('More', Icons.menu_rounded, Icons.menu_open_rounded),
-  ];
-
   @override
   void initState() {
     super.initState();
     _load();
+    _liveRefresh = ForegroundRefresh(
+      refresh: () => _load(silent: true),
+      canRefresh: () =>
+          mounted &&
+          _requestFuture == null &&
+          !_loading &&
+          !_saving &&
+          (ModalRoute.of(context)?.isCurrent ?? true),
+    );
+  }
+
+  @override
+  void dispose() {
+    _liveRefresh.dispose();
+    super.dispose();
   }
 
   List<Map<String, dynamic>> _rows(dynamic value) => value is List
@@ -74,7 +76,24 @@ class _SellerWorkspaceScreenState extends State<SellerWorkspaceScreen> {
       ? fallback
       : value.toString();
 
-  Future<void> _load() async {
+  Future<void>? _requestFuture;
+
+  Future<void> _load({bool silent = false}) {
+    final pending = _requestFuture;
+    if (pending != null) {
+      if (silent) return pending;
+      return pending.then(
+        (_) => mounted ? _load(silent: silent) : Future<void>.value(),
+      );
+    }
+    final request = _fetch(silent: silent).whenComplete(() {
+      if (mounted) setState(() => _requestFuture = null);
+    });
+    _requestFuture = request;
+    return request;
+  }
+
+  Future<void> _fetch({bool silent = false}) async {
     final session = await AuthSessionService.readSession();
     if (!mounted) return;
     if (session == null || session.accountType != 'seller') {
@@ -82,7 +101,7 @@ class _SellerWorkspaceScreenState extends State<SellerWorkspaceScreen> {
       return;
     }
     setState(() {
-      _loading = true;
+      _loading = !silent && _dashboard.isEmpty;
       _error = null;
       _token = session.token;
     });
@@ -352,46 +371,35 @@ class _SellerWorkspaceScreenState extends State<SellerWorkspaceScreen> {
     IconData icon, {
     bool accent = false,
     String? hint,
-  }) {
-    return ShopHopSurface(
-      padding: const EdgeInsets.all(13),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            icon,
-            color: accent ? AppColors.tealDark : AppColors.navy,
-            size: 21,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 21,
-              fontWeight: FontWeight.w900,
-              color: accent ? AppColors.tealDark : AppColors.navy,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 3),
-          Text(
-            name,
-            style: const TextStyle(
-              fontSize: 11,
-              color: Color(0xFF64748B),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          if (hint != null)
-            Text(
-              hint,
-              style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
-            ),
-        ],
-      ),
-    );
-  }
+  }) => ShopHopRoleMetric(
+    label: name,
+    value: value,
+    icon: icon,
+    accent: accent,
+    hint: hint,
+    onTap:
+        _tab == 0 &&
+            [
+              'New orders',
+              'Preparing',
+              'Ready for pickup',
+              'Low stock',
+            ].contains(name)
+        ? () => _openMetric(name)
+        : null,
+  );
+
+  void _openMetric(String label) => setState(() {
+    if (label == 'Low stock') {
+      _tab = 2;
+      _inventoryFilter = 'Low stock';
+      _productSearch = '';
+    } else {
+      _tab = 1;
+      _orderSearch = '';
+      _orderFilter = label == 'Ready for pickup' ? 'In delivery' : 'To do';
+    }
+  });
 
   Widget _sectionTitle(String title, {String? subtitle}) => Padding(
     padding: const EdgeInsets.only(bottom: 12),
@@ -416,7 +424,7 @@ class _SellerWorkspaceScreenState extends State<SellerWorkspaceScreen> {
                   child: Text(
                     _str(order['display_id']),
                     style: const TextStyle(
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w600,
                       color: AppColors.navy,
                     ),
                   ),
@@ -441,7 +449,7 @@ class _SellerWorkspaceScreenState extends State<SellerWorkspaceScreen> {
                   child: Text(
                     _money(order['total_amount']),
                     style: const TextStyle(
-                      fontWeight: FontWeight.w900,
+                      fontWeight: FontWeight.w700,
                       fontSize: 17,
                       color: AppColors.navy,
                     ),
@@ -512,7 +520,7 @@ class _SellerWorkspaceScreenState extends State<SellerWorkspaceScreen> {
                 _str(order['display_id']),
                 style: const TextStyle(
                   fontSize: 21,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w700,
                   color: AppColors.navy,
                 ),
               ),
@@ -525,7 +533,7 @@ class _SellerWorkspaceScreenState extends State<SellerWorkspaceScreen> {
               const Divider(height: 26),
               const Text(
                 'Order items',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 9),
               for (final item in _rows(order['items']))
@@ -540,7 +548,7 @@ class _SellerWorkspaceScreenState extends State<SellerWorkspaceScreen> {
               Text(
                 'Order total: ${_money(order['total_amount'])}',
                 style: const TextStyle(
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w700,
                   fontSize: 16,
                 ),
               ),
@@ -560,22 +568,17 @@ class _SellerWorkspaceScreenState extends State<SellerWorkspaceScreen> {
   }
 
   Widget _home() => ListView(
-    padding: const EdgeInsets.fromLTRB(16, 18, 16, 90),
+    key: PageStorageKey('seller-$_tab'),
+    physics: const AlwaysScrollableScrollPhysics(),
+    padding: const EdgeInsets.fromLTRB(12, 12, 12, 20),
     children: [
-      Text(
-        'Hello, ${_str(_dashboard['business_name'], 'Seller')}!',
-        style: const TextStyle(
-          fontSize: 22,
-          fontWeight: FontWeight.w900,
-          color: AppColors.navy,
-        ),
+      ShopHopRoleIntro(
+        title: _str(_dashboard['business_name'], 'Your store'),
+        subtitle: 'Review orders, prepare pickups and keep stock up to date.',
+        icon: Icons.storefront_outlined,
+        badge: '${_int(_dashboard['new_orders'])} new orders',
       ),
-      const SizedBox(height: 5),
-      const Text(
-        'Your store at a glance · Live ShopHop data',
-        style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-      ),
-      const SizedBox(height: 18),
+      const SizedBox(height: 12),
       Row(
         children: [
           Expanded(
@@ -642,7 +645,7 @@ class _SellerWorkspaceScreenState extends State<SellerWorkspaceScreen> {
       final matchesSearch =
           ('${order['display_id']} ${order['buyer']} ${order['tracking_code']}')
               .toLowerCase()
-              .contains(_search.toLowerCase());
+              .contains(_orderSearch.toLowerCase());
       final status = _str(order['status'], '').toLowerCase();
       return matchesSearch &&
           (_orderFilter == 'All' ||
@@ -654,18 +657,22 @@ class _SellerWorkspaceScreenState extends State<SellerWorkspaceScreen> {
                   ['completed', 'cancelled', 'returned'].contains(status)));
     }).toList();
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 18, 16, 90),
+      key: PageStorageKey('seller-$_tab'),
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 20),
       children: [
         _sectionTitle(
           'Orders',
           subtitle: 'Accept, prepare and track your COD orders.',
         ),
-        TextField(
+        TextFormField(
+          key: const ValueKey('seller-order-search'),
+          initialValue: _orderSearch,
           decoration: const InputDecoration(
             prefixIcon: Icon(Icons.search_rounded),
             hintText: 'Search order, buyer or tracking',
           ),
-          onChanged: (v) => setState(() => _search = v),
+          onChanged: (v) => setState(() => _orderSearch = v),
         ),
         const SizedBox(height: 10),
         SingleChildScrollView(
@@ -771,15 +778,27 @@ class _SellerWorkspaceScreenState extends State<SellerWorkspaceScreen> {
   }
 
   Widget _productsPage() {
-    final rows = _products
-        .where(
-          (p) => '${p['name']} ${p['sku']} ${p['category']} ${p['subcategory']}'
+    final rows = _products.where((p) {
+      final matches =
+          '${p['name']} ${p['sku']} ${p['category']} ${p['subcategory']}'
               .toLowerCase()
-              .contains(_search.toLowerCase()),
-        )
-        .toList();
+              .contains(_productSearch.toLowerCase());
+      final stock = _int(p['stock']);
+      final active = p['status'] != 'archived';
+      return matches &&
+          switch (_inventoryFilter) {
+            'Pending review' =>
+              active && p['compliance_status'] == 'pending_review',
+            'Low stock' =>
+              active && stock <= _int(p['low_stock_threshold'] ?? 10),
+            'Archived' => !active,
+            _ => true,
+          };
+    }).toList();
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 18, 16, 90),
+      key: PageStorageKey('seller-$_tab'),
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 20),
       children: [
         _sectionTitle(
           'Products & inventory',
@@ -794,14 +813,37 @@ class _SellerWorkspaceScreenState extends State<SellerWorkspaceScreen> {
           ),
         ),
         const SizedBox(height: 12),
-        TextField(
+        TextFormField(
+          key: const ValueKey('seller-product-search'),
+          initialValue: _productSearch,
           decoration: const InputDecoration(
             prefixIcon: Icon(Icons.search),
             hintText: 'Search product, SKU or category',
           ),
-          onChanged: (v) => setState(() => _search = v),
+          onChanged: (v) => setState(() => _productSearch = v),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 8),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (final filter in [
+                'All',
+                'Pending review',
+                'Low stock',
+                'Archived',
+              ]) ...[
+                ChoiceChip(
+                  label: Text(filter),
+                  selected: _inventoryFilter == filter,
+                  onSelected: (_) => setState(() => _inventoryFilter = filter),
+                ),
+                const SizedBox(width: 6),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
         if (rows.isEmpty)
           _empty(
             'No matching products',
@@ -835,7 +877,7 @@ class _SellerWorkspaceScreenState extends State<SellerWorkspaceScreen> {
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                fontWeight: FontWeight.w800,
+                                fontWeight: FontWeight.w600,
                                 fontSize: 13,
                                 color: AppColors.navy,
                               ),
@@ -852,13 +894,29 @@ class _SellerWorkspaceScreenState extends State<SellerWorkspaceScreen> {
                             ),
                             const SizedBox(height: 6),
                             ShopHopStatusPill(
-                              label: _str(p['compliance_status']),
+                              label: p['status'] == 'archived'
+                                  ? 'Archived'
+                                  : _str(
+                                      p['compliance_status'],
+                                    ).replaceAll('_', ' '),
                             ),
                           ],
                         ),
                       ),
                     ],
                   ),
+                  if (p['compliance_status'] == 'pending_review' &&
+                      p['status'] != 'archived')
+                    const Padding(
+                      padding: EdgeInsets.only(top: 8),
+                      child: Text(
+                        'Awaiting Admin approval before buyers can see this product.',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+                    ),
                   const SizedBox(height: 10),
                   Row(
                     children: [
@@ -866,14 +924,14 @@ class _SellerWorkspaceScreenState extends State<SellerWorkspaceScreen> {
                         child: Text(
                           _money(p['price']),
                           style: const TextStyle(
-                            fontWeight: FontWeight.w900,
+                            fontWeight: FontWeight.w700,
                             fontSize: 16,
                           ),
                         ),
                       ),
                       Text(
                         '${_int(p['stock'])} units',
-                        style: const TextStyle(fontWeight: FontWeight.w800),
+                        style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
@@ -925,7 +983,9 @@ class _SellerWorkspaceScreenState extends State<SellerWorkspaceScreen> {
   Widget _earningsPage() {
     final entries = _rows(_earnings['entries']);
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 18, 16, 90),
+      key: PageStorageKey('seller-$_tab'),
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 20),
       children: [
         _sectionTitle(
           'Earnings',
@@ -996,7 +1056,7 @@ class _SellerWorkspaceScreenState extends State<SellerWorkspaceScreen> {
                   ),
                   Text(
                     _money(e['amount']),
-                    style: const TextStyle(fontWeight: FontWeight.w800),
+                    style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                 ],
               ),
@@ -1007,11 +1067,13 @@ class _SellerWorkspaceScreenState extends State<SellerWorkspaceScreen> {
   }
 
   Widget _morePage() => ListView(
-    padding: const EdgeInsets.fromLTRB(16, 18, 16, 90),
+    key: PageStorageKey('seller-$_tab'),
+    physics: const AlwaysScrollableScrollPhysics(),
+    padding: const EdgeInsets.fromLTRB(12, 12, 12, 20),
     children: [
       _sectionTitle(
-        'More',
-        subtitle: 'Reports, profile and additional store tools.',
+        'Account & store',
+        subtitle: 'Profile, customer feedback and store reports.',
       ),
       ShopHopSurface(
         child: Column(
@@ -1032,6 +1094,26 @@ class _SellerWorkspaceScreenState extends State<SellerWorkspaceScreen> {
               subtitle: Text(_str(_profile['business_name'])),
               trailing: const Icon(Icons.chevron_right),
               onTap: _openAccount,
+            ),
+            const Divider(height: 1),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.rate_review_outlined),
+              title: const Text('Customer Feedback'),
+              subtitle: const Text('Read product reviews and reply'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                if (_token == null) return;
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => SellerFeedbackScreen(
+                      token: _token!,
+                      onSessionExpired: () => _signOut(localOnly: true),
+                    ),
+                  ),
+                );
+              },
             ),
             const Divider(height: 1),
             const ListTile(
@@ -1115,62 +1197,19 @@ class _SellerWorkspaceScreenState extends State<SellerWorkspaceScreen> {
     ),
   );
 
-  void _openAccount() => Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => Scaffold(
-        appBar: AppBar(title: const Text('Store & account')),
-        body: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            ShopHopSurface(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _str(_profile['business_name']),
-                    style: const TextStyle(
-                      fontSize: 20,
-                      color: AppColors.navy,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  for (final field in <String, dynamic>{
-                    'Seller': _profile['name'],
-                    'Email': _profile['email'],
-                    'Phone': _profile['contact_no'],
-                    'Category': _profile['business_category'],
-                    'Address': _profile['address'],
-                  }.entries) ...[
-                    Text(
-                      field.key,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: Color(0xFF64748B),
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      _str(field.value),
-                      style: const TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(height: 14),
-            const ShopHopSurface(
-              child: Text(
-                'To edit profile details or storefront availability, use your existing Seller Web portal.',
-              ),
-            ),
-          ],
+  Future<void> _openAccount() async {
+    if (_token == null) return;
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SellerAccountScreen(
+          token: _token!,
+          onSessionExpired: () => _signOut(localOnly: true),
         ),
       ),
-    ),
-  );
+    );
+    if (mounted) await _load();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1183,18 +1222,11 @@ class _SellerWorkspaceScreenState extends State<SellerWorkspaceScreen> {
     ];
     return Scaffold(
       backgroundColor: AppColors.grayBg,
-      appBar: AppBar(
-        title: const Text(
-          'ShopHop Seller',
-          style: TextStyle(fontWeight: FontWeight.w800),
-        ),
-        actions: [
-          IconButton(
-            tooltip: 'Refresh Seller data',
-            onPressed: _loading || _saving ? null : _load,
-            icon: const Icon(Icons.refresh_rounded),
-          ),
-        ],
+      appBar: ShopHopRoleAppBar(
+        role: ShopHopRole.seller,
+        index: _tab,
+        refreshing: _requestFuture != null,
+        onRefresh: _saving ? null : _load,
       ),
       body: Center(
         child: ConstrainedBox(
@@ -1228,12 +1260,9 @@ class _SellerWorkspaceScreenState extends State<SellerWorkspaceScreen> {
         ),
       ),
       bottomNavigationBar: ShopHopNavigation(
-        items: _nav,
+        items: ShopHopRole.seller.destinations,
         index: _tab,
-        onChanged: (value) => setState(() {
-          _tab = value;
-          _search = '';
-        }),
+        onChanged: (value) => setState(() => _tab = value),
         badges: {1: _int(_dashboard['new_orders'])},
       ),
     );

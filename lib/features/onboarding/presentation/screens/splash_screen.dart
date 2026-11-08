@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 
@@ -21,6 +22,7 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
+  Timer? _navigationTimer;
 
   // Logo animations
 
@@ -207,7 +209,10 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
-    Future.delayed(const Duration(milliseconds: 3500), _openNextScreen);
+    _navigationTimer = Timer(
+      const Duration(milliseconds: 3500),
+      _openNextScreen,
+    );
   }
 
   Future<void> _openNextScreen() async {
@@ -252,6 +257,7 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   void dispose() {
+    _navigationTimer?.cancel();
     _controller.dispose();
 
     super.dispose();

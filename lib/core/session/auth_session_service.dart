@@ -118,6 +118,21 @@ class AuthSessionService {
     return session?.token;
   }
 
+  static Future<void> replaceToken(String token) async {
+    final session = await readSession();
+    if (session == null) return;
+    var remember = false;
+    try {
+      remember = await _storage.read(key: _rememberKey) == 'true';
+    } catch (_) {}
+    await saveSession(
+      token: token,
+      email: session.email,
+      accountType: session.accountType,
+      rememberMe: remember,
+    );
+  }
+
   static Future<void> clearSession() async {
     _memorySession = null;
     await _clearPersistedSession();

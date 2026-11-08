@@ -1,3 +1,4 @@
+import 'package:shophop/features/rider/registration/widgets/rider_work_preferences.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
@@ -58,6 +59,7 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
 
   final List<Map<String, dynamic>> _logisticsCenters = [];
   int? _logisticsPartnerId;
+  RiderWorkSelection _workPreferences = const RiderWorkSelection();
   String _partnerSearchQuery = '';
   bool _loadingLogisticsCenters = true;
   String? _logisticsCentersError;
@@ -196,6 +198,8 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
     }
 
     if (_logisticsPartnerId == null ||
+        _workPreferences.branchId == null ||
+        _workPreferences.coverage.isEmpty ||
         _provinceCode == null ||
         _provinceName == null ||
         _municipalityCode == null ||
@@ -213,6 +217,8 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
 
     final result = await AuthService.registerRider(
       logisticsPartnerId: _logisticsPartnerId!,
+      preferredBranchId: _workPreferences.branchId,
+      preferredCoverage: _workPreferences.coverage,
       firstName: _firstName.text,
       lastName: _lastName.text,
       middleInitial: _middleInitial.text,
@@ -393,6 +399,15 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _logisticsCenterField(),
+            if (_logisticsPartnerId != null) ...[
+              const SizedBox(height: 18),
+              RiderWorkPreferences(
+                key: ValueKey(_logisticsPartnerId),
+                companyId: _logisticsPartnerId!,
+                value: _workPreferences,
+                onChanged: (value) => setState(() => _workPreferences = value),
+              ),
+            ],
             const SizedBox(height: 24),
             RiderDetailsStep(
               vehicleController: _vehicle,
@@ -594,7 +609,12 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
                           return InkWell(
                             onTap: () {
                               field.didChange(id);
-                              setState(() => _logisticsPartnerId = id);
+                              setState(() {
+                                if (_logisticsPartnerId != id) {
+                                  _workPreferences = const RiderWorkSelection();
+                                }
+                                _logisticsPartnerId = id;
+                              });
                             },
                             borderRadius: BorderRadius.circular(8),
                             child: AnimatedContainer(

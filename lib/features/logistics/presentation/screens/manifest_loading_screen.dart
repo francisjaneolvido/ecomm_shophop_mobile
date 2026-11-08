@@ -1,3 +1,5 @@
+import 'package:shophop/shared/widgets/shop_hop_scanner.dart';
+import 'package:shophop/shared/widgets/shop_hop_scan_feedback.dart';
 import 'package:flutter/material.dart';
 import 'package:shophop/core/theme/app_colors.dart';
 import 'package:shophop/shared/widgets/shop_hop_ui.dart';
@@ -32,6 +34,34 @@ class _ManifestLoadingScreenState extends State<ManifestLoadingScreen> {
   final _tracking = TextEditingController();
   Map<String, dynamic>? _preview;
   String? _message;
+  final _reviewKey = GlobalKey();
+  void _revealReview() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final target = _reviewKey.currentContext;
+      if (target == null) return;
+      Scrollable.ensureVisible(
+        target,
+        alignment: 0,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+      );
+    });
+  }
+
+  final _scanScroll = ScrollController();
+  void _showResult() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scanScroll.hasClients) return;
+      _scanScroll.animateTo(
+        0,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+      );
+    });
+  }
+
+  bool _needsRecheck = false;
   bool _success = false;
   bool _busy = false;
   bool _exceptionMode = false;
@@ -45,6 +75,7 @@ class _ManifestLoadingScreenState extends State<ManifestLoadingScreen> {
 
   @override
   void dispose() {
+    _scanScroll.dispose();
     _camera.dispose();
     _tracking.dispose();
     _count.dispose();
@@ -65,7 +96,7 @@ class _ManifestLoadingScreenState extends State<ManifestLoadingScreen> {
     return null;
   }
 
-  Future<void> _loadManifests() async {
+  Future<void> _loadManifests({bool keepResult = false}) async {
     setState(() => _busy = true);
     final result = await LogisticsScanService.manifests(
       token: widget.token,
@@ -82,13 +113,16 @@ class _ManifestLoadingScreenState extends State<ManifestLoadingScreen> {
     final selectedRow = rows.where((m) => _id(m['id']) == selected).toList();
     setState(() {
       _busy = false;
+      _needsRecheck = false;
       _manifests = rows;
       _manifestId = selected;
       _count.text = selectedRow.isEmpty
           ? ''
           : _int(selectedRow.first['expected']).toString();
-      _message = result.success ? null : result.message;
-      _success = false;
+      if (!keepResult || !result.success) {
+        _message = result.success ? null : result.message;
+        _success = false;
+      }
     });
   }
 
@@ -103,6 +137,7 @@ class _ManifestLoadingScreenState extends State<ManifestLoadingScreen> {
     }
     setState(() {
       _scanning = true;
+      _success = false;
       _preview = null;
       _message = null;
     });
@@ -122,12 +157,16 @@ class _ManifestLoadingScreenState extends State<ManifestLoadingScreen> {
 
   Future<void> _previewExceptionParcel(String raw) async {
     final code = raw.trim().toUpperCase();
-    if (_busy ||
-        _manifestId == null ||
+    if (_busy) return;
+    if (_manifestId == null ||
         !RegExp(r'^SHP-[0-9]{8}-[0-9]{6,}$').hasMatch(code)) {
       if (mounted) {
         setState(() {
           _message = 'Scan a valid ShopHop Parcel QR.';
+          ShopHopScanFeedback.instance.notify(
+            ScanFeedbackEvent.error,
+            reference: code,
+          );
           _success = false;
         });
       }
@@ -152,17 +191,23 @@ class _ManifestLoadingScreenState extends State<ManifestLoadingScreen> {
     if (!mounted) return;
     setState(() {
       _busy = false;
+      _needsRecheck = false;
       _preview = result.success && result.data['parcel'] is Map
           ? Map<String, dynamic>.from(result.data['parcel'] as Map)
           : null;
       _message = result.success ? null : result.message;
       _success = false;
     });
+    if (_preview != null) _revealReview();
+    ShopHopScanFeedback.instance.notify(
+      _preview != null ? ScanFeedbackEvent.verified : ScanFeedbackEvent.error,
+      reference: code,
+    );
   }
 
   Future<void> _confirmExceptionParcel() async {
     final parcel = _preview;
-    if (_busy || parcel == null || _manifestId == null) return;
+    if (_busy || _needsRecheck || parcel == null || _manifestId == null) return;
     final code = parcel['tracking_code']?.toString() ?? '';
     final confirmed = await showDialog<bool>(
       context: context,
@@ -194,18 +239,26 @@ class _ManifestLoadingScreenState extends State<ManifestLoadingScreen> {
     if (!mounted) return;
     setState(() {
       _busy = false;
-      _preview = null;
+      _preview = result.success ? null : parcel;
+      _needsRecheck = !result.success;
       _message = result.message;
+      _needsRecheck = !result.success;
       _success = result.success;
-      _tracking.clear();
+      if (result.success) _tracking.clear();
     });
-    if (result.success) await _loadManifests();
+    ShopHopScanFeedback.instance.notify(
+      result.success ? ScanFeedbackEvent.complete : ScanFeedbackEvent.error,
+      reference: code,
+    );
+    _showResult();
+    if (result.success) await _loadManifests(keepResult: true);
   }
 
   Future<void> _confirmBatch() async {
     final manifest = _selected;
     final count = int.tryParse(_count.text.trim());
-    if (_busy || manifest == null || count == null || count < 1) {
+    if (_busy || _needsRecheck) return;
+    if (manifest == null || count == null || count < 1) {
       setState(() {
         _message = 'Enter the physical parcel count loaded into this manifest.';
         _success = false;
@@ -215,6 +268,11 @@ class _ManifestLoadingScreenState extends State<ManifestLoadingScreen> {
 
     final expected = _int(manifest['expected']);
     if (count != expected) {
+      _showResult();
+      ShopHopScanFeedback.instance.notify(
+        ScanFeedbackEvent.error,
+        reference: manifest['code']?.toString(),
+      );
       setState(() {
         _message =
             'Physical count is $count but this manifest expects $expected. Do not confirm the batch. Use individual Parcel QR scanning for exception reconciliation.';
@@ -255,9 +313,15 @@ class _ManifestLoadingScreenState extends State<ManifestLoadingScreen> {
     setState(() {
       _busy = false;
       _message = result.message;
+      _needsRecheck = !result.success;
       _success = result.success;
     });
-    if (result.success) await _loadManifests();
+    ShopHopScanFeedback.instance.notify(
+      result.success ? ScanFeedbackEvent.complete : ScanFeedbackEvent.error,
+      reference: manifest['code']?.toString(),
+    );
+    _showResult();
+    if (result.success) await _loadManifests(keepResult: true);
   }
 
   @override
@@ -268,6 +332,15 @@ class _ManifestLoadingScreenState extends State<ManifestLoadingScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: AppColors.tealDark,
+        surfaceTintColor: Colors.transparent,
+        foregroundColor: Colors.white,
+        titleTextStyle: const TextStyle(
+          fontFamily: 'Poppins',
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          color: Colors.white,
+        ),
         title: const Text('Outbound Manifest Loading'),
         actions: [
           IconButton(
@@ -277,7 +350,8 @@ class _ManifestLoadingScreenState extends State<ManifestLoadingScreen> {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        controller: _scanScroll,
+        padding: const EdgeInsets.all(12),
         children: [
           ShopHopWorkflowHeader(
             title: 'Outbound manifest loading',
@@ -295,16 +369,25 @@ class _ManifestLoadingScreenState extends State<ManifestLoadingScreen> {
             ),
           ),
           const SizedBox(height: 14),
+          if (!_exceptionMode) const ShopHopScanPreferences(),
           if (_message != null) ...[
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: _success
-                    ? const Color(0xFFE8F7F1)
-                    : const Color(0xFFFFF3E8),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(_message!),
+            ShopHopScanNotice(
+              message: _message!,
+              success: _success,
+              onNext: _busy
+                  ? null
+                  : _success
+                  ? () {
+                      _loadManifests();
+                    }
+                  : _needsRecheck
+                  ? () {
+                      _exceptionMode && _preview != null
+                          ? _previewExceptionParcel(_tracking.text)
+                          : _loadManifests();
+                    }
+                  : null,
+              nextLabel: _success ? 'Continue loading' : 'Recheck manifest',
             ),
             const SizedBox(height: 12),
           ],
@@ -312,7 +395,7 @@ class _ManifestLoadingScreenState extends State<ManifestLoadingScreen> {
             'STEP 1  Select outbound manifest',
             style: TextStyle(
               fontSize: 12,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w600,
               color: _navy,
             ),
           ),
@@ -338,7 +421,7 @@ class _ManifestLoadingScreenState extends State<ManifestLoadingScreen> {
                 .toList(),
             onChanged: _busy
                 ? null
-                : (value) {
+                : (value) async {
                     setState(() {
                       _manifestId = value;
                       final row = _selected;
@@ -349,6 +432,7 @@ class _ManifestLoadingScreenState extends State<ManifestLoadingScreen> {
                       _message = null;
                       _success = false;
                     });
+                    await _loadManifests();
                   },
           ),
           const SizedBox(height: 16),
@@ -362,7 +446,7 @@ class _ManifestLoadingScreenState extends State<ManifestLoadingScreen> {
                     '${selected['code']}',
                     style: const TextStyle(
                       fontSize: 18,
-                      fontWeight: FontWeight.w900,
+                      fontWeight: FontWeight.w700,
                       color: _navy,
                     ),
                   ),
@@ -390,7 +474,7 @@ class _ManifestLoadingScreenState extends State<ManifestLoadingScreen> {
               'STEP 2  Match physical parcel count',
               style: TextStyle(
                 fontSize: 12,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w600,
                 color: _navy,
               ),
             ),
@@ -411,7 +495,8 @@ class _ManifestLoadingScreenState extends State<ManifestLoadingScreen> {
               width: double.infinity,
               child: FilledButton.icon(
                 style: FilledButton.styleFrom(backgroundColor: _teal),
-                onPressed: _busy || selected['status'] == 'ready'
+                onPressed:
+                    _busy || _needsRecheck || selected['status'] == 'ready'
                     ? null
                     : _confirmBatch,
                 icon: const Icon(Icons.inventory_2_outlined),
@@ -441,82 +526,81 @@ class _ManifestLoadingScreenState extends State<ManifestLoadingScreen> {
                           _exceptionMode = value;
                           _scanning = false;
                           _preview = null;
-                          _message = null;
+                          if (!_needsRecheck) _message = null;
                         });
                       },
                 title: const Text(
                   'Exception / reconciliation mode',
-                  style: TextStyle(fontWeight: FontWeight.w800),
+                  style: TextStyle(fontWeight: FontWeight.w600),
                 ),
                 subtitle: const Text(
                   'Use individual Parcel QR only when the physical count does not match or a specific parcel needs verification.',
                 ),
               ),
               if (_exceptionMode) ...[
-                if (_scanning) ...[
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: SizedBox(
-                      height: 260,
-                      child: MobileScanner(
-                        controller: _camera,
-                        onDetect: (capture) {
-                          if (_busy || !_scanning) return;
-                          for (final barcode in capture.barcodes) {
-                            final value = barcode.rawValue;
-                            if (value != null && value.trim().isNotEmpty) {
-                              _previewExceptionParcel(value);
-                              break;
-                            }
-                          }
-                        },
-                      ),
+                if (_preview == null) ...[
+                  ShopHopCameraPanel(
+                    controller: _camera,
+                    scanning: _scanning,
+                    busy: _busy,
+                    instruction:
+                        'Scan an exception parcel QR for this manifest',
+                    onToggle: () => _setCamera(!_scanning),
+                    onDetect: (capture) {
+                      if (_busy || !_scanning) return;
+                      for (final barcode in capture.barcodes) {
+                        final code = barcode.rawValue;
+                        if (code != null && code.trim().isNotEmpty) {
+                          _previewExceptionParcel(code);
+                          break;
+                        }
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: _tracking,
+                    onChanged: (_) => setState(() {
+                      _preview = null;
+                      _message = null;
+                      _success = false;
+                    }),
+                    enabled: !_busy,
+                    textCapitalization: TextCapitalization.characters,
+                    decoration: const InputDecoration(
+                      labelText: 'Or type parcel tracking code',
+                      border: OutlineInputBorder(),
                     ),
                   ),
                   const SizedBox(height: 10),
+                  OutlinedButton(
+                    onPressed: _busy
+                        ? null
+                        : () => _previewExceptionParcel(_tracking.text),
+                    child: const Text('Verify exception parcel'),
+                  ),
                 ],
-                OutlinedButton.icon(
-                  onPressed: _busy ? null : () => _setCamera(!_scanning),
-                  icon: Icon(
-                    _scanning
-                        ? Icons.stop_circle_outlined
-                        : Icons.qr_code_scanner,
-                  ),
-                  label: Text(
-                    _scanning
-                        ? 'Stop exception camera'
-                        : 'Scan exception Parcel QR',
-                  ),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: _tracking,
-                  enabled: !_busy,
-                  textCapitalization: TextCapitalization.characters,
-                  decoration: const InputDecoration(
-                    labelText: 'Or type parcel tracking code',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                OutlinedButton(
-                  onPressed: _busy
-                      ? null
-                      : () => _previewExceptionParcel(_tracking.text),
-                  child: const Text('Verify exception parcel'),
-                ),
                 if (_preview != null) ...[
                   const SizedBox(height: 12),
                   Card(
+                    key: _reviewKey,
                     child: Padding(
                       padding: const EdgeInsets.all(14),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton.icon(
+                              onPressed: _busy ? null : () => _setCamera(true),
+                              icon: const Icon(Icons.qr_code_scanner, size: 18),
+                              label: const Text('Scan another parcel'),
+                            ),
+                          ),
                           Text(
                             '${_preview!['tracking_code']}',
                             style: const TextStyle(
-                              fontWeight: FontWeight.w900,
+                              fontWeight: FontWeight.w700,
                               fontSize: 17,
                             ),
                           ),
@@ -528,7 +612,9 @@ class _ManifestLoadingScreenState extends State<ManifestLoadingScreen> {
                           SizedBox(
                             width: double.infinity,
                             child: FilledButton(
-                              onPressed: _busy ? null : _confirmExceptionParcel,
+                              onPressed: _busy || _needsRecheck
+                                  ? null
+                                  : _confirmExceptionParcel,
                               child: const Text('Confirm this parcel loaded'),
                             ),
                           ),

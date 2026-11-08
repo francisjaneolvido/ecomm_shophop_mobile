@@ -1,3 +1,5 @@
+import 'package:shophop/shared/widgets/shop_hop_scanner.dart';
+import 'package:shophop/shared/widgets/shop_hop_scan_feedback.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
@@ -23,6 +25,34 @@ class _RiderCustodyScannerState extends State<RiderCustodyScanner> {
     autoStart: false,
   );
 
+  final _reviewKey = GlobalKey();
+  void _revealReview() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final target = _reviewKey.currentContext;
+      if (target == null) return;
+      Scrollable.ensureVisible(
+        target,
+        alignment: 0,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+      );
+    });
+  }
+
+  final _scanScroll = ScrollController();
+  void _showResult() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scanScroll.hasClients) return;
+      _scanScroll.animateTo(
+        0,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+      );
+    });
+  }
+
+  bool _needsRecheck = false;
   bool _scanning = false;
   bool _busy = false;
   bool _success = false;
@@ -72,6 +102,11 @@ class _RiderCustodyScannerState extends State<RiderCustodyScanner> {
     if (_busy) return;
     final code = rawCode.trim().toUpperCase();
     if (!_validTrackingCode(code)) {
+      ShopHopScanFeedback.instance.notify(
+        ScanFeedbackEvent.error,
+        reference: code,
+      );
+      await _stopCamera();
       if (mounted) {
         setState(() {
           _success = false;
@@ -82,6 +117,7 @@ class _RiderCustodyScannerState extends State<RiderCustodyScanner> {
       return;
     }
 
+    setState(() => _busy = true);
     await _stopCamera();
     if (!mounted) return;
     setState(() {
@@ -99,17 +135,23 @@ class _RiderCustodyScannerState extends State<RiderCustodyScanner> {
     final rawHandoff = response.data['handoff'];
     setState(() {
       _busy = false;
+      _needsRecheck = false;
       _handoff = response.success && rawHandoff is Map
           ? Map<String, dynamic>.from(rawHandoff)
           : null;
       _success = false;
       _message = response.success ? null : response.message;
     });
+    if (_handoff != null) _revealReview();
+    ShopHopScanFeedback.instance.notify(
+      _handoff != null ? ScanFeedbackEvent.verified : ScanFeedbackEvent.error,
+      reference: code,
+    );
   }
 
   Future<void> _confirm() async {
     final handoff = _handoff;
-    if (_busy || handoff == null) return;
+    if (_busy || _needsRecheck || handoff == null) return;
 
     final tracking = handoff['tracking_code']?.toString() ?? '';
     final action = handoff['action']?.toString() ?? '';
@@ -154,11 +196,17 @@ class _RiderCustodyScannerState extends State<RiderCustodyScanner> {
 
     setState(() {
       _busy = false;
-      _handoff = null;
+      _handoff = response.success ? null : handoff;
+      _needsRecheck = !response.success;
       _success = response.success;
       _message = response.message;
     });
 
+    ShopHopScanFeedback.instance.notify(
+      response.success ? ScanFeedbackEvent.complete : ScanFeedbackEvent.error,
+      reference: tracking,
+    );
+    _showResult();
     if (response.success) {
       await widget.onConfirmed();
     }
@@ -175,159 +223,46 @@ class _RiderCustodyScannerState extends State<RiderCustodyScanner> {
     }
   }
 
-  Widget _notice(String text, {required bool success}) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(13),
-      decoration: BoxDecoration(
-        color: success ? const Color(0xFFE8F7F1) : const Color(0xFFFFF3E8),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            success ? Icons.check_circle_outline : Icons.info_outline_rounded,
-            color: success ? AppColors.tealDark : const Color(0xFF9B5718),
-          ),
-          const SizedBox(width: 9),
-          Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(
-                color: AppColors.navy,
-                fontSize: 12.5,
-                height: 1.4,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget _notice(String text, {required bool success}) => ShopHopScanNotice(
+    message: text,
+    success: success,
+    onNext: _busy
+        ? null
+        : success
+        ? _startCamera
+        : _needsRecheck && _handoff != null
+        ? () => _preview(_handoff!['tracking_code'].toString())
+        : null,
+    nextLabel: success ? 'Scan next' : 'Recheck parcel',
+  );
 
-  Widget _cameraCard() {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.grayBorder),
+  Widget _cameraCard() => Column(
+    children: [
+      ShopHopCameraPanel(
+        controller: _camera,
+        scanning: _scanning,
+        busy: _busy,
+        instruction: 'Scan the QR printed on the parcel waybill',
+        onToggle: () => _scanning ? _stopCamera() : _startCamera(),
+        onDetect: (capture) {
+          if (_busy || !_scanning) return;
+          for (final barcode in capture.barcodes) {
+            final code = barcode.rawValue;
+            if (code != null && code.trim().isNotEmpty) {
+              _preview(code);
+              break;
+            }
+          }
+        },
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(Icons.qr_code_scanner_rounded, color: AppColors.tealDark),
-              SizedBox(width: 8),
-              Text(
-                'Custody camera',
-                style: TextStyle(
-                  color: AppColors.navy,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 5),
-          const Text(
-            'Scan the permanent QR on the ShopHop waybill. The server verifies the assignment and shows the parcel waybill before any custody status changes.',
-            style: TextStyle(
-              color: Color(0xFF65748A),
-              fontSize: 12,
-              height: 1.4,
-            ),
-          ),
-          const SizedBox(height: 14),
-          if (_scanning)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: SizedBox(
-                height: 300,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    MobileScanner(
-                      controller: _camera,
-                      onDetect: (capture) {
-                        if (_busy || !_scanning) return;
-                        for (final barcode in capture.barcodes) {
-                          final raw = barcode.rawValue;
-                          if (raw != null && raw.trim().isNotEmpty) {
-                            _preview(raw);
-                            break;
-                          }
-                        }
-                      },
-                    ),
-                    IgnorePointer(
-                      child: Center(
-                        child: Container(
-                          width: 215,
-                          height: 215,
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.white, width: 3),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          else
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 34),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF6F8FA),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Column(
-                children: [
-                  Icon(
-                    Icons.qr_code_scanner_rounded,
-                    size: 54,
-                    color: AppColors.tealDark,
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    'Camera is paused',
-                    style: TextStyle(
-                      color: AppColors.navy,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: _busy
-                  ? null
-                  : () => _scanning ? _stopCamera() : _startCamera(),
-              icon: Icon(
-                _scanning
-                    ? Icons.stop_circle_outlined
-                    : Icons.qr_code_scanner_rounded,
-              ),
-              label: Text(_scanning ? 'Pause camera' : 'Open camera'),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+    ],
+  );
 
   Widget _handoffCard(Map<String, dynamic> handoff) {
     final action = handoff['action']?.toString() ?? '';
     final color = _actionColor(action);
     return Container(
+      key: _reviewKey,
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -359,7 +294,7 @@ class _RiderCustodyScannerState extends State<RiderCustodyScanner> {
                       style: const TextStyle(
                         color: AppColors.navy,
                         fontSize: 15,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                     Text(
@@ -367,7 +302,7 @@ class _RiderCustodyScannerState extends State<RiderCustodyScanner> {
                       style: TextStyle(
                         color: color,
                         fontSize: 12,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -420,7 +355,7 @@ class _RiderCustodyScannerState extends State<RiderCustodyScanner> {
             width: double.infinity,
             child: FilledButton.icon(
               style: FilledButton.styleFrom(backgroundColor: color),
-              onPressed: _busy ? null : _confirm,
+              onPressed: _busy || _needsRecheck ? null : _confirm,
               icon: const Icon(Icons.verified_user_outlined),
               label: Text(
                 handoff['confirm_label']?.toString() ?? 'Confirm custody',
@@ -477,7 +412,7 @@ class _RiderCustodyScannerState extends State<RiderCustodyScanner> {
                   style: TextStyle(
                     color: AppColors.navy,
                     fontSize: 11,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w700,
                     letterSpacing: 0.5,
                   ),
                 ),
@@ -487,7 +422,7 @@ class _RiderCustodyScannerState extends State<RiderCustodyScanner> {
                 style: TextStyle(
                   color: color,
                   fontSize: 11,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
@@ -594,7 +529,7 @@ class _RiderCustodyScannerState extends State<RiderCustodyScanner> {
                 style: const TextStyle(
                   color: Color(0xFF7A8799),
                   fontSize: 9.5,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w600,
                   letterSpacing: 0.5,
                 ),
               ),
@@ -618,6 +553,7 @@ class _RiderCustodyScannerState extends State<RiderCustodyScanner> {
 
   @override
   void dispose() {
+    _scanScroll.dispose();
     _camera.dispose();
     super.dispose();
   }
@@ -625,15 +561,16 @@ class _RiderCustodyScannerState extends State<RiderCustodyScanner> {
   @override
   Widget build(BuildContext context) {
     return ListView(
+      controller: _scanScroll,
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(14, 18, 14, 38),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 20),
       children: [
         const Text(
           'Scan waybill & custody',
           style: TextStyle(
             color: AppColors.navy,
-            fontSize: 24,
-            fontWeight: FontWeight.w900,
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
           ),
         ),
         const SizedBox(height: 4),
@@ -646,6 +583,13 @@ class _RiderCustodyScannerState extends State<RiderCustodyScanner> {
           ),
         ),
         const SizedBox(height: 14),
+        ShopHopScanSteps(
+          step: _success
+              ? 2
+              : _handoff != null
+              ? 1
+              : 0,
+        ),
         if (_busy) ...[
           const LinearProgressIndicator(minHeight: 3),
           const SizedBox(height: 12),
@@ -654,7 +598,10 @@ class _RiderCustodyScannerState extends State<RiderCustodyScanner> {
           _notice(_message!, success: _success),
           const SizedBox(height: 12),
         ],
-        if (_handoff != null) _handoffCard(_handoff!) else _cameraCard(),
+        if (_handoff != null)
+          _handoffCard(_handoff!)
+        else if (!_success)
+          _cameraCard(),
         const SizedBox(height: 14),
         Container(
           padding: const EdgeInsets.all(14),
@@ -670,7 +617,7 @@ class _RiderCustodyScannerState extends State<RiderCustodyScanner> {
                 'Where this scanner is required',
                 style: TextStyle(
                   color: AppColors.navy,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
               SizedBox(height: 8),

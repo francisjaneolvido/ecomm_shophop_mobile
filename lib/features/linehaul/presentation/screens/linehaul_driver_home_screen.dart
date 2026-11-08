@@ -1,4 +1,7 @@
-import 'dart:async';
+import 'package:shophop/shared/widgets/shop_hop_scanner.dart';
+import 'package:shophop/shared/widgets/shop_hop_scan_feedback.dart';
+import 'package:shophop/shared/widgets/shop_hop_role_layout.dart';
+import 'package:shophop/shared/realtime/foreground_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:shophop/core/theme/app_colors.dart';
 import 'package:shophop/shared/widgets/shop_hop_navigation.dart';
@@ -28,22 +31,62 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
   double _pendingEarnings = 0, _availableEarnings = 0, _paidEarnings = 0;
   Map<String, dynamic>? _manifest;
   String? _token, _email, _message;
+  final _reviewKey = GlobalKey();
+  void _revealReview() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final target = _reviewKey.currentContext;
+      if (target == null) return;
+      Scrollable.ensureVisible(
+        target,
+        alignment: 0,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+      );
+    });
+  }
+
+  final _scanScroll = ScrollController();
+  void _showResult() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scanScroll.hasClients) return;
+      _scanScroll.animateTo(
+        0,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+      );
+    });
+  }
+
+  bool _needsRecheck = false;
   bool _success = false, _busy = true, _scanning = false;
   int _tab = 0;
-  Timer? _refreshTimer;
+  late final ForegroundRefresh _liveRefresh;
+  bool _initialLoading = true;
+  String? _syncError;
 
   @override
   void initState() {
     super.initState();
     _load();
-    _refreshTimer = Timer.periodic(const Duration(seconds: 10), (_) {
-      if (mounted && !_busy && !_scanning) _load(silent: true);
-    });
+    _liveRefresh = ForegroundRefresh(
+      refresh: () => _load(silent: true),
+      interval: const Duration(seconds: 10),
+      canRefresh: () =>
+          mounted &&
+          _requestFuture == null &&
+          !_busy &&
+          !_scanning &&
+          _tab != 2 &&
+          _manifest == null &&
+          (ModalRoute.of(context)?.isCurrent ?? true),
+    );
   }
 
   @override
   void dispose() {
-    _refreshTimer?.cancel();
+    _scanScroll.dispose();
+    _liveRefresh.dispose();
     _manifestCode.dispose();
     _camera.dispose();
     super.dispose();
@@ -53,7 +96,24 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
       ? v.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList()
       : [];
 
-  Future<void> _load({bool silent = false}) async {
+  Future<void>? _requestFuture;
+
+  Future<void> _load({bool silent = false}) {
+    final pending = _requestFuture;
+    if (pending != null) {
+      if (silent) return pending;
+      return pending.then(
+        (_) => mounted ? _load(silent: silent) : Future<void>.value(),
+      );
+    }
+    final request = _fetch(silent: silent).whenComplete(() {
+      if (mounted) setState(() => _requestFuture = null);
+    });
+    _requestFuture = request;
+    return request;
+  }
+
+  Future<void> _fetch({bool silent = false}) async {
     final session = await AuthSessionService.readSession();
     if (!mounted) return;
     if (session == null || session.accountType != 'linehaul_driver') {
@@ -80,6 +140,7 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
     }
     setState(() {
       _busy = false;
+      _initialLoading = false;
       if (r.success) _trips = _rows(r.data['trips']);
       if (e.success) {
         _earnings = _rows(e.data['entries']);
@@ -87,8 +148,7 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
         _availableEarnings = (e.data['available'] as num?)?.toDouble() ?? 0;
         _paidEarnings = (e.data['paid'] as num?)?.toDouble() ?? 0;
       }
-      _message = r.success ? (e.success ? null : e.message) : r.message;
-      _success = false;
+      _syncError = r.success ? (e.success ? null : e.message) : r.message;
     });
   }
 
@@ -109,6 +169,8 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
     if (_busy) return;
     setState(() {
       _scanning = true;
+      _success = false;
+      _needsRecheck = false;
       _manifest = null;
       _message = null;
     });
@@ -137,21 +199,30 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
     try {
       await _camera.stop();
     } catch (_) {}
-    final r = await LinehaulService.preview(token: _token!, manifestCode: code);
+    final r = await LinehaulService.preview(
+      token: _token!,
+      manifestCode: _manifestCode.text,
+    );
     if (!mounted) return;
     setState(() {
       _busy = false;
+      _needsRecheck = false;
       _manifest = r.success && r.data['manifest'] is Map
           ? Map<String, dynamic>.from(r.data['manifest'] as Map)
           : null;
       _message = r.success ? null : r.message;
       _success = false;
     });
+    if (_manifest != null) _revealReview();
+    ShopHopScanFeedback.instance.notify(
+      _manifest != null ? ScanFeedbackEvent.verified : ScanFeedbackEvent.error,
+      reference: _manifestCode.text,
+    );
   }
 
   Future<void> _confirm() async {
     final m = _manifest;
-    if (m == null || _token == null || _busy) return;
+    if (m == null || _token == null || _busy || _needsRecheck) return;
     final action = m['action']?.toString() ?? 'none';
     if (action != 'depart') return;
     final ok = await showDialog<bool>(
@@ -183,10 +254,16 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
     if (!mounted) return;
     setState(() {
       _busy = false;
-      _manifest = null;
+      _manifest = r.success ? null : m;
+      _needsRecheck = !r.success;
       _message = r.message;
       _success = r.success;
     });
+    ShopHopScanFeedback.instance.notify(
+      r.success ? ScanFeedbackEvent.complete : ScanFeedbackEvent.error,
+      reference: m['manifest_code']?.toString(),
+    );
+    _showResult();
     await _load();
   }
 
@@ -214,7 +291,7 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
                     '${trip['code'] ?? 'Linehaul trip'}',
                     style: const TextStyle(
                       fontSize: 14,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w600,
                       color: _navy,
                     ),
                     maxLines: 1,
@@ -273,7 +350,11 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
                   onPressed: _busy
                       ? null
                       : () => setState(() {
-                          _tab = 1;
+                          _tab = 2;
+                          _manifest = null;
+                          _message = null;
+                          _success = false;
+                          _needsRecheck = false;
                           _manifestCode.text = (trip['manifest_code'] ?? '')
                               .toString();
                         }),
@@ -296,10 +377,22 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
               : !['completed', 'cancelled'].contains(trip['status']),
         )
         .toList();
+    if (!history) {
+      rows.sort((a, b) {
+        final rankA = a['status'] == 'in_transit' ? 0 : 1;
+        final rankB = b['status'] == 'in_transit' ? 0 : 1;
+        final rank = rankA.compareTo(rankB);
+        return rank != 0
+            ? rank
+            : ((a['id'] as num?) ?? 0).compareTo((b['id'] as num?) ?? 0);
+      });
+    }
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(14, 12, 14, 90),
+        key: PageStorageKey('linehaul-$_tab'),
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 20),
         children: [
           ShopHopWorkflowHeader(
             title: history ? 'Trip history' : 'My assigned trips',
@@ -332,8 +425,10 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
               ],
             ),
             const SizedBox(height: 14),
-            const ShopHopOpsHeading(
-              title: 'Next trip',
+            ShopHopOpsHeading(
+              title: rows.first['status'] == 'in_transit'
+                  ? 'Current trip'
+                  : 'Next trip',
               subtitle:
                   'Manifest acceptance requires physical load verification.',
             ),
@@ -360,7 +455,10 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
   }
 
   Widget _scanPage() => ListView(
-    padding: const EdgeInsets.fromLTRB(14, 12, 14, 90),
+    controller: _scanScroll,
+    key: PageStorageKey('linehaul-$_tab'),
+    physics: const AlwaysScrollableScrollPhysics(),
+    padding: const EdgeInsets.fromLTRB(12, 12, 12, 20),
     children: [
       const ShopHopWorkflowHeader(
         title: 'Scan manifest',
@@ -369,113 +467,126 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
         icon: Icons.qr_code_scanner_rounded,
       ),
       const SizedBox(height: 12),
+      ShopHopScanSteps(
+        step: _success
+            ? 2
+            : _manifest != null
+            ? 1
+            : 0,
+      ),
       if (_message != null) ...[
-        ShopHopSurface(
-          background: _success
-              ? const Color(0xFFE8F7F1)
-              : const Color(0xFFFFF3E8),
-          child: Text(_message!, style: const TextStyle(fontSize: 12)),
+        ShopHopScanNotice(
+          message: _message!,
+          success: _success,
+          onNext: _busy
+              ? null
+              : _success
+              ? () {
+                  _manifestCode.clear();
+                  _startScan();
+                }
+              : _needsRecheck
+              ? () => _scan(_manifestCode.text)
+              : null,
+          nextLabel: _success ? 'Scan next' : 'Recheck manifest',
         ),
         const SizedBox(height: 10),
       ],
-      ShopHopSurface(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              '1  Scan manifest QR',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w900,
-                color: _navy,
-              ),
-            ),
-            const SizedBox(height: 5),
-            const Text(
-              'Driver scans the Manifest QR, not individual parcel labels.',
-              style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-            ),
-            const SizedBox(height: 12),
-            if (_scanning) ...[
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: SizedBox(
-                  height: 230,
-                  child: MobileScanner(
-                    controller: _camera,
-                    onDetect: (capture) {
-                      if (_busy || !_scanning) return;
-                      for (final barcode in capture.barcodes) {
-                        final raw = barcode.rawValue;
-                        if (raw != null && raw.trim().isNotEmpty) {
-                          _scan(raw);
-                          break;
-                        }
-                      }
-                    },
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-            ],
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: _busy
-                    ? null
-                    : (_scanning
-                          ? () async {
-                              await _camera.stop();
-                              if (mounted) setState(() => _scanning = false);
-                            }
-                          : _startScan),
-                icon: Icon(
-                  _scanning
-                      ? Icons.stop_circle_outlined
-                      : Icons.qr_code_scanner_rounded,
-                ),
-                label: Text(_scanning ? 'Stop camera' : 'Open QR scanner'),
-              ),
-            ),
-            const SizedBox(height: 13),
-            TextField(
-              controller: _manifestCode,
-              enabled: !_busy,
-              onChanged: (_) => setState(() {}),
-              textCapitalization: TextCapitalization.characters,
-              decoration: const InputDecoration(
-                labelText: 'Or enter Manifest code',
-                prefixIcon: Icon(Icons.numbers),
-                border: OutlineInputBorder(),
-                isDense: true,
-              ),
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: _busy || _manifestCode.text.trim().isEmpty
-                    ? null
-                    : () => _scan(_manifestCode.text),
-                child: const Text('Review manifest details'),
-              ),
-            ),
-          ],
-        ),
-      ),
-      if (_manifest != null) ...[
-        const SizedBox(height: 12),
+      if (_manifest == null)
         ShopHopSurface(
           padding: const EdgeInsets.all(14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
+                '1  Scan manifest QR',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: _navy,
+                ),
+              ),
+              const SizedBox(height: 5),
+              const Text(
+                'Driver scans the Manifest QR, not individual parcel labels.',
+                style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+              ),
+              const SizedBox(height: 12),
+              ShopHopCameraPanel(
+                controller: _camera,
+                scanning: _scanning,
+                busy: _busy,
+                instruction: 'Scan the Manifest QR for your assigned vehicle',
+                onToggle: () async {
+                  if (_scanning) {
+                    await _camera.stop();
+                    if (mounted) setState(() => _scanning = false);
+                  } else {
+                    await _startScan();
+                  }
+                },
+                onDetect: (capture) {
+                  if (_busy || !_scanning) return;
+                  for (final barcode in capture.barcodes) {
+                    final code = barcode.rawValue;
+                    if (code != null && code.trim().isNotEmpty) {
+                      _scan(code);
+                      break;
+                    }
+                  }
+                },
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _manifestCode,
+                enabled: !_busy,
+                onChanged: (_) => setState(() {
+                  _manifest = null;
+                  _message = null;
+                  _success = false;
+                }),
+                textCapitalization: TextCapitalization.characters,
+                decoration: const InputDecoration(
+                  labelText: 'Or enter Manifest code',
+                  prefixIcon: Icon(Icons.numbers),
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: _busy || _manifestCode.text.trim().isEmpty
+                      ? null
+                      : () => _scan(_manifestCode.text),
+                  child: const Text('Review manifest details'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      if (_manifest != null) ...[
+        const SizedBox(height: 12),
+        ShopHopSurface(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            key: _reviewKey,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: _busy ? null : _startScan,
+                  icon: const Icon(Icons.qr_code_scanner, size: 18),
+                  label: const Text('Scan another manifest'),
+                ),
+              ),
+              const Text(
                 '2  Review load & custody',
                 style: TextStyle(
                   fontSize: 14,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w700,
                   color: _navy,
                 ),
               ),
@@ -484,7 +595,7 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
                 '${_manifest!['manifest_code']}',
                 style: const TextStyle(
                   fontSize: 16,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w700,
                   color: _navy,
                 ),
               ),
@@ -530,6 +641,7 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
                 child: FilledButton.icon(
                   onPressed:
                       _busy ||
+                          _needsRecheck ||
                           _manifest!['requires_review'] == true ||
                           _manifest!['action'] != 'depart'
                       ? null
@@ -554,7 +666,9 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
         .toList();
     final t = active.isEmpty ? null : active.first;
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 18, 16, 100),
+      key: const PageStorageKey('linehaul-account'),
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 20),
       children: [
         const ShopHopWorkflowHeader(
           title: 'Assigned vehicle',
@@ -564,7 +678,7 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
         const SizedBox(height: 16),
         Card(
           child: Padding(
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.all(12),
             child: t == null
                 ? const Text('No active vehicle assignment.')
                 : Column(
@@ -574,7 +688,7 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
                         '${t['vehicle_code'] ?? 'Vehicle'}',
                         style: const TextStyle(
                           fontSize: 20,
-                          fontWeight: FontWeight.w900,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                       Text(
@@ -596,7 +710,9 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
   Widget _accountPage() => RefreshIndicator(
     onRefresh: _load,
     child: ListView(
-      padding: const EdgeInsets.fromLTRB(16, 18, 16, 100),
+      key: const PageStorageKey('linehaul-account'),
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 20),
       children: [
         const ShopHopWorkflowHeader(
           title: 'Account & earnings',
@@ -630,7 +746,7 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
                         _money(_pendingEarnings),
                         style: const TextStyle(
                           fontSize: 18,
-                          fontWeight: FontWeight.w900,
+                          fontWeight: FontWeight.w700,
                           color: _navy,
                         ),
                       ),
@@ -656,7 +772,7 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
                         _money(_availableEarnings),
                         style: const TextStyle(
                           fontSize: 18,
-                          fontWeight: FontWeight.w900,
+                          fontWeight: FontWeight.w700,
                           color: _teal,
                         ),
                       ),
@@ -682,7 +798,7 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
                         _money(_paidEarnings),
                         style: const TextStyle(
                           fontSize: 18,
-                          fontWeight: FontWeight.w900,
+                          fontWeight: FontWeight.w700,
                           color: _navy,
                         ),
                       ),
@@ -698,7 +814,7 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
           'Trip Earnings',
           style: TextStyle(
             fontSize: 18,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w600,
             color: _navy,
           ),
         ),
@@ -725,7 +841,7 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
                   ),
                   title: Text(
                     '${e['trip_code'] ?? 'Trip'} · ${_money((e['amount'] as num?)?.toDouble() ?? 0)}',
-                    style: const TextStyle(fontWeight: FontWeight.w800),
+                    style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                   subtitle: Text(
                     '${e['from'] ?? 'Origin'} → ${e['to'] ?? 'Destination'}\n${(e['status'] ?? 'pending').toString().toUpperCase()}${e['payment_reference'] != null ? ' · Ref ${e['payment_reference']}' : ''}',
@@ -748,59 +864,56 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
   Widget build(BuildContext context) {
     final pages = [
       _tripsPage(),
-      _scanPage(),
       _vehiclePage(),
+      _scanPage(),
       _tripsPage(history: true),
       _accountPage(),
     ];
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'ShopHop Linehaul',
-          style: TextStyle(fontWeight: FontWeight.w800),
-        ),
-        actions: [
-          IconButton(
-            onPressed: _busy ? null : _load,
-            icon: const Icon(Icons.refresh),
-          ),
-        ],
+      appBar: ShopHopRoleAppBar(
+        role: ShopHopRole.linehaul,
+        index: _tab,
+        refreshing: _requestFuture != null,
+        onRefresh: _busy || _scanning || _tab == 2 ? null : _load,
       ),
-      body: _busy && _trips.isEmpty
+      body: _initialLoading
           ? const Center(child: CircularProgressIndicator())
-          : pages[_tab],
+          : Column(
+              children: [
+                if (_syncError != null)
+                  MaterialBanner(
+                    content: Text(
+                      _syncError!,
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: _requestFuture != null ? null : _load,
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                Expanded(child: pages[_tab]),
+              ],
+            ),
       bottomNavigationBar: ShopHopNavigation(
+        raisedIndex: 2,
         index: _tab,
         onChanged: (i) {
-          if (_scanning && i != 1) {
+          if (_scanning && i != 2) {
             _camera.stop();
             _scanning = false;
           }
           setState(() => _tab = i);
         },
-        items: const [
-          ShopHopNavItem('Trips', Icons.route_outlined, Icons.route_rounded),
-          ShopHopNavItem(
-            'Scan',
-            Icons.qr_code_scanner_rounded,
-            Icons.qr_code_scanner_rounded,
-          ),
-          ShopHopNavItem(
-            'Vehicle',
-            Icons.local_shipping_outlined,
-            Icons.local_shipping_rounded,
-          ),
-          ShopHopNavItem(
-            'History',
-            Icons.history_outlined,
-            Icons.history_rounded,
-          ),
-          ShopHopNavItem(
-            'Account',
-            Icons.person_outline_rounded,
-            Icons.person_rounded,
-          ),
-        ],
+        items: ShopHopRole.linehaul.destinations,
+        badges: {
+          0: _trips
+              .where(
+                (trip) => !['completed', 'cancelled'].contains(trip['status']),
+              )
+              .length,
+        },
       ),
     );
   }

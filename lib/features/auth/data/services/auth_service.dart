@@ -148,7 +148,7 @@ class AuthService {
         );
       }
 
-      return _sendMultipart(request);
+      return await _sendMultipart(request);
     } catch (_) {
       return _networkError();
     }
@@ -222,7 +222,7 @@ class AuthService {
           message: 'Unable to read one of the selected Seller documents.',
         );
       }
-      return _sendMultipart(request);
+      return await _sendMultipart(request);
     } catch (_) {
       return _networkError();
     }
@@ -242,6 +242,8 @@ class AuthService {
 
   static Future<AuthApiResult> registerRider({
     required int logisticsPartnerId,
+    int? preferredBranchId,
+    List<String> preferredCoverage = const [],
     required String firstName,
     required String lastName,
     required String middleInitial,
@@ -272,6 +274,10 @@ class AuthService {
       request.headers['Accept'] = 'application/json';
       request.fields.addAll({
         'logistics_partner_id': logisticsPartnerId.toString(),
+        if (preferredBranchId != null)
+          'preferred_branch_id': preferredBranchId.toString(),
+        for (var i = 0; i < preferredCoverage.length; i++)
+          'preferred_coverage[$i]': preferredCoverage[i],
         'first_name': firstName.trim(),
         'last_name': lastName.trim(),
         'middle_initial': middleInitial.trim(),
@@ -309,7 +315,7 @@ class AuthService {
         );
       }
 
-      return _sendMultipart(request);
+      return await _sendMultipart(request);
     } catch (_) {
       return _networkError();
     }

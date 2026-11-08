@@ -460,24 +460,10 @@ class _BuyerMyLikesPageState extends State<BuyerMyLikesPage>
                 sliver: SliverLayoutBuilder(
                   builder: (context, constraints) {
                     final width = constraints.crossAxisExtent;
-                    final columns = width >= 1050
-                        ? 5
-                        : width >= 780
-                        ? 4
-                        : width >= 560
-                        ? 3
-                        : 2;
-
                     return SliverGrid(
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: columns,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                        childAspectRatio: width < 340
-                            ? 0.50
-                            : width < 430
-                            ? 0.59
-                            : 0.65,
+                      gridDelegate: BuyerProductCard.gridDelegate(
+                        context,
+                        width,
                       ),
                       delegate: SliverChildBuilderDelegate((context, index) {
                         final product = likedProducts[index];
@@ -539,7 +525,7 @@ class _FilterChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected ? const Color(0xFFE7F8F4) : const Color(0xFFF7F9FA),
+      color: selected ? AppColors.tealLight : const Color(0xFFF7F9FA),
       borderRadius: BorderRadius.circular(99),
       child: InkWell(
         onTap: onTap,

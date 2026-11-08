@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:shophop/core/theme/app_colors.dart';
+import 'package:shophop/core/theme/app_theme.dart';
 
-/// Small, presentation-only components shared by every ShopHop role.
-/// Never performs network requests or changes a form's submission behavior.
+/// Presentation-only components shared by every ShopHop role.
 class ShopHopSectionHeading extends StatelessWidget {
   const ShopHopSectionHeading({
     super.key,
@@ -17,6 +16,7 @@ class ShopHopSectionHeading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -24,23 +24,13 @@ class ShopHopSectionHeading extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.navy,
-                  letterSpacing: -.35,
-                ),
-              ),
+              Text(title, style: theme.textTheme.titleMedium),
               if (subtitle != null) ...[
                 const SizedBox(height: 4),
                 Text(
                   subtitle!,
-                  style: TextStyle(
-                    fontSize: 12,
-                    height: 1.45,
-                    color: AppColors.navy.withValues(alpha: .55),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -57,30 +47,38 @@ class ShopHopSurface extends StatelessWidget {
   const ShopHopSurface({
     super.key,
     required this.child,
-    this.padding = const EdgeInsets.all(16),
-    this.background = Colors.white,
+    this.padding = const EdgeInsets.all(AppTheme.screenPadding),
+    this.background,
   });
 
   final Widget child;
   final EdgeInsetsGeometry padding;
-  final Color background;
+  final Color? background;
 
   @override
-  Widget build(BuildContext context) => DecoratedBox(
-    decoration: BoxDecoration(
-      color: background,
-      border: Border.all(color: AppColors.grayBorder),
-      borderRadius: BorderRadius.circular(8),
-      boxShadow: [
-        BoxShadow(
-          color: AppColors.navy.withValues(alpha: .025),
-          blurRadius: 12,
-          offset: const Offset(0, 3),
-        ),
-      ],
-    ),
-    child: Padding(padding: padding, child: child),
-  );
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: background ?? colors.surface,
+        border: Border.all(color: colors.outline),
+        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+        boxShadow: [
+          BoxShadow(
+            color: colors.shadow.withValues(alpha: .025),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Material(
+        type: MaterialType.transparency,
+        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+        clipBehavior: Clip.antiAlias,
+        child: Padding(padding: padding, child: child),
+      ),
+    );
+  }
 }
 
 class ShopHopStatusPill extends StatelessWidget {
@@ -88,45 +86,47 @@ class ShopHopStatusPill extends StatelessWidget {
     super.key,
     required this.label,
     this.icon,
-    this.color = AppColors.tealDark,
-    this.background = AppColors.tealLight,
+    this.color,
+    this.background,
   });
 
   final String label;
   final IconData? icon;
-  final Color color;
-  final Color background;
+  final Color? color;
+  final Color? background;
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-    decoration: BoxDecoration(
-      color: background,
-      borderRadius: BorderRadius.circular(100),
-    ),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (icon != null) ...[
-          Icon(icon, color: color, size: 14),
-          const SizedBox(width: 5),
-        ],
-        ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 230),
-          child: Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: color,
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final foreground = color ?? theme.colorScheme.onPrimaryContainer;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: background ?? theme.colorScheme.primaryContainer,
+        borderRadius: BorderRadius.circular(AppTheme.inputRadius),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, color: foreground, size: 14),
+            const SizedBox(width: 5),
+          ],
+          Flexible(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 230),
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.labelSmall?.copyWith(color: foreground),
+              ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
+  }
 }
 
 class ShopHopEmptyState extends StatelessWidget {
@@ -146,49 +146,46 @@ class ShopHopEmptyState extends StatelessWidget {
   final VoidCallback? onAction;
 
   @override
-  Widget build(BuildContext context) => ShopHopSurface(
-    child: Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 58,
-            height: 58,
-            decoration: BoxDecoration(
-              color: AppColors.tealLight,
-              borderRadius: BorderRadius.circular(8),
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ShopHopSurface(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+              ),
+              child: Icon(icon, color: theme.colorScheme.primary, size: 28),
             ),
-            child: Icon(icon, color: AppColors.tealDark, size: 29),
-          ),
-          const SizedBox(height: 14),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: AppColors.navy,
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
+            const SizedBox(height: 14),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.titleSmall,
             ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            description,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: AppColors.navy.withValues(alpha: .55),
-              fontSize: 12,
-              height: 1.5,
+            const SizedBox(height: 6),
+            Text(
+              description,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
-          ),
-          if (actionLabel != null && onAction != null) ...[
-            const SizedBox(height: 16),
-            FilledButton(onPressed: onAction, child: Text(actionLabel!)),
+            if (actionLabel != null && onAction != null) ...[
+              const SizedBox(height: 16),
+              FilledButton(onPressed: onAction, child: Text(actionLabel!)),
+            ],
           ],
-        ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 Future<bool> showShopHopConfirmation(
@@ -200,23 +197,29 @@ Future<bool> showShopHopConfirmation(
 }) async {
   final result = await showDialog<bool>(
     context: context,
-    builder: (dialogContext) => AlertDialog(
-      title: Text(title),
-      content: Text(message),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(dialogContext).pop(false),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.of(dialogContext).pop(true),
-          style: destructive
-              ? FilledButton.styleFrom(backgroundColor: const Color(0xFFB42318))
-              : null,
-          child: Text(confirmLabel),
-        ),
-      ],
-    ),
+    builder: (dialogContext) {
+      final colors = Theme.of(dialogContext).colorScheme;
+      return AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: destructive
+                ? FilledButton.styleFrom(
+                    backgroundColor: colors.error,
+                    foregroundColor: colors.onError,
+                  )
+                : null,
+            child: Text(confirmLabel),
+          ),
+        ],
+      );
+    },
   );
   return result ?? false;
 }

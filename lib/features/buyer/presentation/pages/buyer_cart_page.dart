@@ -416,7 +416,7 @@ class _CartInfoCard extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: const Color(0xFFE9F8F5),
+              color: AppColors.tealLight,
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Icon(
@@ -522,7 +522,7 @@ class _ShopCartCard extends StatelessWidget {
                   width: 34,
                   height: 34,
                   decoration: BoxDecoration(
-                    color: Color(0xFFDCF7F1),
+                    color: AppColors.tealLight,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(
@@ -1043,14 +1043,14 @@ class _EmptyCart extends StatelessWidget {
               width: 82,
               height: 82,
               decoration: const BoxDecoration(
-                color: Color(0xFFE9F8F5),
+                color: AppColors.tealLight,
                 shape: BoxShape.circle,
               ),
               child: Image.asset(
                 'assets/images/icon_cart_shophop.png',
                 width: 39,
                 height: 39,
-                color: const Color(0xFF087968),
+                color: AppColors.tealDark,
                 filterQuality: FilterQuality.high,
               ),
             ),
@@ -1107,7 +1107,7 @@ class _CartErrorState extends StatelessWidget {
               'assets/images/icon_cart_shophop.png',
               width: 56,
               height: 56,
-              color: const Color(0xFF087968),
+              color: AppColors.tealDark,
               filterQuality: FilterQuality.high,
             ),
             const SizedBox(height: 14),

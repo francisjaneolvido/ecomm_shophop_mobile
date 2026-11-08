@@ -739,7 +739,7 @@ class _CheckoutShopCard extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF0FBF8),
+                    color: AppColors.tealLight,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: AppColors.tealDark),
                   ),
@@ -818,7 +818,7 @@ class _CheckoutShopCard extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                             decoration: BoxDecoration(
                               color: selectedLogisticsPartnerId == partner.id
-                                  ? const Color(0xFFF0FBF8)
+                                  ? AppColors.tealLight
                                   : const Color(0xFFF8FAFA),
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
@@ -1097,7 +1097,7 @@ class _PaymentOption extends StatelessWidget {
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.all(11),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFFF0FBF8) : const Color(0xFFF8FAFA),
+          color: selected ? AppColors.tealLight : const Color(0xFFF8FAFA),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: selected ? AppColors.tealDark : AppColors.grayBorder,
@@ -1353,7 +1353,7 @@ class _VoucherTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFFF0FBF8) : const Color(0xFFF9FAFB),
+          color: selected ? AppColors.tealLight : const Color(0xFFF9FAFB),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: selected ? AppColors.tealDark : AppColors.grayBorder,

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:shophop/shared/widgets/shop_hop_navigation.dart';
 
 class BuyerBottomNavigationBar extends StatelessWidget {
@@ -18,26 +18,18 @@ class BuyerBottomNavigationBar extends StatelessWidget {
     onChanged: onTap,
     badges: {3: notificationCount},
     items: const [
-      ShopHopNavItem('Home', Icons.home_outlined, Icons.home_rounded),
-      ShopHopNavItem(
-        'Likes',
-        Icons.favorite_outline_rounded,
-        Icons.favorite_rounded,
-      ),
+      ShopHopNavItem('Home', CupertinoIcons.house, CupertinoIcons.house_fill),
+      ShopHopNavItem('Likes', CupertinoIcons.heart, CupertinoIcons.heart_fill),
       ShopHopNavItem(
         'Orders',
-        Icons.receipt_long_outlined,
-        Icons.receipt_long_rounded,
+        CupertinoIcons.doc_text,
+        CupertinoIcons.doc_text_fill,
       ),
-      ShopHopNavItem(
-        'Updates',
-        Icons.notifications_none_rounded,
-        Icons.notifications_rounded,
-      ),
+      ShopHopNavItem('Updates', CupertinoIcons.bell, CupertinoIcons.bell_fill),
       ShopHopNavItem(
         'Account',
-        Icons.person_outline_rounded,
-        Icons.person_rounded,
+        CupertinoIcons.person,
+        CupertinoIcons.person_fill,
       ),
     ],
   );

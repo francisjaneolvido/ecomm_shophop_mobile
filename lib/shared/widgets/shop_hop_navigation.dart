@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shophop/core/theme/app_colors.dart';
 
-/// Identical navigation chrome for Buyer, Seller, Rider, Linehaul, and Logistics.
-/// Each role supplies its own destinations; Scan always uses the same icon.
+/// Shared navigation for Buyer, Seller, Rider, Linehaul and Logistics.
 class ShopHopNavItem {
   const ShopHopNavItem(this.label, this.icon, this.activeIcon);
   final String label;
@@ -17,97 +16,183 @@ class ShopHopNavigation extends StatelessWidget {
     required this.index,
     required this.onChanged,
     this.badges = const {},
+    this.raisedIndex,
   });
   final List<ShopHopNavItem> items;
   final int index;
   final ValueChanged<int> onChanged;
   final Map<int, int> badges;
+  final int? raisedIndex;
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: const Border(top: BorderSide(color: AppColors.grayBorder)),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.navy.withValues(alpha: 0.06),
-            blurRadius: 18,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: BottomNavigationBar(
-          currentIndex: index < 0
-              ? 0
-              : (index >= items.length ? items.length - 1 : index),
-          onTap: onChanged,
-          type: BottomNavigationBarType.fixed,
-          elevation: 0,
-          backgroundColor: Colors.white,
-          selectedItemColor: AppColors.tealDark,
-          unselectedItemColor: const Color(0xFF64748B),
-          selectedFontSize: 11,
-          unselectedFontSize: 10.5,
-          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w800),
-          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
-          items: [
-            for (var i = 0; i < items.length; i++)
-              BottomNavigationBarItem(
-                label: items[i].label,
-                icon: _IconBadge(icon: items[i].icon, count: badges[i] ?? 0),
-                activeIcon: _IconBadge(
-                  icon: items[i].activeIcon,
-                  count: badges[i] ?? 0,
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _IconBadge extends StatelessWidget {
-  const _IconBadge({required this.icon, required this.count});
-  final IconData icon;
-  final int count;
-
-  @override
-  Widget build(BuildContext context) => SizedBox(
-    width: 38,
-    height: 30,
-    child: Stack(
-      clipBehavior: Clip.none,
-      alignment: Alignment.center,
-      children: [
-        Icon(icon, size: 24),
-        if (count > 0)
+    final selected = index.clamp(0, items.length - 1);
+    final hasRaised = raisedIndex != null;
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+    // Text layout rounds line heights up; reserve the same space at every scale.
+    final labelHeight = (MediaQuery.textScalerOf(context).scale(10.5) * 1.5)
+        .ceilToDouble();
+    const scanLift = 17.0;
+    // Keep the white bar itself the same height for every role.
+    final contentHeight =
+        42 + 3 + labelHeight + 14 + (hasRaised ? scanLift : 0);
+    return SizedBox(
+      height: contentHeight + bottomInset,
+      child: Stack(
+        children: [
           Positioned(
-            top: -2,
-            right: -1,
-            child: Container(
-              constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-              padding: const EdgeInsets.symmetric(horizontal: 3),
+            top: hasRaised ? scanLift : 0,
+            left: 10,
+            right: 10,
+            bottom: bottomInset + 6,
+            child: DecoratedBox(
               decoration: BoxDecoration(
-                color: const Color(0xFFE44D57),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.white, width: 1.3),
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                count > 99 ? '99+' : '$count',
-                style: const TextStyle(
-                  fontSize: 8,
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                ),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(color: AppColors.border),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.tealDark.withValues(alpha: .10),
+                    blurRadius: 18,
+                    offset: const Offset(0, -3),
+                  ),
+                ],
               ),
             ),
           ),
-      ],
+          SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (var i = 0; i < items.length; i++)
+                    Expanded(
+                      child: Semantics(
+                        selected: selected == i,
+                        button: true,
+                        label:
+                            '${items[i].label}, tab ${i + 1} of ${items.length}',
+                        excludeSemantics: true,
+                        child: Tooltip(
+                          message: items[i].label,
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              // Selection lives on the icon/label, never on a tab backdrop.
+                              overlayColor: const WidgetStatePropertyAll(
+                                Colors.transparent,
+                              ),
+                              splashFactory: NoSplash.splashFactory,
+                              onTap: () {
+                                FocusManager.instance.primaryFocus?.unfocus();
+                                onChanged(i);
+                              },
+                              borderRadius: BorderRadius.circular(24),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  if (i == raisedIndex) ...[
+                                    AnimatedContainer(
+                                      key: const ValueKey('raised-scan-button'),
+                                      duration: const Duration(
+                                        milliseconds: 180,
+                                      ),
+                                      width: 56,
+                                      height: 56,
+                                      decoration: BoxDecoration(
+                                        color: selected == i
+                                            ? AppColors.tealDark
+                                            : AppColors.teal,
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: Colors.white,
+                                          width: 4,
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: AppColors.tealDark
+                                                .withValues(alpha: .28),
+                                            blurRadius: 14,
+                                            offset: const Offset(0, 4),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Icon(
+                                        items[i].activeIcon,
+                                        size: 27,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 3),
+                                    _roleLabel(i, selected),
+                                  ] else
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 4,
+                                      ),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          SizedBox(
+                                            height: 31,
+                                            child: Center(
+                                              child: Badge.count(
+                                                count: (badges[i] ?? 0).clamp(
+                                                  0,
+                                                  9999,
+                                                ),
+                                                maxCount: 99,
+                                                isLabelVisible:
+                                                    (badges[i] ?? 0) > 0,
+                                                child: Icon(
+                                                  selected == i
+                                                      ? items[i].activeIcon
+                                                      : items[i].icon,
+                                                  size: 23,
+                                                  color: selected == i
+                                                      ? AppColors.tealDark
+                                                      : AppColors.textMuted,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 3),
+                                          _roleLabel(i, selected),
+                                        ],
+                                      ),
+                                    ),
+                                  const SizedBox(height: 14),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _roleLabel(int itemIndex, int selected) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 3),
+    child: Text(
+      items[itemIndex].label,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(
+        fontFamily: 'Poppins',
+        fontSize: 10.5,
+        height: 1.5,
+        fontWeight: selected == itemIndex ? FontWeight.w600 : FontWeight.w400,
+        color: selected == itemIndex ? AppColors.tealDark : AppColors.textMuted,
+      ),
     ),
   );
 }
@@ -122,34 +207,40 @@ Future<bool> shopHopConfirm(
 }) async {
   final result = await showDialog<bool>(
     context: context,
-    builder: (dialogContext) => AlertDialog(
-      title: Row(
-        children: [
-          Icon(
-            destructive
-                ? Icons.warning_amber_rounded
-                : Icons.check_circle_outline_rounded,
-            color: destructive ? const Color(0xFFC83939) : AppColors.tealDark,
+    builder: (dialogContext) {
+      final colors = Theme.of(dialogContext).colorScheme;
+      return AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              destructive
+                  ? Icons.warning_amber_rounded
+                  : Icons.check_circle_outline_rounded,
+              color: destructive ? colors.error : colors.primary,
+            ),
+            const SizedBox(width: 10),
+            Expanded(child: Text(title)),
+          ],
+        ),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
           ),
-          const SizedBox(width: 10),
-          Expanded(child: Text(title)),
+          FilledButton(
+            style: destructive
+                ? FilledButton.styleFrom(
+                    backgroundColor: colors.error,
+                    foregroundColor: colors.onError,
+                  )
+                : null,
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(confirmLabel),
+          ),
         ],
-      ),
-      content: Text(message),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(dialogContext, false),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          style: destructive
-              ? FilledButton.styleFrom(backgroundColor: const Color(0xFFC83939))
-              : null,
-          onPressed: () => Navigator.pop(dialogContext, true),
-          child: Text(confirmLabel),
-        ),
-      ],
-    ),
+      );
+    },
   );
   return result == true;
 }

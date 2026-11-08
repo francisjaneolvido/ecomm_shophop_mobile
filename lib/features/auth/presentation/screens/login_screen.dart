@@ -1,3 +1,4 @@
+import 'package:shophop/features/rider/presentation/screens/rider_application_status_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -135,6 +136,7 @@ class _LoginScreenState extends State<LoginScreen> {
         _showMessage(result.message);
         return;
 
+      case 'rider_application':
       case 'approved':
         final token = result.data['token']?.toString();
 
@@ -185,7 +187,9 @@ class _LoginScreenState extends State<LoginScreen> {
             builder: (_) => accountType == 'seller'
                 ? const SellerWorkspaceScreen()
                 : accountType == 'rider'
-                ? const RiderHomeScreen()
+                ? (result.status == 'rider_application'
+                      ? const RiderApplicationStatusScreen()
+                      : const RiderHomeScreen())
                 : accountType == 'linehaul_driver'
                 ? const LinehaulDriverHomeScreen()
                 : (accountType == 'logistics' ||
