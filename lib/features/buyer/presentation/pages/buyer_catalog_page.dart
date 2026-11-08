@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:shophop/shared/realtime/foreground_refresh.dart';
 
 import 'package:flutter/material.dart';
 
@@ -32,6 +33,9 @@ class _BuyerCatalogPageState extends State<BuyerCatalogPage> {
   final ScrollController _scrollController = ScrollController();
   late final TextEditingController _searchController;
   Timer? _debounce;
+  late final ForegroundRefresh _liveRefresh;
+  int _requestId = 0;
+  bool _requestBusy = false;
 
   final List<BuyerProductData> _products = [];
   BuyerCatalogException? _error;
@@ -55,10 +59,16 @@ class _BuyerCatalogPageState extends State<BuyerCatalogPage> {
     _searchController = TextEditingController(text: widget.initialQuery);
     _scrollController.addListener(_handleScroll);
     _loadProducts(reset: true);
+    _liveRefresh = ForegroundRefresh(
+      refresh: () => _loadProducts(reset: true, silent: true),
+      canRefresh: () => mounted && !_requestBusy && !(_debounce?.isActive ?? false) &&
+          (ModalRoute.of(context)?.isCurrent ?? true),
+    );
   }
 
   @override
   void dispose() {
+    _liveRefresh.dispose();
     _debounce?.cancel();
     _searchController.dispose();
     _scrollController.dispose();
@@ -75,7 +85,9 @@ class _BuyerCatalogPageState extends State<BuyerCatalogPage> {
     }
   }
 
-  Future<void> _loadProducts({required bool reset}) async {
+  Future<void> _loadProducts({required bool reset, bool silent = false}) async {
+    final requestId = ++_requestId;
+    _requestBusy = true;
     if (reset) {
       if (_refreshing) {
         setState(() => _refreshing = false);
@@ -91,8 +103,9 @@ class _BuyerCatalogPageState extends State<BuyerCatalogPage> {
     }
 
     try {
+      final pages = silent ? (_pagination?.currentPage ?? 1) : 1;
       final nextPage = reset ? 1 : (_pagination?.currentPage ?? 0) + 1;
-      final result = await BuyerCatalogService.getProducts(
+      var result = await BuyerCatalogService.getProducts(
         token: widget.token,
         query: _searchController.text,
         category: widget.category?.slug,
@@ -101,13 +114,23 @@ class _BuyerCatalogPageState extends State<BuyerCatalogPage> {
         perPage: 20,
       );
 
-      if (!mounted) return;
+      final refreshed = [...result.items];
+      if (silent) {
+        for (var page = 2; page <= pages && result.pagination.hasMore; page++) {
+          result = await BuyerCatalogService.getProducts(
+            token: widget.token, query: _searchController.text,
+            category: widget.category?.slug, sort: _sort, page: page, perPage: 20,
+          );
+          refreshed.addAll(result.items);
+        }
+      }
+      if (!mounted || requestId != _requestId) return;
 
       setState(() {
         if (reset) {
           _products
             ..clear()
-            ..addAll(result.items);
+            ..addAll(refreshed);
         } else {
           final existing = _products.map((item) => item.id).toSet();
           _products.addAll(
@@ -121,7 +144,7 @@ class _BuyerCatalogPageState extends State<BuyerCatalogPage> {
         _refreshing = false;
       });
     } on BuyerCatalogException catch (error) {
-      if (!mounted) return;
+      if (!mounted || requestId != _requestId) return;
 
       if (error.isUnauthorized) {
         setState(() {
@@ -134,11 +157,13 @@ class _BuyerCatalogPageState extends State<BuyerCatalogPage> {
       }
 
       setState(() {
-        _error = error;
+        if (!silent) _error = error;
         _loading = false;
         _loadingMore = false;
         _refreshing = false;
       });
+    } finally {
+      if (requestId == _requestId) _requestBusy = false;
     }
   }
 
@@ -149,6 +174,7 @@ class _BuyerCatalogPageState extends State<BuyerCatalogPage> {
   }
 
   void _onSearchChanged(String _) {
+    _requestId++;
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 450), () {
       if (mounted) _loadProducts(reset: true);

@@ -431,6 +431,7 @@ class BuyerReviewData {
     required this.comment,
     required this.image,
     required this.helpful,
+    this.sellerReply = '',
   });
 
   final int id;
@@ -441,6 +442,7 @@ class BuyerReviewData {
   final String comment;
   final String image;
   final int helpful;
+  final String sellerReply;
 
   factory BuyerReviewData.fromJson(Map<String, dynamic> json) {
     return BuyerReviewData(
@@ -452,6 +454,7 @@ class BuyerReviewData {
       comment: json['comment']?.toString().trim() ?? '',
       image: _productImageUrl(json),
       helpful: _asInt(json['helpful']),
+      sellerReply: json['seller_reply']?.toString() ?? '',
     );
   }
 }

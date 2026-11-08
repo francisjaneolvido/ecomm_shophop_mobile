@@ -284,6 +284,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
     final pages = <Widget>[
       BuyerHomePage(
         key: ValueKey<String>('buyer-home-$_homeRefreshVersion'),
+        isActive: _currentIndex == 0,
         token: _token,
         onSessionExpired: _expireSession,
         onOpenSearch: _openSearch,

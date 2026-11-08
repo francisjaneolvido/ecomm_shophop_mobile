@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:shophop/shared/realtime/foreground_refresh.dart';
 
 import 'package:flutter/material.dart';
 
@@ -17,9 +18,11 @@ class BuyerHomePage extends StatefulWidget {
     required this.onOpenCart,
     required this.onOpenOrders,
     required this.onOpenMessages,
+    this.isActive = true,
   });
 
   final String token;
+  final bool isActive;
   final Future<void> Function() onSessionExpired;
   final VoidCallback onOpenSearch;
   final ValueChanged<BuyerCategoryData> onOpenCategory;
@@ -42,6 +45,7 @@ class _BuyerHomePageState extends State<BuyerHomePage>
   BuyerHomeData? _home;
   BuyerCatalogException? _error;
   Timer? _bannerTimer;
+  late final ForegroundRefresh _liveRefresh;
   int _bannerIndex = 0;
   bool _loading = true;
   bool _refreshing = false;
@@ -56,6 +60,11 @@ class _BuyerHomePageState extends State<BuyerHomePage>
     super.initState();
     _scrollController.addListener(_handleScroll);
     _loadHome();
+    _liveRefresh = ForegroundRefresh(
+      refresh: () => _loadHome(refresh: true, silent: true),
+      canRefresh: () => mounted && widget.isActive && !_loading && !_refreshing &&
+          (ModalRoute.of(context)?.isCurrent ?? true),
+    );
   }
 
   @override
@@ -68,6 +77,7 @@ class _BuyerHomePageState extends State<BuyerHomePage>
 
   @override
   void dispose() {
+    _liveRefresh.dispose();
     _bannerTimer?.cancel();
     _scrollController
       ..removeListener(_handleScroll)
@@ -84,7 +94,7 @@ class _BuyerHomePageState extends State<BuyerHomePage>
     }
   }
 
-  Future<void> _loadHome({bool refresh = false}) async {
+  Future<void> _loadHome({bool refresh = false, bool silent = false}) async {
     if (refresh) {
       if (_refreshing) return;
       setState(() => _refreshing = true);
@@ -111,13 +121,13 @@ class _BuyerHomePageState extends State<BuyerHomePage>
         _error = null;
         _loading = false;
         _refreshing = false;
-        _bannerIndex = 0;
+        if (!silent) _bannerIndex = 0;
         _likedProductIds
           ..clear()
           ..addAll(allProducts.where((p) => p.isLiked).map((p) => p.id));
       });
 
-      _startBannerRotation();
+      if (!silent) _startBannerRotation();
     } on BuyerCatalogException catch (error) {
       if (!mounted) return;
       if (error.isUnauthorized) {
@@ -129,7 +139,7 @@ class _BuyerHomePageState extends State<BuyerHomePage>
         return;
       }
       setState(() {
-        _error = error;
+        if (!silent) _error = error;
         _loading = false;
         _refreshing = false;
       });

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shophop/shared/realtime/foreground_refresh.dart';
 import 'package:shophop/shared/widgets/shop_hop_product_media.dart';
 
 import 'package:shophop/features/buyer/data/services/buyer_catalog_service.dart';
@@ -32,6 +33,9 @@ class BuyerProductDetailPage extends StatefulWidget {
 
 class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
   final PageController _galleryController = PageController();
+  late final ForegroundRefresh _liveRefresh;
+  bool _requestBusy = false;
+  int _requestId = 0;
 
   BuyerProductDetailData? _detail;
   BuyerCatalogException? _error;
@@ -46,6 +50,11 @@ class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
   void initState() {
     super.initState();
     _loadProduct();
+    _liveRefresh = ForegroundRefresh(
+      refresh: () => _loadProduct(silent: true),
+      canRefresh: () => mounted && !_requestBusy && !_cartBusy &&
+          (ModalRoute.of(context)?.isCurrent ?? true),
+    );
   }
 
   @override
@@ -62,13 +71,16 @@ class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
 
   @override
   void dispose() {
+    _liveRefresh.dispose();
     _galleryController.dispose();
     super.dispose();
   }
 
-  Future<void> _loadProduct() async {
+  Future<void> _loadProduct({bool silent = false}) async {
+    final requestId = ++_requestId;
+    _requestBusy = true;
     setState(() {
-      _loading = true;
+      if (!silent) _loading = true;
       _error = null;
     });
 
@@ -78,16 +90,22 @@ class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
         productId: widget.productId,
       );
 
-      if (!mounted) return;
+      if (!mounted || requestId != _requestId) return;
 
       final availableVariants = detail.variants.where((item) => item.inStock);
       setState(() {
         _detail = detail;
-        _selectedVariant = availableVariants.isNotEmpty
-            ? availableVariants.first
-            : null;
-        _quantity = 1;
-        _galleryIndex = 0;
+        final previousId = _selectedVariant?.id;
+        final previous = availableVariants.where((v) => v.id == previousId);
+        _selectedVariant = silent && previous.isNotEmpty ? previous.first
+            : (availableVariants.isNotEmpty ? availableVariants.first : null);
+        if (!silent) {
+          _quantity = 1;
+          _galleryIndex = 0;
+        } else {
+          final stock = _selectedVariant?.stock ?? detail.product.stock;
+          _quantity = _quantity.clamp(1, stock > 0 ? stock : 1);
+        }
         _error = null;
         _loading = false;
         _likedProductIds
@@ -100,16 +118,19 @@ class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
           ]);
       });
     } on BuyerCatalogException catch (error) {
-      if (!mounted) return;
+      if (!mounted || requestId != _requestId) return;
       if (error.isUnauthorized) {
         setState(() => _loading = false);
         await widget.onSessionExpired();
         return;
       }
       setState(() {
-        _error = error;
+        if (!silent || error.statusCode == 404) _error = error;
         _loading = false;
       });
+    }
+    finally {
+      if (requestId == _requestId) _requestBusy = false;
     }
   }
 
@@ -1267,6 +1288,11 @@ class _ReviewCard extends StatelessWidget {
                 height: 1.4,
               ),
             ),
+          ],
+          if (review.sellerReply.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text('Seller reply: ${review.sellerReply}',
+              style: const TextStyle(color: AppColors.tealDark, fontSize: 11.5)),
           ],
           if (review.image.isNotEmpty) ...[
             const SizedBox(height: 8),
