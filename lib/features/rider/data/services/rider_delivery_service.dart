@@ -44,6 +44,34 @@ class RiderDeliveryService {
     }
   }
 
+  static Future<AuthApiResult> submitCodBatch({
+    required String token,
+    required int facilityId,
+    required String idempotencyKey,
+    required String reference,
+    required List<Map<String, dynamic>> items,
+  }) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('${ApiConfig.baseUrl}/rider/cod/batches'),
+            headers: {..._headers(token), 'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'sorting_center_id': facilityId,
+              'idempotency_key': idempotencyKey,
+              'reference': reference,
+              'items': items,
+            }),
+          )
+          .timeout(_requestTimeout);
+      return AuthApiResult.fromResponse(response);
+    } on TimeoutException {
+      return _timeoutError();
+    } catch (_) {
+      return _networkError();
+    }
+  }
+
   static Future<AuthApiResult> remitCod({
     required String token,
     required int deliveryId,

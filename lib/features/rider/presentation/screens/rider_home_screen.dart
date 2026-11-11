@@ -934,7 +934,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
                 ),
               ),
               icon: const Icon(Icons.route_outlined),
-              label: const Text('View batch history'),
+              label: const Text('View route history'),
             ),
           // Reuse the existing history renderer without duplicating its records.
           _historyInline(),
@@ -1051,7 +1051,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
         const Padding(
           padding: EdgeInsets.symmetric(vertical: 8),
           child: Text(
-            'No assigned batches. New Branch routes appear here.',
+            'No assigned routes. New branch assignments appear here.',
             style: TextStyle(fontSize: 12, color: AppColors.textMuted),
           ),
         ),

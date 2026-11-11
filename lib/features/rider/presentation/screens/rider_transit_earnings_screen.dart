@@ -57,7 +57,14 @@ class _RiderTransitEarningsScreenState
         _pending = _amount(response.data['pending']);
         _available = _amount(response.data['available']);
         _paid = _amount(response.data['paid']);
+        final partner = response.data['partner_compensation'];
         _entries = _rows(response.data['entries']);
+        if (partner is Map) {
+          _pending += _amount(partner['pending']);
+          _available += _amount(partner['available']);
+          _paid += _amount(partner['paid']);
+          _entries.addAll(_rows(partner['entries']));
+        }
       }
     });
   }
@@ -79,7 +86,7 @@ class _RiderTransitEarningsScreenState
         padding: const EdgeInsets.all(16),
         children: [
           const Text(
-            'Pickup & Delivery Earnings',
+            'Partner Compensation',
             style: TextStyle(
               color: _navy,
               fontSize: 22,
@@ -88,7 +95,7 @@ class _RiderTransitEarningsScreenState
           ),
           const SizedBox(height: 4),
           const Text(
-            'Branch/Hub transport is now handled by Linehaul Drivers and fleet vehicles, not Rider accounts.',
+            'Your Logistics Partner configures and pays your compensation. Earnings never reduce collected COD and do not depend on the Seller settlement hold.',
             style: TextStyle(color: Color(0xFF65748A)),
           ),
           const SizedBox(height: 16),
@@ -128,6 +135,7 @@ class _RiderTransitEarningsScreenState
                 title: Text('Order #${entry['order_id'] ?? '—'}'),
                 subtitle: Text(
                   '${(entry['kind'] ?? '').toString().replaceAll('_', ' ')}'
+                  '${entry['compensation_type'] != null ? '\n${entry['compensation_type']} ? ${entry['schedule'] ?? ''}' : ''}'
                   '${entry['payment_reference'] != null
                       ? '\nPaid ref: ${entry['payment_reference']}'
                       : entry['distribution_reference'] != null

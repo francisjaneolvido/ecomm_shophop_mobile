@@ -82,7 +82,7 @@ void main() {
       await http.runWithClient(
         () async {
           await mount(tester, const RiderHomeScreen());
-          expect(find.text('Pickup batch'), findsOneWidget);
+          expect(find.text('Pickup route'), findsOneWidget);
           expect(find.text('Seller Pickup'), findsNothing);
           await tester.tap(
             find.descendant(
@@ -91,7 +91,7 @@ void main() {
             ),
           );
           await tester.pumpAndSettle();
-          expect(find.text('Pickup batch'), findsOneWidget);
+          expect(find.text('Pickup route'), findsOneWidget);
           expect(find.text('Seller Pickup'), findsNothing);
           expect(tester.takeException(), isNull);
           await tester.pumpWidget(const SizedBox.shrink());
@@ -186,7 +186,7 @@ void main() {
           await tester.pumpAndSettle();
           expect(failed, isTrue);
           expect(
-            find.text('1/2 parcels resolved \u2022 2 stops'),
+            find.text('0/2 collected \u2022 0/2 received at branch'),
             findsOneWidget,
           );
           expect(find.text('Pickup Failed'), findsOneWidget);
@@ -296,4 +296,75 @@ void main() {
       ),
     );
   });
+  testWidgets(
+    'collected pickup directs the rider to branch receipt without another pickup scan',
+    (tester) async {
+      final route = batch();
+      route['items'] = [
+        {
+          ...((route['items'] as List).first as Map<String, dynamic>),
+          'status': 'picked_up',
+          'settled': false,
+        },
+      ];
+      route['progress'] = {'settled': 0, 'total': 1};
+      await http.runWithClient(() async {
+        await mount(
+          tester,
+          RiderBatchDetailScreen(token: 'test', initial: route),
+        );
+        expect(find.text('Return to branch'), findsOneWidget);
+        expect(
+          find.text('1/1 collected \u2022 0/1 received at branch'),
+          findsOneWidget,
+        );
+        expect(
+          find.textContaining('Bring collected parcels to Calamba Branch'),
+          findsWidgets,
+        );
+        expect(
+          find.text('Collected - awaiting branch receipt'),
+          findsOneWidget,
+        );
+        expect(find.text('Scan parcel QR'), findsNothing);
+        expect(find.text('Parcel actions'), findsNothing);
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox.shrink());
+      }, () => MockClient((_) async => ok({'batch': route})));
+    },
+  );
+
+  testWidgets(
+    'branch receipt completes pickup progress and removes return instructions',
+    (tester) async {
+      final route = batch();
+      route['items'] = [
+        {
+          ...((route['items'] as List).first as Map<String, dynamic>),
+          'status': 'received_at_branch',
+          'settled': true,
+        },
+      ];
+      route['progress'] = {'settled': 1, 'total': 1};
+      await http.runWithClient(() async {
+        await mount(
+          tester,
+          RiderBatchDetailScreen(token: 'test', initial: route),
+        );
+        expect(
+          find.text('1/1 collected \u2022 1/1 received at branch'),
+          findsOneWidget,
+        );
+        expect(find.text('Return to branch'), findsNothing);
+        expect(find.textContaining('Bring collected parcels to'), findsNothing);
+        expect(
+          find.text('All outcomes resolved. Branch can complete this route.'),
+          findsOneWidget,
+        );
+        expect(find.text('Scan parcel QR'), findsNothing);
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox.shrink());
+      }, () => MockClient((_) async => ok({'batch': route})));
+    },
+  );
 }

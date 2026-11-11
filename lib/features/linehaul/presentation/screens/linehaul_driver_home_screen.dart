@@ -147,6 +147,13 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
         _pendingEarnings = (e.data['pending'] as num?)?.toDouble() ?? 0;
         _availableEarnings = (e.data['available'] as num?)?.toDouble() ?? 0;
         _paidEarnings = (e.data['paid'] as num?)?.toDouble() ?? 0;
+        final partner = e.data['partner_compensation'];
+        if (partner is Map) {
+          _pendingEarnings += double.tryParse('${partner['pending']}') ?? 0;
+          _availableEarnings += double.tryParse('${partner['available']}') ?? 0;
+          _paidEarnings += double.tryParse('${partner['paid']}') ?? 0;
+          _earnings.addAll(_rows(partner['entries']));
+        }
       }
       _syncError = r.success ? (e.success ? null : e.message) : r.message;
     });
@@ -834,13 +841,14 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
                   leading: Icon(
                     e['status'] == 'paid'
                         ? Icons.check_circle_outline
-                        : e['status'] == 'available'
+                        : (e['status'] == 'available' ||
+                              e['status'] == 'approved')
                         ? Icons.account_balance_wallet_outlined
                         : Icons.schedule,
                     color: _teal,
                   ),
                   title: Text(
-                    '${e['trip_code'] ?? 'Trip'} · ${_money((e['amount'] as num?)?.toDouble() ?? 0)}',
+                    '${e['event_key'] ?? e['trip_code'] ?? 'Trip'} · ${_money(double.tryParse('${e['amount']}') ?? 0)}',
                     style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                   subtitle: Text(

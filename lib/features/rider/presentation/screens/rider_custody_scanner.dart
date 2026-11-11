@@ -199,7 +199,9 @@ class _RiderCustodyScannerState extends State<RiderCustodyScanner> {
       _handoff = response.success ? null : handoff;
       _needsRecheck = !response.success;
       _success = response.success;
-      _message = response.message;
+      _message = response.success && action == 'seller_pickup'
+          ? 'Pickup recorded. Bring this parcel to ${handoff['center'] ?? 'your assigned branch'}. Branch staff must scan it to confirm receipt.'
+          : response.message;
     });
 
     ShopHopScanFeedback.instance.notify(

@@ -19,6 +19,23 @@ String batchWindow(BuildContext context, Map<String, dynamic> batch) {
   return '${local.formatShortDate(start)}, ${local.formatTimeOfDay(TimeOfDay.fromDateTime(start))} - ${local.formatTimeOfDay(TimeOfDay.fromDateTime(end))}';
 }
 
+bool pickupAwaitingBranch(Map<String, dynamic> route) =>
+    route['type'] == 'pickup' &&
+    batchRows(route['items']).any((item) => item['status'] == 'picked_up');
+
+bool pickupCollectionPending(Map<String, dynamic> route) =>
+    batchRows(route['items']).any(
+      (item) => ['pickup_assigned', 'pickup_accepted'].contains(item['status']),
+    );
+
+String pickupBranchInstruction(Map<String, dynamic> route) {
+  final branch = route['branch']?.toString().trim();
+  final destination = branch == null || branch.isEmpty
+      ? 'your assigned branch'
+      : branch;
+  return 'Bring collected parcels to $destination. Branch staff must scan each parcel to confirm receipt. Do not scan them again as a pickup.';
+}
+
 class RiderBatchCard extends StatelessWidget {
   const RiderBatchCard({super.key, required this.batch, required this.onTap});
   final Map<String, dynamic> batch;
@@ -26,6 +43,24 @@ class RiderBatchCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final active = batch['status'] == 'in_progress';
+    final pickup = batch['type'] == 'pickup';
+    final items = batchRows(batch['items']);
+    final received = items
+        .where((item) => item['status'] == 'received_at_branch')
+        .length;
+    final collected = items
+        .where(
+          (item) =>
+              ['picked_up', 'received_at_branch'].contains(item['status']),
+        )
+        .length;
+    final failed = items
+        .where((item) => item['status'] == 'pickup_failed')
+        .length;
+    final returning =
+        active &&
+        pickupAwaitingBranch(batch) &&
+        !pickupCollectionPending(batch);
     final progress = batch['progress'] is Map
         ? batch['progress'] as Map
         : const {};
@@ -59,7 +94,9 @@ class RiderBatchCard extends StatelessWidget {
                   const SizedBox(width: 9),
                   Expanded(
                     child: Text(
-                      '${batchLabel(batch['type'])} batch',
+                      returning
+                          ? 'Return to branch'
+                          : '${batchLabel(batch['type'])} route',
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -96,7 +133,9 @@ class RiderBatchCard extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                '$done/$total parcels resolved \u2022 ${totals['stops'] ?? 0} stops',
+                pickup
+                    ? '$collected/$total collected \u2022 $received/$total received at branch'
+                    : '$done/$total deliveries resolved \u2022 ${totals['stops'] ?? 0} stops',
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
@@ -104,12 +143,44 @@ class RiderBatchCard extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               LinearProgressIndicator(
-                value: total == 0 ? 0 : (done / total).clamp(0, 1),
+                value: total == 0
+                    ? 0
+                    : (pickup
+                              ? (collected + received + failed * 2) /
+                                    (total * 2)
+                              : done / total)
+                          .clamp(0, 1),
                 minHeight: 4,
                 color: AppColors.tealDark,
                 backgroundColor: AppColors.tealLight,
                 borderRadius: BorderRadius.circular(4),
               ),
+              if (pickup && failed > 0) ...[
+                const SizedBox(height: 6),
+                Text(
+                  '$failed could not be collected',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+              ],
+              if (active && pickupAwaitingBranch(batch)) ...[
+                const SizedBox(height: 10),
+                Text(
+                  pickupBranchInstruction(batch),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.tealDark,
+                  ),
+                ),
+                if (pickupCollectionPending(batch))
+                  const Text(
+                    'Other seller pickups are still pending on this route.',
+                    style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+                  ),
+              ],
               if (active && done == total && total > 0) ...[
                 const SizedBox(height: 8),
                 const Text(
@@ -269,7 +340,7 @@ class _RiderBatchDetailScreenState extends State<RiderBatchDetailScreen> {
         foregroundColor: Colors.white,
         actions: [
           IconButton(
-            tooltip: 'Refresh batch',
+            tooltip: 'Refresh route',
             onPressed: _loading || _mutating ? null : _load,
             icon: const Icon(Icons.refresh),
           ),
@@ -297,7 +368,9 @@ class _RiderBatchDetailScreenState extends State<RiderBatchDetailScreen> {
                 _batch['status'] == 'queued'
                     ? 'Waiting for Branch dispatch. Parcels cannot be collected before this route is activated.'
                     : _active
-                    ? 'Follow the planned stops. Scan each parcel individually; the Branch confirms returned parcels and closes the batch.'
+                    ? _batch['type'] == 'pickup'
+                          ? 'Scan at the seller to collect each parcel. Then bring it to your assigned branch, where branch staff scan it as received.'
+                          : 'Collect parcels from the branch, deliver to each buyer, and record the delivery outcome.'
                     : 'This route is closed. Individual parcel outcomes are preserved.',
                 style: const TextStyle(
                   fontSize: 12,
@@ -314,7 +387,9 @@ class _RiderBatchDetailScreenState extends State<RiderBatchDetailScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: _active
+      bottomNavigationBar:
+          _active &&
+              (_batch['type'] != 'pickup' || pickupCollectionPending(_batch))
           ? SafeArea(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(12, 6, 12, 10),
@@ -400,7 +475,9 @@ class _RiderBatchDetailScreenState extends State<RiderBatchDetailScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                batchLabel(item['status']),
+                item['status'] == 'picked_up' && _batch['type'] == 'pickup'
+                    ? 'Collected - awaiting branch receipt'
+                    : batchLabel(item['status']),
                 style: TextStyle(
                   fontSize: 11,
                   color: item['settled'] == true
@@ -414,6 +491,19 @@ class _RiderBatchDetailScreenState extends State<RiderBatchDetailScreen> {
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
+                  ),
+                ),
+              if (_active &&
+                  _batch['type'] == 'pickup' &&
+                  item['status'] == 'picked_up')
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    pickupBranchInstruction(_batch),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.tealDark,
+                    ),
                   ),
                 ),
               if (item['requires_branch_return'] == true)
@@ -432,7 +522,10 @@ class _RiderBatchDetailScreenState extends State<RiderBatchDetailScreen> {
                     color: AppColors.textMuted,
                   ),
                 ),
-              if (_active && item['settled'] != true)
+              if (_active &&
+                  item['settled'] != true &&
+                  !(_batch['type'] == 'pickup' &&
+                      item['status'] == 'picked_up'))
                 Wrap(
                   spacing: 8,
                   children: [
@@ -509,7 +602,7 @@ class _RiderBatchHistoryScreenState extends State<RiderBatchHistoryScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: const Text('Batch history'),
+      title: const Text('Route history'),
       backgroundColor: AppColors.tealDark,
       foregroundColor: Colors.white,
     ),
@@ -522,7 +615,7 @@ class _RiderBatchHistoryScreenState extends State<RiderBatchHistoryScreen> {
           if (_loading) const LinearProgressIndicator(),
           if (_error != null)
             Text(_error!, style: const TextStyle(color: AppColors.error)),
-          if (!_loading && _items.isEmpty) const Text('No closed batches yet.'),
+          if (!_loading && _items.isEmpty) const Text('No closed routes yet.'),
           for (final batch in _items)
             RiderBatchCard(
               batch: batch,
@@ -544,7 +637,7 @@ class _RiderBatchHistoryScreenState extends State<RiderBatchHistoryScreen> {
                       _pages++;
                       _load();
                     },
-              child: const Text('Load more batches'),
+              child: const Text('Load more routes'),
             ),
         ],
       ),
