@@ -7,6 +7,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shophop/core/session/auth_session_service.dart';
+import 'package:shophop/features/rider/data/models/rider_earnings_overview.dart';
+import 'package:shophop/features/rider/presentation/screens/rider_home_screen.dart';
+import 'package:shophop/shared/widgets/shop_hop_navigation.dart';
 import 'package:shophop/features/rider/data/models/rider_cod_overview.dart';
 import 'package:shophop/features/rider/data/services/rider_delivery_service.dart';
 import 'package:shophop/features/rider/presentation/screens/rider_cod_remittance_screen.dart';
@@ -31,6 +34,303 @@ void main() {
   });
 
   tearDown(() async => AuthSessionService.clearSession());
+
+  test('cash review remains open after a balanced supplemental receipt', () {
+    expect(
+      RiderCodOverview.receiptStatus({
+        'status': 'reconciled',
+        'receipt_verified': true,
+        'discrepancy_case': {
+          'reference': 'CASE-50',
+          'status': 'pending_approval',
+        },
+      }),
+      'Under review',
+    );
+    expect(
+      RiderCodOverview.receiptStatus({
+        'status': 'reconciled',
+        'receipt_verified': true,
+        'discrepancy_case': {'reference': 'CASE-50', 'status': 'resolved'},
+      }),
+      'Receipt verified',
+    );
+    expect(
+      RiderCodOverview.batchReviewDescription({
+        'discrepancy_cases': [
+          {'status': 'resolved'},
+          {'status': 'open'},
+        ],
+      }),
+      contains('Under review'),
+    );
+    expect(
+      RiderCodOverview.batchReviewDescription({
+        'discrepancy_cases': [
+          {'status': 'resolved'},
+        ],
+      }),
+      contains('Original cash counts remain in history'),
+    );
+  });
+
+  testWidgets('Rider sees case review progress without finance approval actions', (
+    tester,
+  ) async {
+    final stages = {
+      'open': 'Awaiting Logistics investigation.',
+      'pending_approval': 'Awaiting ShopHop Admin review.',
+      'approved': 'Logistics must confirm the actual cash return.',
+      'resolved': 'Resolved after authorized review.',
+    };
+    for (final stage in stages.entries) {
+      await http.runWithClient(
+        () async {
+          await tester.pumpWidget(
+            const MaterialApp(home: RiderCodRemittanceScreen()),
+          );
+          await tester.pumpAndSettle();
+          expect(find.textContaining('CASE-1100'), findsOneWidget);
+          expect(find.textContaining(stage.value), findsOneWidget);
+          expect(find.text('Approve resolution'), findsNothing);
+          expect(find.text('Record actual return'), findsNothing);
+          if (stage.key == 'resolved') {
+            await tester.scrollUntilVisible(
+              find.text(
+                'Original discrepancy resolved. Original cash counts remain in history.',
+              ),
+              200,
+            );
+            expect(
+              find.text(
+                'Original discrepancy resolved. Original cash counts remain in history.',
+              ),
+              findsOneWidget,
+            );
+          }
+          expect(tester.takeException(), isNull);
+          await tester.pumpWidget(const SizedBox.shrink());
+        },
+        () => MockClient(
+          (_) async => response({
+            'summary': {
+              'collected': '1100.00',
+              'remitted': '1100.00',
+              'outstanding': '0.00',
+              'discrepancies': stage.key == 'resolved' ? 0 : 1,
+            },
+            'collections': [
+              {
+                'collection_id': 1,
+                'order_id': 12,
+                'amount': '1100.00',
+                'received_amount': '1100.00',
+                'outstanding': '0.00',
+                'status': 'reconciled',
+                'receipt_verified': true,
+                'can_remit': false,
+                'discrepancy_case': {
+                  'reference': 'CASE-1100',
+                  'status': stage.key,
+                },
+              },
+            ],
+            'batches': [
+              {
+                'reference': 'ORIGINAL-COUNT',
+                'status': 'discrepancy',
+                'sorting_center_id': 3,
+                'expected_minor': 110000,
+                'submitted_minor': 112000,
+                'verified_minor': 112000,
+                'difference_minor': 2000,
+                'receipt_reference': 'COUNT-1120',
+                'created_at': '2026-11-12',
+                'discrepancy_cases': [
+                  {'reference': 'CASE-1100', 'status': stage.key},
+                ],
+              },
+            ],
+          }),
+        ),
+      );
+    }
+  });
+
+  test(
+    'earnings include historical fees and partner payroll in every total',
+    () {
+      final summary = RiderEarningsOverview.fromJson({
+        'pending': 10,
+        'available': '20.00',
+        'paid': 30,
+        'entries': [
+          {'kind': 'pickup_rider', 'amount': '10.00'},
+        ],
+        'partner_compensation': {
+          'pending': '25.00',
+          'available': '50.00',
+          'paid': '100.00',
+          'entries': [
+            {'kind': 'delivery:12', 'amount': '25.00'},
+          ],
+        },
+      });
+      expect(summary.pending, 35);
+      expect(summary.available, 70);
+      expect(summary.paid, 130);
+      expect(summary.entries, hasLength(2));
+      expect(RiderEarningsOverview.fromJson({}).entries, isEmpty);
+    },
+  );
+
+  testWidgets('Home wallet includes partner earnings without reducing COD', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(420, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await http.runWithClient(
+      () async {
+        await tester.pumpWidget(const MaterialApp(home: RiderHomeScreen()));
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.descendant(
+            of: find.byType(ShopHopNavigation),
+            matching: find.text('Wallet'),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.textContaining('1100.00'), findsWidgets);
+        expect(find.text('COD awaiting verified receipt'), findsOneWidget);
+        expect(find.textContaining('Awaiting verification'), findsOneWidget);
+        await tester.tap(find.text('My earnings'));
+        await tester.pumpAndSettle();
+        expect(find.text('₱25.00'), findsWidgets);
+        expect(find.text('₱50.00'), findsWidgets);
+        expect(find.text('₱100.00'), findsWidgets);
+        expect(find.textContaining('Order #12'), findsOneWidget);
+        expect(
+          find.textContaining('Earnings never reduce collected COD'),
+          findsOneWidget,
+        );
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox.shrink());
+      },
+      () => MockClient((request) async {
+        if (request.url.path.endsWith('/me')) {
+          return http.Response(
+            jsonEncode({
+              'success': true,
+              'status': 'approved',
+              'data': {
+                'name': 'Finance Rider',
+                'sorting_center_name': 'Receiving branch',
+              },
+            }),
+            200,
+          );
+        }
+        if (request.url.path.endsWith('/rider/earnings')) {
+          return response({
+            'entries': [],
+            'partner_compensation': {
+              'pending': '25.00',
+              'available': '50.00',
+              'paid': '100.00',
+              'entries': [
+                {
+                  'kind': 'delivery:12',
+                  'order_id': 12,
+                  'amount': '25.00',
+                  'status': 'pending',
+                },
+              ],
+            },
+          });
+        }
+        if (request.url.path.endsWith('/rider/cod')) {
+          return response({
+            'summary': {
+              'collected': '1100.00',
+              'remitted': '0.00',
+              'outstanding': '1100.00',
+            },
+            'collections': [
+              {
+                'collection_id': 1,
+                'order_id': 12,
+                'amount': '1100.00',
+                'outstanding': '1100.00',
+                'received_amount': '0.00',
+                'status': 'remitted',
+                'can_remit': false,
+                'platform_receipt_status': 'not_ready',
+              },
+            ],
+          });
+        }
+        return response({});
+      }),
+    );
+  });
+
+  testWidgets(
+    'ShopHop remittance awaits Admin receipt and keeps rider handover verified',
+    (tester) async {
+      for (final status in [
+        'with_logistics',
+        'awaiting_confirmation',
+        'confirmed',
+        'under_review',
+      ]) {
+        final cash = {
+          'order_id': 12,
+          'amount': '1100.00',
+          'received_amount': '1100.00',
+          'outstanding': '0.00',
+          'status': status == 'under_review' ? 'discrepancy' : 'reconciled',
+          'receipt_verified': true,
+          'can_remit': false,
+          'platform_receipt_status': status,
+        };
+        await http.runWithClient(
+          () async {
+            await tester.pumpWidget(
+              const MaterialApp(home: RiderCodRemittanceScreen()),
+            );
+            await tester.pumpAndSettle();
+            expect(
+              find.textContaining(
+                RiderCodOverview.platformReceiptDescription(cash),
+              ),
+              findsOneWidget,
+            );
+            expect(
+              find.textContaining(
+                status == 'under_review' ? 'Under review' : 'Receipt verified',
+              ),
+              findsOneWidget,
+            );
+            if (status == 'awaiting_confirmation') {
+              expect(
+                find.textContaining('Admin must confirm actual receipt'),
+                findsOneWidget,
+              );
+              expect(find.textContaining('Receipt confirmed.'), findsNothing);
+            }
+            await tester.pumpWidget(const SizedBox.shrink());
+          },
+          () => MockClient(
+            (_) async => response({
+              'collections': [cash],
+            }),
+          ),
+        );
+      }
+    },
+  );
 
   test('COD overview preserves server amounts and signed centavo history', () {
     final overview = RiderCodOverview.fromJson({

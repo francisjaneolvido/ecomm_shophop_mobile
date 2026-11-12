@@ -744,7 +744,7 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
                   ],
                   const SizedBox(height: 10),
                   Text(
-                    'Your selected company will review your application after email verification. Branch assignment is determined during approval.',
+                    'Choose your preferred Branch and barangays. After email verification, Main Hub reviews your application. Your assigned Branch confirms official coverage and activates you.',
                     style: TextStyle(
                       color: AppColors.navy.withValues(alpha: .48),
                       fontSize: 10,

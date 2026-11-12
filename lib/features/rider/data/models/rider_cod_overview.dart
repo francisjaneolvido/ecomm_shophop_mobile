@@ -42,12 +42,57 @@ class RiderCodOverview {
       : [];
 
   static String receiptStatus(Map<String, dynamic> cash) {
+    final review = cash['discrepancy_case'];
+    if (review is Map && review['status'] != 'resolved') return 'Under review';
     if (cash['status'] == 'discrepancy') return 'Under review';
     if (cash['receipt_verified'] == true || cash['status'] == 'reconciled') {
       return 'Receipt verified';
     }
     if (cash['status'] == 'remitted') return 'Awaiting verification';
     return 'With rider';
+  }
+
+  static String? caseDescription(Map<String, dynamic> cash) {
+    final review = cash['discrepancy_case'];
+    if (review is! Map) return null;
+    final message = switch (review['status']) {
+      'open' => 'Awaiting Logistics investigation.',
+      'pending_approval' => 'Awaiting ShopHop Admin review.',
+      'approved' =>
+        'Excess return approved; Logistics must confirm the actual cash return.',
+      'resolved' => 'Resolved after authorized review.',
+      _ => 'Review in progress.',
+    };
+    return 'Case ${review['reference'] ?? ''}: $message';
+  }
+
+  static String batchReviewDescription(Map<String, dynamic> batch) {
+    final cases = rows(batch['discrepancy_cases']);
+    if (cases.isEmpty) {
+      return 'Original cash difference recorded. Contact Logistics for review status.';
+    }
+    if (cases.isNotEmpty &&
+        cases.every((review) => review['status'] == 'resolved')) {
+      return 'Original discrepancy resolved. Original cash counts remain in history.';
+    }
+    return 'Under review. Shortages remain owed; overages require investigation.';
+  }
+
+  static String platformReceiptDescription(Map<String, dynamic> cash) {
+    switch (cash['platform_receipt_status']) {
+      case 'under_review':
+        return 'ShopHop: Cash discrepancy under review; settlement blocked.';
+      case 'not_ready':
+        return 'ShopHop: Awaiting verified branch cash receipt.';
+      case 'with_logistics':
+        return 'ShopHop: Logistics must remit the verified cash.';
+      case 'awaiting_confirmation':
+        return 'ShopHop: Remittance recorded; Admin must confirm actual receipt.';
+      case 'confirmed':
+        return 'ShopHop: Receipt confirmed. Seller and Logistics settlement is a separate approval.';
+      default:
+        return 'ShopHop receipt status unavailable.';
+    }
   }
 
   static String receiverDescription(Map<String, dynamic> cash) {

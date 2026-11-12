@@ -240,7 +240,6 @@ class _BuyerHomePageState extends State<BuyerHomePage>
                   onPressed: widget.onOpenCart,
                   icon: Badge.count(
                     count: home.cartCount < 0 ? 0 : home.cartCount,
-                    maxCount: 99,
                     isLabelVisible: home.cartCount > 0,
                     child: const Icon(CupertinoIcons.cart),
                   ),

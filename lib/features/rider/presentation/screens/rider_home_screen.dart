@@ -2,6 +2,7 @@ import 'package:shophop/features/rider/presentation/widgets/rider_delivery_compl
 import 'package:shophop/features/rider/presentation/screens/rider_application_status_screen.dart';
 import 'package:shophop/features/rider/presentation/screens/rider_cod_remittance_screen.dart';
 import 'package:shophop/features/rider/data/models/rider_cod_overview.dart';
+import 'package:shophop/features/rider/data/models/rider_earnings_overview.dart';
 import 'package:shophop/features/rider/data/services/rider_batch_service.dart';
 import 'package:shophop/features/rider/presentation/screens/rider_batch_detail_screen.dart';
 import 'package:shophop/shared/widgets/shop_hop_role_layout.dart';
@@ -85,6 +86,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
   String _taskFilter = 'all';
   bool _tasksCompleted = false;
   bool _walletCod = true;
+  RiderCodOverview _codOverview = RiderCodOverview.fromJson({});
   String? _error;
   String? _token;
   String _name = 'Rider';
@@ -312,17 +314,19 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
             ..addAll(_rows(returnResult.data['returns']));
         }
         if (codResult.success) {
+          _codOverview = RiderCodOverview.fromJson(codResult.data);
           _codCollections
             ..clear()
             ..addAll(_rows(codResult.data['collections']));
         }
         if (earningsResult.success) {
+          final overview = RiderEarningsOverview.fromJson(earningsResult.data);
           _earnings
             ..clear()
-            ..addAll(_rows(earningsResult.data['entries']));
-          _pendingEarnings = _number(earningsResult.data['pending']);
-          _availableEarnings = _number(earningsResult.data['available']);
-          _paidEarnings = _number(earningsResult.data['paid']);
+            ..addAll(overview.entries);
+          _pendingEarnings = overview.pending;
+          _availableEarnings = overview.available;
+          _paidEarnings = overview.paid;
         }
         _error = syncErrors.isEmpty
             ? null
@@ -591,8 +595,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
   List<Map<String, dynamic>> get _codToRemit =>
       _codCollections.where((cash) => cash['can_remit'] == true).toList();
 
-  double get _codCashOnHand =>
-      _codToRemit.fold<double>(0, (sum, cash) => sum + _number(cash['amount']));
+  double get _codOutstanding => _number(_codOverview.outstanding);
 
   List<_RiderTask> get _todayTasks {
     final tasks = <_RiderTask>[];
@@ -1236,7 +1239,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '₱${_codCashOnHand.toStringAsFixed(2)} COD cash to hand over',
+                    '₱${_codOutstanding.toStringAsFixed(2)} COD awaiting verified receipt',
                     style: const TextStyle(
                       color: AppColors.navy,
                       fontSize: 13,
@@ -1630,7 +1633,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
                     const SizedBox(width: 11),
                     const Expanded(
                       child: Text(
-                        'COD cash to hand over',
+                        'COD awaiting verified receipt',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 13,
@@ -1642,7 +1645,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  '₱${_codCashOnHand.toStringAsFixed(2)}',
+                  '₱${_codOutstanding.toStringAsFixed(2)}',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 30,
@@ -1651,7 +1654,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${_codToRemit.length} collection${_codToRemit.length == 1 ? '' : 's'} currently in your custody',
+                  'Cash handover remains outstanding until the branch verifies receipt.',
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.68),
                     fontSize: 11,
@@ -1659,7 +1662,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Buyer → Rider → Logistics → ShopHop Admin',
+                  'Buyer → Rider → Branch → Logistics → ShopHop',
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.78),
                     fontSize: 10.5,
@@ -1687,7 +1690,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
         ] else ...[
           _sectionHeader(
             title: 'My earnings',
-            subtitle: 'Pickup and delivery fees recorded by Logistics.',
+            subtitle: 'Compensation recorded and paid by your Logistics Partner.',
           ),
           const SizedBox(height: 10),
           Row(
@@ -1725,7 +1728,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
           ),
           const SizedBox(height: 12),
           _notice(
-            'Earnings are payout ledger records. Your Logistics company still handles the actual payout.',
+            'Your Logistics Partner pays these earnings separately. Earnings never reduce collected COD or depend on Seller settlement.',
             Icons.info_outline_rounded,
           ),
           const SizedBox(height: 12),
@@ -1783,6 +1786,20 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
               fontWeight: FontWeight.w700,
             ),
           ),
+          if (RiderCodOverview.caseDescription(cash) != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              RiderCodOverview.caseDescription(cash)!,
+              style: const TextStyle(fontSize: 12),
+            ),
+          ],
+          if (cash['platform_receipt_status'] != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              RiderCodOverview.platformReceiptDescription(cash),
+              style: const TextStyle(fontSize: 12),
+            ),
+          ],
           if (canRemit) ...[
             const SizedBox(height: 12),
             if (busy)

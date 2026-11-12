@@ -255,8 +255,11 @@ void main() {
         );
         await tester.scrollUntilVisible(button, 300);
         expect(tester.widget<FilledButton>(button).onPressed, isNull);
-        await tester.tap(find.byType(CheckboxListTile));
+        final coverage = find.byType(CheckboxListTile);
+        await tester.ensureVisible(coverage);
+        await tester.tap(coverage);
         await tester.pumpAndSettle();
+        await tester.ensureVisible(button);
         await tester.tap(button);
         await tester.pumpAndSettle();
         expect(accepted, isTrue);

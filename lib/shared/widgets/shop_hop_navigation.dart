@@ -143,7 +143,6 @@ class ShopHopNavigation extends StatelessWidget {
                                                   0,
                                                   9999,
                                                 ),
-                                                maxCount: 99,
                                                 isLabelVisible:
                                                     (badges[i] ?? 0) > 0,
                                                 child: Icon(

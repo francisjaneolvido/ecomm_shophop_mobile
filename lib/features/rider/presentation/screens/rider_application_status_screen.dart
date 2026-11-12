@@ -1,5 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:shophop/features/rider/data/models/rider_onboarding_progress.dart';
 import 'package:shophop/core/session/auth_session_service.dart';
 import 'package:shophop/core/theme/app_colors.dart';
 import 'package:shophop/features/auth/data/services/auth_service.dart';
@@ -180,6 +181,94 @@ class _RiderApplicationStatusScreenState
     ),
   );
 
+  Widget _onboardingProgress(Map<String, dynamic> data) {
+    final progress = RiderOnboardingProgress.fromJson(data);
+    final color = progress.needsAttention
+        ? const Color(0xFF9C5617)
+        : AppColors.tealDark;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          progress.title,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: color,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          progress.message,
+          style: const TextStyle(
+            fontSize: 12,
+            height: 1.5,
+            color: AppColors.navy,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Next action: ${progress.nextActor}',
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          runSpacing: 6,
+          children: [
+            for (
+              var index = 0;
+              index < RiderOnboardingProgress.steps.length;
+              index++
+            )
+              Semantics(
+                label:
+                    RiderOnboardingProgress.steps[index] +
+                    (index < progress.currentStep
+                        ? ', completed'
+                        : index == progress.currentStep
+                        ? ', current step'
+                        : ', upcoming'),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: index <= progress.currentStep
+                        ? AppColors.tealDark.withValues(alpha: .08)
+                        : AppColors.grayBg,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        index < progress.currentStep
+                            ? Icons.check_circle_outline
+                            : index == progress.currentStep
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_unchecked,
+                        size: 14,
+                        color: index <= progress.currentStep
+                            ? AppColors.tealDark
+                            : Colors.grey,
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        RiderOnboardingProgress.steps[index],
+                        style: const TextStyle(fontSize: 10),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final data = _data;
@@ -242,20 +331,7 @@ class _RiderApplicationStatusScreenState
                       ),
                       Text('Operations: ${_label(data['operational_status'])}'),
                       const SizedBox(height: 10),
-                      Text(
-                        active
-                            ? 'Your Branch has activated you for pickup and delivery.'
-                            : data['application_status'] == 'approved'
-                            ? 'Approved by Main Hub. Your assigned Branch must confirm your official barangays and activate you.'
-                            : data['application_status'] == 'rejected'
-                            ? 'Your application was rejected. Review the reason below and contact your logistics provider.'
-                            : 'Your application is handled by your selected logistics company Main Hub.',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.navy,
-                          height: 1.5,
-                        ),
-                      ),
+                      _onboardingProgress(data),
                       if (data['rejection_reason'] != null)
                         Padding(
                           padding: const EdgeInsets.only(top: 8),
@@ -319,6 +395,18 @@ class _RiderApplicationStatusScreenState
                           fontWeight: FontWeight.w500,
                         ),
                       ),
+                      if (RiderManagementService.rows(
+                        data['official_coverage'],
+                      ).isEmpty)
+                        Text(
+                          active
+                              ? 'No official barangays are recorded. Contact your Branch to verify your coverage.'
+                              : 'Awaiting official barangay assignment by ${branch is Map ? branch['name'] : 'your assigned Branch'}.',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.navy,
+                          ),
+                        ),
                       ...RiderManagementService.rows(
                         data['official_coverage'],
                       ).map(
@@ -530,7 +618,7 @@ class _RiderApplicationStatusScreenState
                         data['schedules'],
                       ).isEmpty)
                         const Text(
-                          'No upcoming managed work windows. Contact your Branch for your schedule.',
+                          'No upcoming Branch work schedule is recorded. Schedules can be managed after activation.',
                           style: TextStyle(fontSize: 12),
                         ),
                       ...RiderManagementService.rows(data['schedules']).map(

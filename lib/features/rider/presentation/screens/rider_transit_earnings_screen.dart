@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shophop/features/rider/data/models/rider_earnings_overview.dart';
 import 'package:shophop/core/session/auth_session_service.dart';
 import 'package:shophop/features/rider/data/services/rider_transit_service.dart';
 
@@ -29,10 +30,6 @@ class _RiderTransitEarningsScreenState
     _load();
   }
 
-  List<Map<String, dynamic>> _rows(dynamic value) => value is List
-      ? value.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList()
-      : <Map<String, dynamic>>[];
-
   double _amount(dynamic value) =>
       double.tryParse(value?.toString() ?? '') ?? 0;
 
@@ -54,17 +51,11 @@ class _RiderTransitEarningsScreenState
       _busy = false;
       _message = response.success ? null : response.message;
       if (response.success) {
-        _pending = _amount(response.data['pending']);
-        _available = _amount(response.data['available']);
-        _paid = _amount(response.data['paid']);
-        final partner = response.data['partner_compensation'];
-        _entries = _rows(response.data['entries']);
-        if (partner is Map) {
-          _pending += _amount(partner['pending']);
-          _available += _amount(partner['available']);
-          _paid += _amount(partner['paid']);
-          _entries.addAll(_rows(partner['entries']));
-        }
+        final overview = RiderEarningsOverview.fromJson(response.data);
+        _pending = overview.pending;
+        _available = overview.available;
+        _paid = overview.paid;
+        _entries = overview.entries;
       }
     });
   }

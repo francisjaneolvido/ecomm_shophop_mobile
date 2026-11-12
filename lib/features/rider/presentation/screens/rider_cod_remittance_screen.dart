@@ -247,7 +247,7 @@ class _RiderCodRemittanceScreenState extends State<RiderCodRemittanceScreen> {
                           : null,
                       title: Text('Order #${cash['order_id']}'),
                       subtitle: Text(
-                        'Collected ₱${cash['amount']} · Verified received ₱${cash['received_amount']}\nOutstanding ₱${cash['outstanding']} · ${RiderCodOverview.receiptStatus(cash)}${cash['remitted_at'] != null ? '\n${RiderCodOverview.receiverDescription(cash)}' : ''}',
+                        'Collected ₱${cash['amount']} · Verified received ₱${cash['received_amount']}\nOutstanding ₱${cash['outstanding']} · ${RiderCodOverview.receiptStatus(cash)}${cash['remitted_at'] != null ? '\n${RiderCodOverview.receiverDescription(cash)}' : ''}${cash['platform_receipt_status'] != null ? '\n${RiderCodOverview.platformReceiptDescription(cash)}' : ''}${RiderCodOverview.caseDescription(cash) != null ? '\n${RiderCodOverview.caseDescription(cash)}' : ''}',
                       ),
                     ),
                   ),
@@ -303,9 +303,22 @@ class _RiderCodRemittanceScreenState extends State<RiderCodRemittanceScreen> {
                               'Collection #${item['cod_settlement_id']} · Cash ₱${RiderCodOverview.minorDisplay(item['submitted_minor'])}',
                             ),
                           if (batch['status'] == 'discrepancy')
-                            const Text(
-                              'Under review. Shortages remain owed; overages require investigation.',
-                              style: TextStyle(color: Colors.red),
+                            Text(
+                              RiderCodOverview.batchReviewDescription(batch),
+                              style: TextStyle(
+                                color:
+                                    RiderCodOverview.rows(
+                                          batch['discrepancy_cases'],
+                                        ).isNotEmpty &&
+                                        RiderCodOverview.rows(
+                                          batch['discrepancy_cases'],
+                                        ).every(
+                                          (review) =>
+                                              review['status'] == 'resolved',
+                                        )
+                                    ? Colors.teal
+                                    : Colors.red,
+                              ),
                             ),
                         ],
                       ),
