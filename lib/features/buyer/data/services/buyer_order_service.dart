@@ -18,11 +18,19 @@ class BuyerOrderItemData {
     required this.variant,
     required this.quantity,
     required this.price,
+    this.image,
+    this.id = 0,
+    this.canRate = false,
+    this.rating,
   });
   final String name;
   final String variant;
   final int quantity;
   final double price;
+  final String? image;
+  final int id;
+  final bool canRate;
+  final int? rating;
 
   factory BuyerOrderItemData.fromJson(Map<String, dynamic> json) =>
       BuyerOrderItemData(
@@ -30,6 +38,10 @@ class BuyerOrderItemData {
         variant: json['variant']?.toString() ?? 'Standard',
         quantity: (num.tryParse(json['quantity'].toString()) ?? 0).toInt(),
         price: double.tryParse(json['price'].toString()) ?? 0,
+        image: json['image']?.toString(),
+        id: int.tryParse(json['id'].toString()) ?? 0,
+        canRate: json['can_rate'] == true,
+        rating: int.tryParse(json['rating'].toString()),
       );
 }
 
@@ -59,12 +71,14 @@ class BuyerOrderData {
     required this.canConfirmReceipt,
     required this.items,
     required this.timeline,
+    this.status = '',
   });
 
   final int id;
   final String displayId;
   final String sellerName;
   final String statusLabel;
+  final String status;
   final String statusNote;
   final double totalAmount;
   final String paymentMethod;
@@ -83,6 +97,7 @@ class BuyerOrderData {
       displayId: json['display_id']?.toString() ?? '',
       sellerName: json['seller_name']?.toString() ?? 'ShopHop Seller',
       statusLabel: json['status_label']?.toString() ?? 'Placed',
+      status: json['status']?.toString() ?? '',
       statusNote: json['status_note']?.toString() ?? '',
       totalAmount: double.tryParse(json['total_amount'].toString()) ?? 0,
       paymentMethod: json['payment_method']?.toString() ?? 'cod',
@@ -115,9 +130,14 @@ class BuyerOrderData {
 }
 
 class BuyerOrderPageData {
-  const BuyerOrderPageData({required this.orders, required this.hasMore});
+  const BuyerOrderPageData({
+    required this.orders,
+    required this.hasMore,
+    this.statusCounts = const {},
+  });
   final List<BuyerOrderData> orders;
   final bool hasMore;
+  final Map<String, int> statusCounts;
 }
 
 class BuyerOrderService {
@@ -126,8 +146,15 @@ class BuyerOrderService {
   static Future<BuyerOrderPageData> list({
     required String token,
     int page = 1,
+    String? statusGroup,
   }) async {
-    final data = await _request('/buyer/orders?page=$page', token: token);
+    final query = Uri(
+      queryParameters: {
+        'page': '$page',
+        if (statusGroup != null) 'status_group': statusGroup,
+      },
+    ).query;
+    final data = await _request('/buyer/orders?$query', token: token);
     final orders = data['orders'];
     return BuyerOrderPageData(
       orders: orders is List
@@ -140,6 +167,12 @@ class BuyerOrderService {
                 .toList()
           : const [],
       hasMore: data['has_more'] == true,
+      statusCounts: data['status_counts'] is Map
+          ? (data['status_counts'] as Map).map(
+              (key, value) =>
+                  MapEntry(key.toString(), int.tryParse(value.toString()) ?? 0),
+            )
+          : const {},
     );
   }
 
@@ -154,20 +187,41 @@ class BuyerOrderService {
     );
   }
 
+  static Future<void> rateItem({
+    required String token,
+    required int orderId,
+    required int itemId,
+    required int rating,
+    required String comment,
+  }) async {
+    await _request(
+      '/buyer/orders/$orderId/items/$itemId/review',
+      token: token,
+      post: true,
+      body: {'rating': rating, 'comment': comment.trim()},
+    );
+  }
+
   static Future<Map<String, dynamic>> _request(
     String path, {
     required String token,
     bool post = false,
+    Map<String, dynamic>? body,
   }) async {
     try {
       final url = Uri.parse('${ApiConfig.baseUrl}$path');
       final headers = {
         'Accept': 'application/json',
         'Authorization': 'Bearer $token',
+        if (body != null) 'Content-Type': 'application/json',
       };
       final response = post
           ? await http
-                .post(url, headers: headers)
+                .post(
+                  url,
+                  headers: headers,
+                  body: body == null ? null : jsonEncode(body),
+                )
                 .timeout(const Duration(seconds: 15))
           : await http
                 .get(url, headers: headers)
