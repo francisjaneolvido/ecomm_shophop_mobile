@@ -15,8 +15,8 @@ class RiderTransitEarningsScreen extends StatefulWidget {
 
 class _RiderTransitEarningsScreenState
     extends State<RiderTransitEarningsScreen> {
-  static const _navy = Color(0xFF0E1B4D);
-  static const _teal = Color(0xFF18AA94);
+  static const _navy = Color(0xFF10193C);
+  static const _teal = Color(0xFF10193C);
   bool _busy = true;
   String? _message;
   double _pending = 0;
@@ -87,7 +87,7 @@ class _RiderTransitEarningsScreenState
           const SizedBox(height: 4),
           const Text(
             'Your Logistics Partner configures and pays your compensation. Earnings never reduce collected COD and do not depend on the Seller settlement hold.',
-            style: TextStyle(color: Color(0xFF65748A)),
+            style: TextStyle(color: Color(0xFF6B6B7B)),
           ),
           const SizedBox(height: 16),
           if (_busy) const LinearProgressIndicator(color: _teal),
@@ -148,7 +148,7 @@ class _RiderTransitEarningsScreenState
                       (entry['status'] ?? 'pending').toString().toUpperCase(),
                       style: const TextStyle(
                         fontSize: 10,
-                        color: Color(0xFF65748A),
+                        color: Color(0xFF6B6B7B),
                       ),
                     ),
                   ],
@@ -169,7 +169,7 @@ class _RiderTransitEarningsScreenState
         children: [
           Text(
             label,
-            style: const TextStyle(color: Color(0xFF65748A), fontSize: 12),
+            style: const TextStyle(color: Color(0xFF6B6B7B), fontSize: 12),
           ),
           const SizedBox(height: 5),
           Text(

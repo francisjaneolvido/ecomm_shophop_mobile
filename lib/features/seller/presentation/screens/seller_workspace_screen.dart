@@ -440,7 +440,7 @@ class _SellerWorkspaceScreenState extends State<SellerWorkspaceScreen> {
             const SizedBox(height: 3),
             Text(
               '${_int(order['items_count'])} items · COD',
-              style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+              style: const TextStyle(fontSize: 11, color: Color(0xFF6B6B7B)),
             ),
             const SizedBox(height: 9),
             Row(
@@ -705,7 +705,7 @@ class _SellerWorkspaceScreenState extends State<SellerWorkspaceScreen> {
         for (final order in rows) _orderTile(order),
         const Text(
           'Shipping labels remain available on Seller Web. Pickup booking is available here after packing.',
-          style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+          style: TextStyle(fontSize: 11, color: Color(0xFF6B6B7B)),
         ),
       ],
     );
@@ -889,7 +889,7 @@ class _SellerWorkspaceScreenState extends State<SellerWorkspaceScreen> {
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 fontSize: 11,
-                                color: Color(0xFF64748B),
+                                color: Color(0xFF6B6B7B),
                               ),
                             ),
                             const SizedBox(height: 6),
@@ -913,7 +913,7 @@ class _SellerWorkspaceScreenState extends State<SellerWorkspaceScreen> {
                         'Awaiting Admin approval before buyers can see this product.',
                         style: TextStyle(
                           fontSize: 11,
-                          color: Color(0xFF64748B),
+                          color: Color(0xFF6B6B7B),
                         ),
                       ),
                     ),
@@ -974,7 +974,7 @@ class _SellerWorkspaceScreenState extends State<SellerWorkspaceScreen> {
           ),
         const Text(
           'Product variants, vouchers and existing photo removal remain on Seller Web.',
-          style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+          style: TextStyle(fontSize: 11, color: Color(0xFF6B6B7B)),
         ),
       ],
     );
@@ -1048,7 +1048,7 @@ class _SellerWorkspaceScreenState extends State<SellerWorkspaceScreen> {
                           _str(e['status']).toUpperCase(),
                           style: const TextStyle(
                             fontSize: 10,
-                            color: Color(0xFF64748B),
+                            color: Color(0xFF6B6B7B),
                           ),
                         ),
                       ],

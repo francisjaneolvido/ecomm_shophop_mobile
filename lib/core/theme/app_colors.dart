@@ -1,28 +1,35 @@
 import 'package:flutter/material.dart';
 
-/// Shared light palette from the web's partials/theme-head.blade.php.
-/// Keep the existing brand names available for screens migrating to tokens.
+/// ShopHop's single light palette: navy, pink and warm cream.
 class AppColors {
   AppColors._();
-
-  static const navy = Color(0xFF0F1B3D);
-  static const teal = Color(0xFF21C3A6);
-  static const tealDark = Color(0xFF18A98E);
-  static const tealLight = Color(0xFFD4F5EE);
-
-  static const page = Color(0xFFFFFFFF);
+  static const navy = Color(0xFF10193C);
+  static const navyHover = Color(0xFF26305A);
+  static const pink = Color(0xFFEDA3AE);
+  static const pinkHover = Color(0xFFE1909E);
+  static const pinkSoft = Color(0xFFFCECEF);
+  static const cream = Color(0xFFFBF6EE);
+  static const page = cream;
   static const surface = Color(0xFFFFFFFF);
-  static const surfaceRaised = Color(0xFFF3F5F7);
-  static const surfaceSoft = Color(0xFFF8FAFB);
+  static const surfaceRaised = cream;
+  static const surfaceSoft = Color(0xFFFFFAF6);
   static const text = navy;
-  static const textMuted = Color(0xFF59667A);
-  static const textFaint = Color(0xFF748095);
-  static const border = Color(0xFFE2E6EA);
-  static const input = surfaceRaised;
-  static const error = Color(0xFFB42318);
-  static const errorSoft = Color(0xFFFEE4E2);
+  static const textMuted = Color(0xFF6B6B7B);
+  static const textFaint = textMuted;
+  static const border = Color(0x2610193C);
+  static const input = surface;
+  static const success = Color(0xFF1F9D55);
+  static const successStrong = Color(0xFF166534);
+  static const successSoft = Color(0xFFEAF7EE);
+  static const error = Color(0xFFD93F4C);
+  static const errorStrong = Color(0xFFA92F3A);
+  static const errorSoft = Color(0xFFFFF0F2);
+  static const warning = Color(0xFFF59E0B);
 
-  // Compatibility aliases used by existing Buyer, Seller and Rider screens.
-  static const grayBg = surfaceRaised;
+  // Compatibility aliases keep existing role screens on the shared palette.
+  static const teal = navy;
+  static const tealDark = navy;
+  static const tealLight = pinkSoft;
+  static const grayBg = page;
   static const grayBorder = border;
 }

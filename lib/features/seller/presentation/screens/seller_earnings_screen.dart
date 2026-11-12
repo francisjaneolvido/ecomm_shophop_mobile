@@ -12,8 +12,8 @@ class SellerEarningsScreen extends StatefulWidget {
 }
 
 class _SellerEarningsScreenState extends State<SellerEarningsScreen> {
-  static const _navy = Color(0xFF0E1B4D);
-  static const _teal = Color(0xFF18AA94);
+  static const _navy = Color(0xFF10193C);
+  static const _teal = Color(0xFF10193C);
   bool _busy = true;
   String? _message;
   String _sellerName = 'Seller';
@@ -86,7 +86,7 @@ class _SellerEarningsScreenState extends State<SellerEarningsScreen> {
             children: [
               Text(
                 label,
-                style: const TextStyle(fontSize: 12, color: Color(0xFF65748A)),
+                style: const TextStyle(fontSize: 12, color: Color(0xFF6B6B7B)),
               ),
               const SizedBox(height: 5),
               Text(
@@ -129,11 +129,11 @@ class _SellerEarningsScreenState extends State<SellerEarningsScreen> {
               color: _navy,
             ),
           ),
-          Text(_email ?? '', style: const TextStyle(color: Color(0xFF65748A))),
+          Text(_email ?? '', style: const TextStyle(color: Color(0xFF6B6B7B))),
           const SizedBox(height: 6),
           const Text(
             'Earnings only on mobile for now. Seller operations remain on ShopHop Web.',
-            style: TextStyle(color: Color(0xFF65748A)),
+            style: TextStyle(color: Color(0xFF6B6B7B)),
           ),
           const SizedBox(height: 16),
           if (_busy) const LinearProgressIndicator(color: _teal),

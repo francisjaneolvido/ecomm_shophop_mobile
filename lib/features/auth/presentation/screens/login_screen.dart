@@ -375,7 +375,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               shape: BoxShape.circle,
                             ),
                             child: Image.asset(
-                              'assets/images/logo.png',
+                              'assets/images/logo-bunny.png',
                               fit: BoxFit.contain,
                             ),
                           ),

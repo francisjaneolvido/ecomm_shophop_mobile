@@ -321,14 +321,14 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
             Text(
               'Manifest ${trip['manifest_code'] ?? '—'} · '
               '${trip['parcel_count'] ?? 0} parcels',
-              style: const TextStyle(fontSize: 11, color: Color(0xFF607084)),
+              style: const TextStyle(fontSize: 11, color: Color(0xFF6B6B7B)),
             ),
             if (featured) ...[
               const SizedBox(height: 4),
               Text(
                 'Vehicle ${trip['vehicle_code'] ?? '—'} · '
                 '${trip['plate_number'] ?? '—'}',
-                style: const TextStyle(fontSize: 11, color: Color(0xFF607084)),
+                style: const TextStyle(fontSize: 11, color: Color(0xFF6B6B7B)),
               ),
             ],
             if (flagged) ...[
@@ -516,7 +516,7 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
               const SizedBox(height: 5),
               const Text(
                 'Driver scans the Manifest QR, not individual parcel labels.',
-                style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                style: TextStyle(fontSize: 11, color: Color(0xFF6B6B7B)),
               ),
               const SizedBox(height: 12),
               ShopHopCameraPanel(
@@ -640,7 +640,7 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
               const Divider(height: 20),
               const Text(
                 '3  Confirm only after physical load verification.',
-                style: TextStyle(color: Color(0xFF64748B), fontSize: 11),
+                style: TextStyle(color: Color(0xFF6B6B7B), fontSize: 11),
               ),
               const SizedBox(height: 8),
               SizedBox(
@@ -746,7 +746,7 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
                     children: [
                       const Text(
                         'Pending',
-                        style: TextStyle(color: Color(0xFF65748A)),
+                        style: TextStyle(color: Color(0xFF6B6B7B)),
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -772,7 +772,7 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
                     children: [
                       const Text(
                         'Available',
-                        style: TextStyle(color: Color(0xFF65748A)),
+                        style: TextStyle(color: Color(0xFF6B6B7B)),
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -798,7 +798,7 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
                     children: [
                       const Text(
                         'Paid',
-                        style: TextStyle(color: Color(0xFF65748A)),
+                        style: TextStyle(color: Color(0xFF6B6B7B)),
                       ),
                       const SizedBox(height: 4),
                       Text(

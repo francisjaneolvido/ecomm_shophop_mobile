@@ -13,7 +13,7 @@ class ShopHopBrand extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Image.asset(
-          'assets/images/logo.png',
+          'assets/images/logo-bunny.png',
           height: compact ? 34 : 44,
           width: compact ? 34 : 44,
           fit: BoxFit.contain,
@@ -34,7 +34,7 @@ class ShopHopBrand extends StatelessWidget {
                   ),
                   const TextSpan(
                     text: 'Hop',
-                    style: TextStyle(color: AppColors.tealDark),
+                    style: TextStyle(color: AppColors.pinkHover),
                   ),
                 ],
               ),

@@ -1334,7 +1334,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
                 const Icon(
                   Icons.route_outlined,
                   size: 15,
-                  color: Color(0xFF607084),
+                  color: Color(0xFF6B6B7B),
                 ),
                 const SizedBox(width: 6),
                 Expanded(
@@ -1344,7 +1344,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 11,
-                      color: Color(0xFF607084),
+                      color: Color(0xFF6B6B7B),
                     ),
                   ),
                 ),
@@ -1690,7 +1690,8 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
         ] else ...[
           _sectionHeader(
             title: 'My earnings',
-            subtitle: 'Compensation recorded and paid by your Logistics Partner.',
+            subtitle:
+                'Compensation recorded and paid by your Logistics Partner.',
           ),
           const SizedBox(height: 10),
           Row(
@@ -2410,7 +2411,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
   Color _taskColor(_RiderTaskKind kind) {
     switch (kind) {
       case _RiderTaskKind.pickup:
-        return const Color(0xFF0B806E);
+        return const Color(0xFF166534);
       case _RiderTaskKind.transfer:
         return const Color(0xFF2F6FA7);
       case _RiderTaskKind.delivery:

@@ -805,7 +805,7 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
           ),
           const Spacer(),
           Image.asset(
-            'assets/images/logo.png',
+            'assets/images/logo-bunny.png',
             width: 30,
             height: 30,
             fit: BoxFit.contain,

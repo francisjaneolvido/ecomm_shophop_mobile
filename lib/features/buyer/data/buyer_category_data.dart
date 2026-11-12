@@ -99,7 +99,7 @@ const buyerCategories = <BuyerCategory>[
     slug: 'home-and-garden',
     folder: 'home_garden',
     icon: Icons.weekend_rounded,
-    gradient: [Color(0xFF24C5A5), Color(0xFF12937C)],
+    gradient: [Color(0xFF10193C), Color(0xFF26305A)],
     subcategories: [
       'Kitchen Appliances',
       'Furniture & Decor',

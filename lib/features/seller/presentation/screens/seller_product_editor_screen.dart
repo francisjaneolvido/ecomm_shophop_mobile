@@ -111,7 +111,7 @@ class _SellerProductEditorScreenState extends State<SellerProductEditorScreen> {
         if (!isRequired)
           const Text(
             ' (Optional)',
-            style: TextStyle(color: Color(0xFF64748B), fontSize: 11),
+            style: TextStyle(color: Color(0xFF6B6B7B), fontSize: 11),
           ),
       ],
     ),
@@ -332,7 +332,7 @@ class _SellerProductEditorScreenState extends State<SellerProductEditorScreen> {
                     Text(
                       'Registered shop: ${widget.businessCategory}',
                       style: const TextStyle(
-                        color: Color(0xFF64748B),
+                        color: Color(0xFF6B6B7B),
                         fontSize: 12,
                       ),
                     ),
@@ -447,7 +447,7 @@ class _SellerProductEditorScreenState extends State<SellerProductEditorScreen> {
                     const SizedBox(height: 5),
                     const Text(
                       'Photos and video in one gallery. The first item is featured. Tap the star to feature another item.',
-                      style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                      style: TextStyle(fontSize: 12, color: Color(0xFF6B6B7B)),
                     ),
                     const SizedBox(height: 12),
                     OutlinedButton.icon(
@@ -458,7 +458,7 @@ class _SellerProductEditorScreenState extends State<SellerProductEditorScreen> {
                     const SizedBox(height: 6),
                     const Text(
                       'Up to 8 photos (5 MB each) and one video (30 MB).',
-                      style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                      style: TextStyle(fontSize: 11, color: Color(0xFF6B6B7B)),
                     ),
                     const SizedBox(height: 12),
                     for (var index = 0; index < _mediaTokens.length; index++)
@@ -601,7 +601,7 @@ class _SellerProductEditorScreenState extends State<SellerProductEditorScreen> {
                     const SizedBox(height: 4),
                     const Text(
                       'You can still manage old photo deletions in Seller Web.',
-                      style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                      style: TextStyle(fontSize: 11, color: Color(0xFF6B6B7B)),
                     ),
                   ],
                 ),
@@ -630,7 +630,7 @@ class _SellerProductEditorScreenState extends State<SellerProductEditorScreen> {
               const Text(
                 'Changes will require Admin compliance approval before public visibility.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                style: TextStyle(fontSize: 11, color: Color(0xFF6B6B7B)),
               ),
             ],
           ),

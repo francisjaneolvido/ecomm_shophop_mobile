@@ -298,7 +298,7 @@ class BuyerVerificationStep extends StatelessWidget {
                     child: Text(
                       field.errorText!,
                       style: const TextStyle(
-                        color: Color(0xFFDB5757),
+                        color: Color(0xFFD93F4C),
                         fontSize: 10,
                         fontWeight: FontWeight.w500,
                       ),
@@ -393,7 +393,7 @@ class BuyerVerificationStep extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: field.hasError
-                  ? const Color(0xFFDB5757)
+                  ? const Color(0xFFD93F4C)
                   : file != null
                   ? AppColors.teal.withValues(alpha: 0.65)
                   : AppColors.grayBorder,
@@ -808,7 +808,7 @@ class _RequiredLabel extends StatelessWidget {
           TextSpan(text: text),
           const TextSpan(
             text: ' *',
-            style: TextStyle(color: Color(0xFFDB5757)),
+            style: TextStyle(color: Color(0xFFD93F4C)),
           ),
         ],
       ),

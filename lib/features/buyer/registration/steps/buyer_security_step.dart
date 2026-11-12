@@ -403,7 +403,7 @@ class _BuyerSecurityStepState extends State<BuyerSecurityStep> {
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: field.hasError
-                        ? const Color(0xFFDB5757)
+                        ? const Color(0xFFD93F4C)
                         : checked
                         ? AppColors.teal.withValues(alpha: 0.60)
                         : AppColors.grayBorder,
@@ -482,7 +482,7 @@ class _BuyerSecurityStepState extends State<BuyerSecurityStep> {
                           const Text(
                             '. *',
                             style: TextStyle(
-                              color: Color(0xFFDB5757),
+                              color: Color(0xFFD93F4C),
                               fontSize: 10.5,
                               height: 1.5,
                             ),
@@ -501,7 +501,7 @@ class _BuyerSecurityStepState extends State<BuyerSecurityStep> {
                 child: Text(
                   field.errorText!,
                   style: const TextStyle(
-                    color: Color(0xFFDB5757),
+                    color: Color(0xFFD93F4C),
                     fontSize: 10,
                     fontWeight: FontWeight.w500,
                   ),
@@ -542,11 +542,11 @@ class _BuyerSecurityStepState extends State<BuyerSecurityStep> {
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: Color(0xFFDB5757)),
+        borderSide: const BorderSide(color: Color(0xFFD93F4C)),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: Color(0xFFDB5757), width: 1.5),
+        borderSide: const BorderSide(color: Color(0xFFD93F4C), width: 1.5),
       ),
       errorStyle: const TextStyle(fontSize: 10, height: 1.3),
     );
@@ -571,7 +571,7 @@ class _RequiredLabel extends StatelessWidget {
           TextSpan(text: text),
           const TextSpan(
             text: ' *',
-            style: TextStyle(color: Color(0xFFDB5757)),
+            style: TextStyle(color: Color(0xFFD93F4C)),
           ),
         ],
       ),

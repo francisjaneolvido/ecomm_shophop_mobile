@@ -60,7 +60,7 @@ class ShopHopWorkflowAction extends StatelessWidget {
       ),
       subtitle: Text(
         subtitle,
-        style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+        style: const TextStyle(fontSize: 11, color: Color(0xFF6B6B7B)),
       ),
       trailing: const Icon(Icons.chevron_right_rounded, size: 20),
     ),

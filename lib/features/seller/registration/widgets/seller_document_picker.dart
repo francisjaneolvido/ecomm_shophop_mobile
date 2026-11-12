@@ -142,7 +142,7 @@ class SellerDocumentPicker extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: field.hasError
-                          ? const Color(0xFFDB5757)
+                          ? const Color(0xFFD93F4C)
                           : file != null
                           ? AppColors.teal.withValues(alpha: 0.55)
                           : AppColors.grayBorder,
@@ -218,7 +218,7 @@ class SellerDocumentPicker extends StatelessWidget {
                 child: Text(
                   field.errorText!,
                   style: SellerUi.text(
-                    color: const Color(0xFFDB5757),
+                    color: const Color(0xFFD93F4C),
                     fontSize: 10,
                     fontWeight: FontWeight.w500,
                   ),

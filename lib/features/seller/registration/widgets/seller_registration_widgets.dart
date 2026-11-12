@@ -96,7 +96,7 @@ class SellerRegistrationProgress extends StatelessWidget {
                   child: Container(
                     height: 2,
                     color: lineStep < currentStep
-                        ? const Color(0xFF087968)
+                        ? const Color(0xFF166534)
                         : AppColors.grayBorder,
                   ),
                 );
@@ -113,11 +113,11 @@ class SellerRegistrationProgress extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: completed || active
-                      ? const Color(0xFF087968)
+                      ? const Color(0xFF166534)
                       : Colors.white,
                   border: Border.all(
                     color: completed || active
-                        ? const Color(0xFF087968)
+                        ? const Color(0xFF166534)
                         : AppColors.grayBorder,
                   ),
                 ),

@@ -289,7 +289,7 @@ class _RiderSecurityStepState extends State<RiderSecurityStep> {
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
                 color: field.hasError
-                    ? const Color(0xFFDB5757)
+                    ? const Color(0xFFD93F4C)
                     : checked
                     ? AppColors.teal.withValues(alpha: 0.60)
                     : AppColors.grayBorder,
@@ -352,7 +352,7 @@ class _RiderSecurityStepState extends State<RiderSecurityStep> {
             const SizedBox(height: 7),
             Text(
               field.errorText!,
-              style: const TextStyle(color: Color(0xFFDB5757), fontSize: 10),
+              style: const TextStyle(color: Color(0xFFD93F4C), fontSize: 10),
             ),
           ],
         ],

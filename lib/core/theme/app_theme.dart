@@ -77,19 +77,19 @@ class AppTheme {
           bodyColor: AppColors.text,
           displayColor: AppColors.text,
         );
-    const selected = AppColors.tealDark;
+    const selected = AppColors.navy;
     const unselected = AppColors.textMuted;
     const scheme = ColorScheme.light(
       primary: selected,
       onPrimary: Colors.white,
       primaryContainer: AppColors.tealLight,
       onPrimaryContainer: AppColors.navy,
-      secondary: selected,
-      onSecondary: Colors.white,
+      secondary: AppColors.pink,
+      onSecondary: AppColors.navy,
       secondaryContainer: AppColors.tealLight,
       onSecondaryContainer: AppColors.navy,
-      tertiary: selected,
-      onTertiary: Colors.white,
+      tertiary: AppColors.pinkHover,
+      onTertiary: AppColors.navy,
       tertiaryContainer: AppColors.tealLight,
       onTertiaryContainer: AppColors.navy,
       surface: AppColors.surface,
@@ -102,10 +102,10 @@ class AppTheme {
       surfaceContainerHigh: AppColors.surfaceRaised,
       surfaceContainerHighest: AppColors.input,
       onSurfaceVariant: AppColors.textMuted,
-      error: AppColors.error,
+      error: AppColors.errorStrong,
       onError: Colors.white,
       errorContainer: AppColors.errorSoft,
-      onErrorContainer: AppColors.error,
+      onErrorContainer: AppColors.errorStrong,
       outline: AppColors.border,
       outlineVariant: AppColors.border,
       inverseSurface: AppColors.navy,
@@ -126,7 +126,7 @@ class AppTheme {
 
     return base.copyWith(
       primaryColor: selected,
-      scaffoldBackgroundColor: AppColors.surfaceRaised,
+      scaffoldBackgroundColor: AppColors.page,
       canvasColor: scheme.surface,
       colorScheme: scheme,
       textTheme: text,
@@ -312,7 +312,7 @@ class AppTheme {
         backgroundColor: scheme.surface,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
-        indicatorColor: Colors.transparent,
+        indicatorColor: AppColors.pinkSoft,
         iconTheme: WidgetStateProperty.resolveWith<IconThemeData>(
           (states) => IconThemeData(
             size: 24,

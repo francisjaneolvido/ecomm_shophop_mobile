@@ -132,7 +132,7 @@ class ShopHopVideoPreview {
               const SizedBox(height: 10),
               const Text(
                 'Tap Play to preview. Playback requires a reachable video URL.',
-                style: TextStyle(fontSize: 11, color: Color(0xFF607084)),
+                style: TextStyle(fontSize: 11, color: Color(0xFF6B6B7B)),
               ),
             ],
           ),

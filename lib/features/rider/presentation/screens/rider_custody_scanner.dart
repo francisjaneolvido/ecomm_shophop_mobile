@@ -242,7 +242,7 @@ class _RiderCustodyScannerState extends State<RiderCustodyScanner> {
   Color _actionColor(String action) {
     switch (action) {
       case 'seller_pickup':
-        return const Color(0xFF0B7C70);
+        return const Color(0xFF166534);
       case 'delivery_handoff':
         return const Color(0xFF76522E);
       default:
@@ -372,7 +372,7 @@ class _RiderCustodyScannerState extends State<RiderCustodyScanner> {
             handoff['instruction']?.toString() ??
                 'Verify the physical parcel before confirming custody.',
             style: const TextStyle(
-              color: Color(0xFF65748A),
+              color: Color(0xFF6B6B7B),
               fontSize: 12,
               height: 1.45,
             ),
@@ -604,7 +604,7 @@ class _RiderCustodyScannerState extends State<RiderCustodyScanner> {
         const Text(
           'Scan the ShopHop waybill QR to verify the parcel and record every physical handoff to a Rider.',
           style: TextStyle(
-            color: Color(0xFF65748A),
+            color: Color(0xFF6B6B7B),
             fontSize: 12.5,
             height: 1.4,
           ),
@@ -654,7 +654,7 @@ class _RiderCustodyScannerState extends State<RiderCustodyScanner> {
               Text(
                 'Branch/Hub staff use the Logistics scanner for parcel receiving and manifest loading. Linehaul Drivers scan the Manifest QR instead of parcel QRs.',
                 style: TextStyle(
-                  color: Color(0xFF65748A),
+                  color: Color(0xFF6B6B7B),
                   fontSize: 11.5,
                   height: 1.4,
                 ),

@@ -63,7 +63,7 @@ class ShopHopOpsAction extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      color: Color(0xFF607084),
+                      color: Color(0xFF6B6B7B),
                       fontSize: 11,
                     ),
                   ),
@@ -114,7 +114,7 @@ class ShopHopOpsHeading extends StatelessWidget {
               const SizedBox(height: 3),
               Text(
                 subtitle!,
-                style: const TextStyle(fontSize: 11, color: Color(0xFF607084)),
+                style: const TextStyle(fontSize: 11, color: Color(0xFF6B6B7B)),
               ),
             ],
           ],

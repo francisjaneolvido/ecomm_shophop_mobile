@@ -365,7 +365,7 @@ class _ManifestLoadingScreenState extends State<ManifestLoadingScreen> {
             child: Text(
               'Normal flow: select a manifest, verify the physical count and confirm. '
               'Use individual Parcel QR reconciliation only for mismatches or exceptions.',
-              style: TextStyle(fontSize: 12, color: Color(0xFF607084)),
+              style: TextStyle(fontSize: 12, color: Color(0xFF6B6B7B)),
             ),
           ),
           const SizedBox(height: 14),

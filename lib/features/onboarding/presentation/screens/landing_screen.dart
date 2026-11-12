@@ -195,7 +195,7 @@ class _HeroMark extends StatelessWidget {
               ),
               child: Center(
                 child: Image.asset(
-                  'assets/images/logo.png',
+                  'assets/images/logo-bunny.png',
                   width: logoSize,
                   height: logoSize,
                   fit: BoxFit.contain,

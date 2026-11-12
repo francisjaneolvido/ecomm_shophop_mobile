@@ -264,7 +264,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
             ),
           ),
           const Spacer(),
-          Image.asset('assets/images/logo.png', width: 30, height: 30),
+          Image.asset('assets/images/logo-bunny.png', width: 30, height: 30),
           const SizedBox(width: 7),
           Text(
             'ShopHop',

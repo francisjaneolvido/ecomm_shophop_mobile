@@ -324,7 +324,7 @@ class _ManifestReceivingScreenState extends State<ManifestReceivingScreen> {
             child: Text(
               'Only the destination facility confirms physical arrival. '
               'Scan the Manifest QR, verify the shipment, then receive the actual parcel count.',
-              style: TextStyle(fontSize: 12, color: Color(0xFF607084)),
+              style: TextStyle(fontSize: 12, color: Color(0xFF6B6B7B)),
             ),
           ),
           const SizedBox(height: 14),
@@ -439,7 +439,7 @@ class _ManifestReceivingScreenState extends State<ManifestReceivingScreen> {
                       vertical: 5,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE8F7F2),
+                      color: const Color(0xFFEAF7EE),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -525,7 +525,7 @@ class _ManifestReceivingScreenState extends State<ManifestReceivingScreen> {
               const SizedBox(height: 8),
               const Text(
                 'If the physical count differs or a parcel is damaged/wrong, do not use Receive All. Use the normal Parcel Receiving scanner for individual exception reconciliation.',
-                style: TextStyle(fontSize: 12, color: Color(0xFF65748A)),
+                style: TextStyle(fontSize: 12, color: Color(0xFF6B6B7B)),
               ),
             ],
             if (completed)

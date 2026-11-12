@@ -72,7 +72,7 @@ class _AccountTypeScreenState extends State<AccountTypeScreen> {
                               shape: BoxShape.circle,
                             ),
                             child: Image.asset(
-                              'assets/images/logo.png',
+                              'assets/images/logo-bunny.png',
                               fit: BoxFit.contain,
                             ),
                           ),

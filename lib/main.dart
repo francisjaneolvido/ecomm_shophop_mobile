@@ -16,6 +16,7 @@ class ShopHopApp extends StatelessWidget {
       title: 'ShopHop',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
+      themeMode: ThemeMode.light,
       home: const SplashScreen(),
     );
   }

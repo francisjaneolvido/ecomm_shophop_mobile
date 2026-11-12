@@ -322,7 +322,7 @@ class _SellerSecurityStepState extends State<SellerSecurityStep> {
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
                   color: field.hasError
-                      ? const Color(0xFFDB5757)
+                      ? const Color(0xFFD93F4C)
                       : checked
                       ? AppColors.teal.withValues(alpha: 0.60)
                       : AppColors.grayBorder,
@@ -398,7 +398,7 @@ class _SellerSecurityStepState extends State<SellerSecurityStep> {
                         Text(
                           '. *',
                           style: SellerUi.text(
-                            color: const Color(0xFFDB5757),
+                            color: const Color(0xFFD93F4C),
                             fontSize: 10.5,
                             height: 1.5,
                           ),
@@ -416,7 +416,7 @@ class _SellerSecurityStepState extends State<SellerSecurityStep> {
                 child: Text(
                   field.errorText!,
                   style: SellerUi.text(
-                    color: const Color(0xFFDB5757),
+                    color: const Color(0xFFD93F4C),
                     fontSize: 10,
                     fontWeight: FontWeight.w500,
                   ),

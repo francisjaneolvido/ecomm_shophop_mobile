@@ -606,7 +606,7 @@ class _SellerRegistrationScreenState extends State<SellerRegistrationScreen> {
           ),
           const Spacer(),
           Image.asset(
-            'assets/images/logo.png',
+            'assets/images/logo-bunny.png',
             width: 30,
             height: 30,
             fit: BoxFit.contain,

@@ -467,7 +467,7 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
           _branchLocked
               ? 'This branch is assigned to your staff account. Ask the company owner to change your assignment.'
               : 'Select the branch where the parcel is physically being handed over.',
-          style: const TextStyle(fontSize: 12, color: Color(0xFF65748A)),
+          style: const TextStyle(fontSize: 12, color: Color(0xFF6B6B7B)),
         ),
         if (!_branchLocked) ...[
           const SizedBox(height: 10),
@@ -503,7 +503,7 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
               padding: EdgeInsets.only(top: 6),
               child: Text(
                 'Showing first 80 branches. Search to select another location.',
-                style: TextStyle(fontSize: 11, color: Color(0xFF65748A)),
+                style: TextStyle(fontSize: 11, color: Color(0xFF6B6B7B)),
               ),
             ),
         ],
@@ -578,7 +578,7 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
               const SizedBox(height: 6),
               const Text(
                 'The QR is checked first. Scanning alone will NOT mark the parcel as received.',
-                style: TextStyle(fontSize: 12, color: Color(0xFF65748A)),
+                style: TextStyle(fontSize: 12, color: Color(0xFF6B6B7B)),
               ),
               const SizedBox(height: 14),
               ShopHopCameraPanel(
@@ -692,9 +692,9 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEAF8F5),
+                    color: const Color(0xFFEAF7EE),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFFB7E5DB)),
+                    border: Border.all(color: const Color(0xFFB9DDC4)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -704,7 +704,7 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF087D6A),
+                          color: Color(0xFF166534),
                         ),
                       ),
                       const SizedBox(height: 5),
@@ -741,7 +741,7 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
                           style: const TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF087D6A),
+                            color: Color(0xFF166534),
                           ),
                         ),
                         Text(
@@ -816,7 +816,7 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: const CircleAvatar(
-                  backgroundColor: Color(0xFFE5F6F2),
+                  backgroundColor: Color(0xFFEAF7EE),
                   child: Icon(Icons.qr_code, color: _teal),
                 ),
                 title: Text(event['tracking_code']?.toString() ?? 'Parcel'),
@@ -894,7 +894,7 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
           children: [
             const Text(
               'Current facility',
-              style: TextStyle(fontSize: 11, color: Color(0xFF607084)),
+              style: TextStyle(fontSize: 11, color: Color(0xFF6B6B7B)),
             ),
             const SizedBox(height: 4),
             Text(
@@ -910,7 +910,7 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
               _branchLocked
                   ? 'Assigned to this facility'
                   : 'Change facility in Account',
-              style: const TextStyle(fontSize: 11, color: Color(0xFF607084)),
+              style: const TextStyle(fontSize: 11, color: Color(0xFF6B6B7B)),
             ),
           ],
         ),
@@ -964,7 +964,7 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
         _surface(
           const Text(
             'No recent scan events. Use a QR action above to get started.',
-            style: TextStyle(fontSize: 12, color: Color(0xFF607084)),
+            style: TextStyle(fontSize: 12, color: Color(0xFF6B6B7B)),
           ),
         )
       else
@@ -1012,7 +1012,7 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
           children: [
             const Text(
               'Signed in as',
-              style: TextStyle(color: Color(0xFF607084), fontSize: 11),
+              style: TextStyle(color: Color(0xFF6B6B7B), fontSize: 11),
             ),
             const SizedBox(height: 4),
             Text(

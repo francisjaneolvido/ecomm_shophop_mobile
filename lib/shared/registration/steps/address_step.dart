@@ -698,7 +698,7 @@ class _AddressStepState extends State<AddressStep> {
 
           const TextSpan(
             text: ' *',
-            style: TextStyle(color: Color(0xFFDB5757)),
+            style: TextStyle(color: Color(0xFFD93F4C)),
           ),
         ],
       ),
@@ -747,12 +747,12 @@ class _AddressStepState extends State<AddressStep> {
 
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: Color(0xFFDB5757)),
+        borderSide: const BorderSide(color: Color(0xFFD93F4C)),
       ),
 
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: Color(0xFFDB5757), width: 1.5),
+        borderSide: const BorderSide(color: Color(0xFFD93F4C), width: 1.5),
       ),
 
       errorStyle: const TextStyle(fontSize: 10, height: 1.3),
