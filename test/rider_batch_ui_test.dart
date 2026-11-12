@@ -367,4 +367,91 @@ void main() {
       }, () => MockClient((_) async => ok({'batch': route})));
     },
   );
+  for (final size in [const Size(320, 640), const Size(430, 932)]) {
+    testWidgets(
+      'out for delivery has direct completion without a scan at ${size.width}',
+      (tester) async {
+        final route = batch();
+        route['type'] = 'delivery';
+        route['progress'] = {'settled': 0, 'total': 1};
+        route['items'] = [
+          {
+            ...((route['items'] as List).first as Map<String, dynamic>),
+            'status': 'out_for_delivery',
+            'settled': false,
+            'stop': {
+              'name': 'Test Buyer',
+              'address': '123 Street, Calamba',
+              'phone': '09123456789',
+            },
+          },
+        ];
+        final actions = <String>[];
+        await http.runWithClient(() async {
+          await mount(
+            tester,
+            RiderBatchDetailScreen(
+              token: 'test',
+              initial: route,
+              onDeliveryAction: (id, action) async {
+                actions.add('$id:$action');
+                (route['items'] as List).first['status'] = 'delivered';
+                (route['items'] as List).first['settled'] = true;
+                route['progress'] = {'settled': 1, 'total': 1};
+              },
+            ),
+          );
+          tester.view.physicalSize = size;
+          await tester.pumpAndSettle();
+          expect(find.text('Deliver to Test Buyer'), findsOneWidget);
+          expect(find.text('Call buyer'), findsOneWidget);
+          expect(find.text('Open map'), findsOneWidget);
+          expect(find.text('0/1 delivered'), findsOneWidget);
+          expect(find.text('Scan parcel QR'), findsNothing);
+          expect(find.text('Scan & collect'), findsNothing);
+          expect(find.text('Parcel actions'), findsNothing);
+          await tester.ensureVisible(find.text('Complete delivery'));
+          await tester.pumpAndSettle();
+          await tester.tap(find.text('Complete delivery'));
+          await tester.pumpAndSettle();
+          expect(actions, ['101:complete']);
+          expect(find.text('1/1 delivered'), findsOneWidget);
+          expect(find.text('Complete delivery'), findsNothing);
+          expect(find.byType(RiderBatchDetailScreen), findsOneWidget);
+          expect(tester.takeException(), isNull);
+          await tester.pumpWidget(const SizedBox.shrink());
+        }, () => MockClient((_) async => ok({'batch': route})));
+      },
+    );
+  }
+
+  testWidgets(
+    'mixed delivery route shows collection only for the parcel still at branch',
+    (tester) async {
+      final route = batch();
+      route['type'] = 'delivery';
+      (route['items'] as List)[0]['status'] = 'delivery_assigned';
+      (route['items'] as List)[1]['status'] = 'out_for_delivery';
+      await http.runWithClient(() async {
+        await mount(
+          tester,
+          RiderBatchDetailScreen(
+            token: 'test',
+            initial: route,
+            onDeliveryAction: (_, _) async {},
+          ),
+        );
+        expect(find.text('Scan parcel QR'), findsNothing);
+        expect(find.text('Scan & collect'), findsOneWidget);
+        await tester.scrollUntilVisible(
+          find.text('Complete delivery'),
+          200,
+          scrollable: find.byType(Scrollable).first,
+        );
+        expect(find.text('Complete delivery'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox.shrink());
+      }, () => MockClient((_) async => ok({'batch': route})));
+    },
+  );
 }

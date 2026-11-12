@@ -41,6 +41,22 @@ class RiderCodOverview {
             .toList()
       : [];
 
+  static String receiptStatus(Map<String, dynamic> cash) {
+    if (cash['status'] == 'discrepancy') return 'Under review';
+    if (cash['receipt_verified'] == true || cash['status'] == 'reconciled') {
+      return 'Receipt verified';
+    }
+    if (cash['status'] == 'remitted') return 'Awaiting verification';
+    return 'With rider';
+  }
+
+  static String receiverDescription(Map<String, dynamic> cash) {
+    final facility = cash['receiving_facility']?.toString().trim() ?? '';
+    return facility.isNotEmpty
+        ? 'Receiving branch: $facility'
+        : 'Receiving branch not recorded. Your logistics company must verify receipt.';
+  }
+
   static String minorDisplay(dynamic value) {
     final minor = int.tryParse('$value');
     if (minor == null) return 'Pending';

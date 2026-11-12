@@ -4,7 +4,9 @@ import 'package:shophop/features/rider/data/models/rider_cod_overview.dart';
 import 'package:shophop/features/rider/data/services/rider_delivery_service.dart';
 
 class RiderCodRemittanceScreen extends StatefulWidget {
-  const RiderCodRemittanceScreen({super.key});
+  const RiderCodRemittanceScreen({super.key, this.initialCollectionId});
+
+  final int? initialCollectionId;
 
   @override
   State<RiderCodRemittanceScreen> createState() =>
@@ -18,6 +20,7 @@ class _RiderCodRemittanceScreenState extends State<RiderCodRemittanceScreen> {
   String? _token;
   RiderCodOverview _overview = RiderCodOverview.fromJson({});
   final Set<int> _selected = {};
+  bool _initialSelectionApplied = false;
 
   @override
   void initState() {
@@ -49,6 +52,15 @@ class _RiderCodRemittanceScreenState extends State<RiderCodRemittanceScreen> {
       if (response.success) {
         _overview = RiderCodOverview.fromJson(response.data);
         _selected.clear();
+        if (!_initialSelectionApplied) {
+          for (final cash in _overview.collections) {
+            if (cash['collection_id'] == widget.initialCollectionId &&
+                cash['can_remit'] == true) {
+              _selected.add(widget.initialCollectionId!);
+            }
+          }
+          _initialSelectionApplied = true;
+        }
       } else {
         _error = response.message;
       }
@@ -81,8 +93,9 @@ class _RiderCodRemittanceScreenState extends State<RiderCodRemittanceScreen> {
                 ),
                 DropdownButtonFormField<int>(
                   initialValue: facility,
+                  isExpanded: true,
                   decoration: const InputDecoration(
-                    labelText: 'Receiving facility',
+                    labelText: 'Receiving branch / facility',
                   ),
                   items: _overview.facilities
                       .map(
@@ -234,7 +247,7 @@ class _RiderCodRemittanceScreenState extends State<RiderCodRemittanceScreen> {
                           : null,
                       title: Text('Order #${cash['order_id']}'),
                       subtitle: Text(
-                        'Collected ₱${cash['amount']} · Received ₱${cash['received_amount']}\nOutstanding ₱${cash['outstanding']} · ${cash['status']}',
+                        'Collected ₱${cash['amount']} · Verified received ₱${cash['received_amount']}\nOutstanding ₱${cash['outstanding']} · ${RiderCodOverview.receiptStatus(cash)}${cash['remitted_at'] != null ? '\n${RiderCodOverview.receiverDescription(cash)}' : ''}',
                       ),
                     ),
                   ),
@@ -265,7 +278,7 @@ class _RiderCodRemittanceScreenState extends State<RiderCodRemittanceScreen> {
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                           Text(
-                            '${batch['status']} · Facility ${batch['sorting_center_id']}',
+                            '${batch['status'] == 'submitted' ? 'Awaiting verification' : batch['status']} · ${batch['receiving_facility'] ?? 'Facility ${batch['sorting_center_id']}'}',
                           ),
                           Text(
                             'Expected ₱${RiderCodOverview.minorDisplay(batch['expected_minor'])}',

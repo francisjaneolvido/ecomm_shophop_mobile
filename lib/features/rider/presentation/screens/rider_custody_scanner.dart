@@ -11,10 +11,14 @@ class RiderCustodyScanner extends StatefulWidget {
     super.key,
     required this.token,
     required this.onConfirmed,
+    this.expectedTrackingCode,
+    this.expectedAction,
   });
 
   final String token;
   final Future<void> Function() onConfirmed;
+  final String? expectedTrackingCode;
+  final String? expectedAction;
 
   @override
   State<RiderCustodyScanner> createState() => _RiderCustodyScannerState();
@@ -117,6 +121,20 @@ class _RiderCustodyScannerState extends State<RiderCustodyScanner> {
       return;
     }
 
+    if (widget.expectedTrackingCode != null &&
+        code != widget.expectedTrackingCode!.trim().toUpperCase()) {
+      await _stopCamera();
+      if (mounted) {
+        setState(() {
+          _handoff = null;
+          _success = false;
+          _message =
+              'This is a different parcel. Scan ${widget.expectedTrackingCode} for this delivery.';
+        });
+      }
+      return;
+    }
+
     setState(() => _busy = true);
     await _stopCamera();
     if (!mounted) return;
@@ -133,14 +151,21 @@ class _RiderCustodyScannerState extends State<RiderCustodyScanner> {
     if (!mounted) return;
 
     final rawHandoff = response.data['handoff'];
+    final matchesAction =
+        widget.expectedAction == null ||
+        (rawHandoff is Map && rawHandoff['action'] == widget.expectedAction);
     setState(() {
       _busy = false;
       _needsRecheck = false;
-      _handoff = response.success && rawHandoff is Map
+      _handoff = response.success && rawHandoff is Map && matchesAction
           ? Map<String, dynamic>.from(rawHandoff)
           : null;
       _success = false;
-      _message = response.success ? null : response.message;
+      _message = response.success
+          ? (matchesAction
+                ? null
+                : 'This parcel is not awaiting collection from the branch. Refresh the delivery.')
+          : response.message;
     });
     if (_handoff != null) _revealReview();
     ShopHopScanFeedback.instance.notify(

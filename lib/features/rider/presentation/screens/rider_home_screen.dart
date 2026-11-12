@@ -1,4 +1,7 @@
+import 'package:shophop/features/rider/presentation/widgets/rider_delivery_completion.dart';
 import 'package:shophop/features/rider/presentation/screens/rider_application_status_screen.dart';
+import 'package:shophop/features/rider/presentation/screens/rider_cod_remittance_screen.dart';
+import 'package:shophop/features/rider/data/models/rider_cod_overview.dart';
 import 'package:shophop/features/rider/data/services/rider_batch_service.dart';
 import 'package:shophop/features/rider/presentation/screens/rider_batch_detail_screen.dart';
 import 'package:shophop/shared/widgets/shop_hop_role_layout.dart';
@@ -75,6 +78,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
   bool _loading = true;
   bool _profileLoaded = false;
   int? _busyDeliveryId;
+  bool _deliveryFormOpen = false;
   int? _busyReturnId;
   int? _busyCodDeliveryId;
   int _tab = 0;
@@ -432,29 +436,20 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
   }
 
   Future<void> _remitCod(Map<String, dynamic> cash) async {
-    final token = _token;
     final id = _id(cash['delivery_id']);
-    if (token == null || id == null || _busyCodDeliveryId != null) return;
-
-    final amount = cash['amount']?.toString() ?? '0.00';
-    final confirmed = await _confirmAction(
-      title: 'Record COD cash handover?',
-      message:
-          'Continue only if you physically handed ₱$amount to your Logistics company. Logistics must acknowledge receipt separately.',
-      confirmLabel: 'Cash handed over',
-    );
-    if (!confirmed || !mounted) return;
-
+    if (_token == null || id == null || _busyCodDeliveryId != null) return;
     setState(() => _busyCodDeliveryId = id);
-    final result = await RiderDeliveryService.remitCod(
-      token: token,
-      deliveryId: id,
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => RiderCodRemittanceScreen(
+          initialCollectionId: _id(cash['collection_id']),
+        ),
+      ),
     );
     if (!mounted) return;
-
     setState(() => _busyCodDeliveryId = null);
-    _message(result.message, isError: !result.success);
-    if (result.success) await _load(showLoader: false);
+    await _load(showLoader: false);
   }
 
   Future<bool> _confirmAction({
@@ -485,30 +480,28 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
   }
 
   Future<void> _complete(RiderAssignment assignment) async {
-    final picked = await FilePicker.pickFiles(
-      allowMultiple: false,
-      type: FileType.image,
-      withData: true,
-    );
-    if (!mounted || picked == null || picked.files.isEmpty) return;
-
-    if (assignment.isCod) {
-      final confirmed = await _confirmAction(
-        title: 'Confirm COD collection',
-        message:
-            'Confirm that you collected ₱${assignment.totalAmount} from the customer before marking this parcel delivered.',
-        confirmLabel: 'Cash collected',
+    if (_deliveryFormOpen || _busyDeliveryId != null) return;
+    _deliveryFormOpen = true;
+    RiderDeliveryConfirmation? confirmation;
+    try {
+      confirmation = await showModalBottomSheet<RiderDeliveryConfirmation>(
+        context: context,
+        isScrollControlled: true,
+        showDragHandle: true,
+        builder: (_) => RiderDeliveryCompletion(assignment: assignment),
       );
-      if (!confirmed) return;
+    } finally {
+      _deliveryFormOpen = false;
     }
-
+    if (!mounted || confirmation == null) return;
+    final accepted = confirmation;
     await _runDeliveryAction(
       assignment,
       (token) => RiderDeliveryService.completeDelivery(
         token: token,
         deliveryId: assignment.id,
-        proof: picked.files.single,
-        cashCollected: assignment.isCod,
+        proof: accepted.proof,
+        cashCollected: accepted.cashCollected,
       ),
     );
   }
@@ -1068,12 +1061,39 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
     ];
   }
 
+  Future<void> _routeDeliveryAction(int id, String action) async {
+    await _load(showLoader: false);
+    if (!mounted || action == 'refresh') return;
+    final assignment = _assignments.where((a) => a.id == id).firstOrNull;
+    if (assignment == null) {
+      _message(
+        'This delivery is no longer assigned to you. Refresh the route.',
+        isError: true,
+      );
+      return;
+    }
+    if (action == 'complete' && assignment.canCompleteDelivery) {
+      await _complete(assignment);
+    } else if (action == 'problem' && assignment.canFailDelivery) {
+      await _fail(assignment);
+    } else {
+      _message(
+        'The parcel status changed. Review the updated delivery step.',
+        isError: true,
+      );
+    }
+  }
+
   Future<void> _openBatch(Map<String, dynamic> batch) async {
     if (_token == null) return;
     final action = await Navigator.push<String>(
       context,
       MaterialPageRoute(
-        builder: (_) => RiderBatchDetailScreen(token: _token!, initial: batch),
+        builder: (_) => RiderBatchDetailScreen(
+          token: _token!,
+          initial: batch,
+          onDeliveryAction: _routeDeliveryAction,
+        ),
       ),
     );
     if (!mounted) return;
@@ -1653,7 +1673,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
           _sectionHeader(
             title: 'COD collections',
             subtitle:
-                'Record handover only after physically giving the cash to Logistics.',
+                'Choose the receiving branch when handing over cash. Receipt remains pending until verified.',
           ),
           const SizedBox(height: 10),
           if (_codCollections.isEmpty)
@@ -1726,7 +1746,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
     final id = _id(cash['delivery_id']);
     final canRemit = cash['can_remit'] == true;
     final busy = id != null && _busyCodDeliveryId == id;
-    final status = _humanize(cash['status']?.toString() ?? 'Pending');
+    final status = RiderCodOverview.receiptStatus(cash);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -1773,8 +1793,22 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
                 child: FilledButton.icon(
                   onPressed: () => _remitCod(cash),
                   icon: const Icon(Icons.account_balance_outlined, size: 18),
-                  label: const Text('Record handover to Logistics'),
+                  label: const Text('Hand over COD to branch'),
                 ),
+              ),
+          ],
+          if (cash['remitted_at'] != null ||
+              cash['status'] == 'remitted' ||
+              cash['status'] == 'reconciled') ...[
+            const SizedBox(height: 8),
+            Text(
+              RiderCodOverview.receiverDescription(cash),
+              style: const TextStyle(fontSize: 12),
+            ),
+            if (status == 'Awaiting verification')
+              const Text(
+                'Handover recorded. The receiving staff must still count and confirm the cash.',
+                style: TextStyle(fontSize: 12),
               ),
           ],
         ],
@@ -2246,7 +2280,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
                 ),
               if (assignment != null && assignment.canCompleteDelivery)
                 _taskSheetAction(
-                  'Confirm delivery with proof',
+                  'Complete delivery',
                   Icons.task_alt_rounded,
                   () => _complete(assignment),
                   sheetContext,
@@ -2260,7 +2294,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
                       _fail(assignment);
                     },
                     icon: const Icon(Icons.report_outlined),
-                    label: const Text('Report failed attempt'),
+                    label: const Text('Report delivery problem'),
                   ),
                 ),
               if (task.kind == _RiderTaskKind.returnTask &&

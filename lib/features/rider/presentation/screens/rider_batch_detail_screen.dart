@@ -1,3 +1,5 @@
+import 'package:shophop/features/rider/presentation/screens/rider_custody_scanner.dart';
+import 'package:shophop/features/rider/presentation/widgets/rider_contact_actions.dart';
 import 'package:flutter/material.dart';
 import 'package:shophop/core/theme/app_colors.dart';
 import 'package:shophop/features/rider/data/services/rider_batch_service.dart';
@@ -37,13 +39,22 @@ String pickupBranchInstruction(Map<String, dynamic> route) {
 }
 
 class RiderBatchCard extends StatelessWidget {
-  const RiderBatchCard({super.key, required this.batch, required this.onTap});
+  const RiderBatchCard({
+    super.key,
+    required this.batch,
+    required this.onTap,
+    this.showNavigation = true,
+  });
   final Map<String, dynamic> batch;
   final VoidCallback onTap;
+  final bool showNavigation;
   @override
   Widget build(BuildContext context) {
     final active = batch['status'] == 'in_progress';
     final pickup = batch['type'] == 'pickup';
+    final delivered = batchRows(
+      batch['items'],
+    ).where((item) => item['status'] == 'delivered').length;
     final items = batchRows(batch['items']);
     final received = items
         .where((item) => item['status'] == 'received_at_branch')
@@ -66,12 +77,6 @@ class RiderBatchCard extends StatelessWidget {
         : const {};
     final total = (progress['total'] as num?)?.toInt() ?? 0;
     final done = (progress['settled'] as num?)?.toInt() ?? 0;
-    final capacity = batch['capacity'] is Map
-        ? batch['capacity'] as Map
-        : const {};
-    final totals = capacity['totals'] is Map
-        ? capacity['totals'] as Map
-        : const {};
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       child: InkWell(
@@ -111,31 +116,34 @@ class RiderBatchCard extends StatelessWidget {
                       color: AppColors.tealDark,
                     ),
                   ),
-                  const Icon(
-                    Icons.chevron_right,
-                    size: 19,
-                    color: AppColors.textMuted,
-                  ),
+                  if (showNavigation)
+                    const Icon(
+                      Icons.chevron_right,
+                      size: 19,
+                      color: AppColors.textMuted,
+                    ),
                 ],
               ),
-              const SizedBox(height: 5),
-              Text(
-                '${batch['code'] ?? ''}',
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: AppColors.textMuted,
+              if (pickup) ...[
+                const SizedBox(height: 5),
+                Text(
+                  '${batch['code'] ?? ''}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textMuted,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                batchWindow(context, batch),
-                style: const TextStyle(fontSize: 11),
-              ),
+                const SizedBox(height: 8),
+                Text(
+                  batchWindow(context, batch),
+                  style: const TextStyle(fontSize: 11),
+                ),
+              ],
               const SizedBox(height: 8),
               Text(
                 pickup
                     ? '$collected/$total collected \u2022 $received/$total received at branch'
-                    : '$done/$total deliveries resolved \u2022 ${totals['stops'] ?? 0} stops',
+                    : '$delivered/$total delivered',
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
@@ -201,9 +209,11 @@ class RiderBatchDetailScreen extends StatefulWidget {
     super.key,
     required this.token,
     required this.initial,
+    this.onDeliveryAction,
   });
   final String token;
   final Map<String, dynamic> initial;
+  final Future<void> Function(int deliveryId, String action)? onDeliveryAction;
   @override
   State<RiderBatchDetailScreen> createState() => _RiderBatchDetailScreenState();
 }
@@ -361,7 +371,7 @@ class _RiderBatchDetailScreenState extends State<RiderBatchDetailScreen> {
                   style: const TextStyle(color: AppColors.error, fontSize: 12),
                 ),
               ),
-            RiderBatchCard(batch: _batch, onTap: () {}),
+            RiderBatchCard(batch: _batch, onTap: () {}, showNavigation: false),
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: Text(
@@ -370,7 +380,7 @@ class _RiderBatchDetailScreenState extends State<RiderBatchDetailScreen> {
                     : _active
                     ? _batch['type'] == 'pickup'
                           ? 'Scan at the seller to collect each parcel. Then bring it to your assigned branch, where branch staff scan it as received.'
-                          : 'Collect parcels from the branch, deliver to each buyer, and record the delivery outcome.'
+                          : 'Each parcel below shows your next step. After collection from the branch, no additional QR scan is needed at the buyer.'
                     : 'This route is closed. Individual parcel outcomes are preserved.',
                 style: const TextStyle(
                   fontSize: 12,
@@ -378,10 +388,34 @@ class _RiderBatchDetailScreenState extends State<RiderBatchDetailScreen> {
                 ),
               ),
             ),
-            Text(
-              '${_batch['branch'] ?? 'Assigned branch'} \u2022 ${totals['weight_kg'] ?? 0} kg ? ${totals['volume_m3'] ?? 0} m\u00b3 ? ${totals['minutes'] ?? 0} min',
-              style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
-            ),
+            if (_batch['type'] == 'pickup')
+              Text(
+                '${_batch['branch'] ?? 'Assigned branch'}',
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: AppColors.textMuted,
+                ),
+              )
+            else
+              ExpansionTile(
+                tilePadding: EdgeInsets.zero,
+                title: const Text(
+                  'Route details',
+                  style: TextStyle(fontSize: 12),
+                ),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Text(
+                      '${_batch['code'] ?? ''}\n${batchWindow(context, _batch)}\n${_batch['branch'] ?? 'Assigned branch'}\n${totals['weight_kg'] ?? 0} kg - ${totals['volume_m3'] ?? 0} m3 - ${totals['minutes'] ?? 0} min',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             const SizedBox(height: 14),
             for (final entry in stops.entries) _stop(entry.key, entry.value),
           ],
@@ -389,7 +423,8 @@ class _RiderBatchDetailScreenState extends State<RiderBatchDetailScreen> {
       ),
       bottomNavigationBar:
           _active &&
-              (_batch['type'] != 'pickup' || pickupCollectionPending(_batch))
+              _batch['type'] == 'pickup' &&
+              pickupCollectionPending(_batch)
           ? SafeArea(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(12, 6, 12, 10),
@@ -402,11 +437,225 @@ class _RiderBatchDetailScreenState extends State<RiderBatchDetailScreen> {
                 ),
               ),
             )
+          : _active &&
+                _batch['type'] == 'delivery' &&
+                items.length == 1 &&
+                [
+                  'delivery_assigned',
+                  'out_for_delivery',
+                ].contains(items.first['status'])
+          ? _deliveryFooter(items.first)
           : null,
     );
   }
 
+  Widget _deliveryFooter(Map<String, dynamic> item) {
+    final collect = item['status'] == 'delivery_assigned';
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 6, 12, 10),
+        child: FilledButton.icon(
+          onPressed:
+              _loading ||
+                  _mutating ||
+                  (!collect && widget.onDeliveryAction == null)
+              ? null
+              : () => collect
+                    ? _collectDelivery(item)
+                    : _deliveryAction(item, 'complete'),
+          icon: Icon(collect ? Icons.qr_code_scanner : Icons.task_alt),
+          label: Text(collect ? 'Scan & collect' : 'Complete delivery'),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _deliveryAction(Map<String, dynamic> item, String action) async {
+    if (_loading || _mutating) return;
+    final id = int.tryParse('${item['delivery_id']}');
+    if (id == null || widget.onDeliveryAction == null) return;
+    setState(() {
+      _mutating = true;
+      _error = null;
+    });
+    try {
+      await widget.onDeliveryAction!(id, action);
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => _error =
+              'Could not finish this action. Refresh and check the parcel before retrying.',
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _mutating = false);
+        await _load();
+      }
+    }
+  }
+
+  Future<void> _collectDelivery(Map<String, dynamic> item) async {
+    if (_loading || _mutating) return;
+    final tracking = '${item['tracking_code'] ?? ''}';
+    if (tracking.isEmpty) return;
+    setState(() => _mutating = true);
+    try {
+      await Navigator.push<void>(
+        context,
+        MaterialPageRoute(
+          builder: (scanContext) => Scaffold(
+            appBar: AppBar(title: const Text('Scan & collect')),
+            body: RiderCustodyScanner(
+              token: widget.token,
+              expectedTrackingCode: tracking,
+              expectedAction: 'delivery_handoff',
+              onConfirmed: () async {
+                if (scanContext.mounted) Navigator.pop(scanContext);
+              },
+            ),
+          ),
+        ),
+      );
+      final id = int.tryParse('${item['delivery_id']}');
+      if (mounted && id != null) {
+        await widget.onDeliveryAction?.call(id, 'refresh');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _mutating = false);
+        await _load();
+      }
+    }
+  }
+
+  Widget _deliveryStop(String sequence, List<Map<String, dynamic>> items) {
+    final stop = items.first['stop'] is Map
+        ? items.first['stop'] as Map
+        : const {};
+    final name = '${stop['name'] ?? 'Buyer'}';
+    final address = '${stop['address'] ?? ''}';
+    final phone = '${stop['phone'] ?? ''}';
+    final busy = _loading || _mutating;
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Deliver to $name',
+              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 8),
+            SelectableText(address, style: const TextStyle(fontSize: 13)),
+            if (phone.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              SelectableText(phone, style: const TextStyle(fontSize: 13)),
+            ],
+            if (_active &&
+                items.any(
+                  (item) => [
+                    'delivery_assigned',
+                    'out_for_delivery',
+                  ].contains(item['status']),
+                ))
+              RiderContactActions(phone: phone, address: address),
+            for (final item in items) ...[
+              const Divider(height: 24),
+              Text(
+                '${item['tracking_code'] ?? 'Parcel'}',
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textMuted,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                item['status'] == 'delivery_assigned'
+                    ? 'Ready to collect at branch'
+                    : batchLabel(item['status']),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.tealDark,
+                ),
+              ),
+              const SizedBox(height: 10),
+              if (item['cod_amount'] != null)
+                Text(
+                  '${item['status'] == 'delivered' ? 'COD collected' : 'Collect COD'}: PHP ${(num.tryParse('${item['cod_amount']}') ?? 0).toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                  ),
+                )
+              else
+                const Text(
+                  'Already paid - no cash to collect',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+              if (_active && item['settled'] != true) ...[
+                const SizedBox(height: 12),
+                if (item['status'] == 'delivery_assigned') ...[
+                  Text(
+                    'Collect this parcel from ${_batch['branch'] ?? 'your assigned branch'}. Scan its QR once when it is handed to you.',
+                  ),
+                  const SizedBox(height: 12),
+                  if (batchRows(_batch['items']).length != 1)
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: busy ? null : () => _collectDelivery(item),
+                        icon: const Icon(Icons.qr_code_scanner),
+                        label: const Text('Scan & collect'),
+                      ),
+                    ),
+                ] else if (item['status'] == 'out_for_delivery') ...[
+                  const Text(
+                    'Hand the parcel to the buyer, then add delivery proof. No additional QR scan is needed.',
+                  ),
+                  const SizedBox(height: 12),
+                  if (batchRows(_batch['items']).length != 1)
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: busy || widget.onDeliveryAction == null
+                            ? null
+                            : () => _deliveryAction(item, 'complete'),
+                        icon: const Icon(Icons.task_alt),
+                        label: const Text('Complete delivery'),
+                      ),
+                    ),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: busy || widget.onDeliveryAction == null
+                          ? null
+                          : () => _deliveryAction(item, 'problem'),
+                      icon: const Icon(Icons.report_outlined),
+                      label: const Text('Report delivery problem'),
+                    ),
+                  ),
+                ] else if (item['requires_branch_return'] == true)
+                  Text(
+                    'Delivery unsuccessful. Bring this parcel back to ${_batch['branch'] ?? 'your branch'} for the branch receiving scan.',
+                  ),
+              ],
+              if (item['reason'] != null)
+                Text(
+                  '${item['reason']}',
+                  style: const TextStyle(color: AppColors.textMuted),
+                ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _stop(String sequence, List<Map<String, dynamic>> items) {
+    if (_batch['type'] == 'delivery') return _deliveryStop(sequence, items);
     final stop = items.first['stop'] is Map
         ? items.first['stop'] as Map
         : const {};
