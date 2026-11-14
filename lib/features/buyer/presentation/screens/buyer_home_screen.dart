@@ -1,4 +1,6 @@
+import 'package:shophop/features/buyer/presentation/pages/buyer_messages_page.dart';
 import 'package:flutter/material.dart';
+import 'package:shophop/features/buyer/data/services/buyer_preferences.dart';
 
 import 'package:shophop/core/session/auth_session_service.dart';
 import 'package:shophop/core/theme/app_colors.dart';
@@ -8,7 +10,6 @@ import 'package:shophop/features/buyer/data/services/buyer_catalog_service.dart'
 import 'package:shophop/features/buyer/presentation/pages/buyer_account_page.dart';
 import 'package:shophop/features/buyer/presentation/pages/buyer_cart_page.dart';
 import 'package:shophop/features/buyer/presentation/pages/buyer_catalog_page.dart';
-import 'package:shophop/features/buyer/presentation/pages/buyer_categories_page.dart';
 import 'package:shophop/features/buyer/presentation/pages/buyer_checkout_page.dart';
 import 'package:shophop/features/buyer/presentation/pages/buyer_empty_feature_page.dart';
 import 'package:shophop/features/buyer/presentation/pages/buyer_home_page.dart';
@@ -91,6 +92,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
       }
 
       final firstName = result.data['first_name']?.toString().trim();
+      final lastName = result.data['last_name']?.toString().trim();
       final email = result.data['email']?.toString().trim();
 
       if (!mounted) return;
@@ -99,7 +101,10 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
           _email = email;
         }
         if (firstName != null && firstName.isNotEmpty) {
-          _displayName = firstName;
+          _displayName = [
+            firstName,
+            if (lastName != null && lastName.isNotEmpty) lastName,
+          ].join(' ');
         }
       });
     } catch (_) {
@@ -151,16 +156,37 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
     );
   }
 
-  void _openTab(int index) {
+  Future<void> _openTab(int index) async {
     if (index == _currentIndex) return;
+    String? defaultOrderView;
+    if (index == 2) {
+      try {
+        final view = await BuyerPreferences.orderView(_email);
+        defaultOrderView = view == 'all' ? null : view;
+      } catch (_) {
+        /* Keep all orders available when device storage fails. */
+      }
+      if (!mounted) return;
+    }
     setState(() {
       _currentIndex = index;
       if (index == 1) {
         _likesRefreshVersion++;
       }
       if (index == 2) {
+        _ordersStatusGroup = defaultOrderView;
         _ordersRefreshVersion++;
       }
+    });
+  }
+
+  String? _ordersStatusGroup;
+
+  void _openOrders(String? statusGroup) {
+    setState(() {
+      _ordersStatusGroup = statusGroup;
+      _ordersRefreshVersion++;
+      _currentIndex = 2;
     });
   }
 
@@ -185,19 +211,6 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
           initialSubcategory: subcategory,
           onSessionExpired: _expireSession,
           onOpenProduct: _openProduct,
-        ),
-      ),
-    );
-  }
-
-  void _openAllCategories() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => BuyerCategoriesPage(
-          token: _token,
-          onSessionExpired: _expireSession,
-          onOpenCategory: (category, subcategory) =>
-              _openCategory(category, subcategory: subcategory),
         ),
       ),
     );
@@ -273,15 +286,9 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
 
   void _openMessages() {
     Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context2) => BuyerEmptyFeaturePage(
-          title: 'Messages',
-          description:
-              'Seller chat, order concerns, and support conversations will connect here in the next mobile/backend pass.',
-          icon: Icons.chat_bubble_outline_rounded,
-          actionLabel: 'Close',
-          onAction: () => Navigator.of(context2).maybePop(),
-        ),
+      MaterialPageRoute<void>(
+        builder: (_) =>
+            BuyerMessagesPage(token: _token, onSessionExpired: _expireSession),
       ),
     );
   }
@@ -291,6 +298,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
     Navigator.of(context).popUntil((route) => route.isFirst);
     setState(() {
       _currentIndex = 2;
+      _ordersStatusGroup = null;
       _homeRefreshVersion++;
       _ordersRefreshVersion++;
     });
@@ -318,7 +326,6 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
         onSessionExpired: _expireSession,
         onOpenSearch: _openSearch,
         onOpenCategory: _openCategory,
-        onOpenAllCategories: _openAllCategories,
         onOpenCollection: _openCollection,
         onOpenProduct: _openProduct,
         onOpenCart: () => _openCart(),
@@ -335,6 +342,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
       ),
       BuyerOrdersPage(
         key: ValueKey<int>(_ordersRefreshVersion),
+        initialStatusGroup: _ordersStatusGroup,
         token: _token,
         onSessionExpired: _expireSession,
         onBrowseProducts: () => _openTab(0),
@@ -348,11 +356,16 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
         onAction: () => _openTab(0),
       ),
       BuyerAccountPage(
+        onDisplayNameChanged: (name) => setState(() => _displayName = name),
+        onSessionExpired: _expireSession,
         token: _token,
         displayName: _displayName,
         email: _email,
         loggingOut: _loggingOut,
         onLogout: _logout,
+        onOpenOrders: _openOrders,
+        onOpenLikes: () => _openTab(1),
+        onOpenCart: () => _openCart(),
       ),
     ];
 

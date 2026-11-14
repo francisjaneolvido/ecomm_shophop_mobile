@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:shophop/core/theme/app_theme.dart';
 import 'package:shophop/features/buyer/data/services/buyer_catalog_service.dart';
-import 'package:shophop/features/buyer/presentation/widgets/buyer_category_icon.dart';
+import 'package:shophop/features/buyer/presentation/widgets/buyer_category_carousel.dart';
 import 'package:shophop/features/buyer/presentation/widgets/buyer_product_card.dart';
 import 'package:shophop/shared/realtime/foreground_refresh.dart';
 import 'package:shophop/shared/widgets/shop_hop_ui.dart';
@@ -18,7 +18,6 @@ class BuyerHomePage extends StatefulWidget {
     required this.onOpenCart,
     required this.onOpenOrders,
     required this.onOpenMessages,
-    this.onOpenAllCategories,
     this.onOpenCollection,
     this.isActive = true,
   });
@@ -31,7 +30,6 @@ class BuyerHomePage extends StatefulWidget {
   final VoidCallback onOpenCart;
   final VoidCallback onOpenOrders;
   final VoidCallback onOpenMessages;
-  final VoidCallback? onOpenAllCategories;
   final ValueChanged<String>? onOpenCollection;
 
   @override
@@ -115,7 +113,7 @@ class _BuyerHomePageState extends State<BuyerHomePage>
       setState(() {
         _loading = false;
         _refreshing = false;
-        if (!silent) _error = error;
+        _error = error;
       });
       if (error.isUnauthorized) await widget.onSessionExpired();
     }
@@ -236,6 +234,11 @@ class _BuyerHomePageState extends State<BuyerHomePage>
               ),
               actions: [
                 IconButton(
+                  tooltip: 'Messages',
+                  onPressed: widget.onOpenMessages,
+                  icon: const Icon(CupertinoIcons.chat_bubble),
+                ),
+                IconButton(
                   tooltip: 'Cart',
                   onPressed: widget.onOpenCart,
                   icon: Badge.count(
@@ -251,11 +254,20 @@ class _BuyerHomePageState extends State<BuyerHomePage>
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
-                  child: Text(
-                    'Showing saved products. Pull down to try again.',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: colors.error,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Couldn't refresh categories and products. Showing the last loaded data.",
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colors.error,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: _refreshing ? null : _loadHome,
+                        child: const Text('Try again'),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -271,7 +283,7 @@ class _BuyerHomePageState extends State<BuyerHomePage>
                     onTap: () {
                       final target = home.banners[_bannerIndex].target;
                       if (target == 'categories') {
-                        (widget.onOpenAllCategories ?? widget.onOpenSearch)();
+                        widget.onOpenSearch();
                       } else {
                         _openCollection(target);
                       }
@@ -284,19 +296,13 @@ class _BuyerHomePageState extends State<BuyerHomePage>
                 padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
                 child: Column(
                   children: [
-                    ShopHopSectionHeading(
-                      title: 'Shop by Category',
-                      trailing: TextButton(
-                        onPressed:
-                            widget.onOpenAllCategories ?? widget.onOpenSearch,
-                        child: const Text('See all'),
-                      ),
-                    ),
+                    const ShopHopSectionHeading(title: 'Shop by Category'),
                     const SizedBox(height: 8),
-                    _CategoryShortcuts(
+                    BuyerCategoryCarousel(
                       categories: home.categories,
                       onCategory: widget.onOpenCategory,
-                      onAll: widget.onOpenAllCategories ?? widget.onOpenSearch,
+                      onRetry: _loadHome,
+                      refreshing: _refreshing,
                     ),
                   ],
                 ),
@@ -481,7 +487,13 @@ class _MarketplaceBanner extends StatelessWidget {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Flexible(child: Text(banner.linkLabel)),
+                            Flexible(
+                              child: Text(
+                                banner.target == 'categories'
+                                    ? 'Shop now'
+                                    : banner.linkLabel,
+                              ),
+                            ),
                             const SizedBox(width: 8),
                             const Icon(CupertinoIcons.arrow_right, size: 16),
                           ],
@@ -518,83 +530,6 @@ class _MarketplaceBanner extends StatelessWidget {
             ),
           ),
       ],
-    );
-  }
-}
-
-class _CategoryShortcuts extends StatelessWidget {
-  const _CategoryShortcuts({
-    required this.categories,
-    required this.onCategory,
-    required this.onAll,
-  });
-  final List<BuyerCategoryData> categories;
-  final ValueChanged<BuyerCategoryData> onCategory;
-  final VoidCallback onAll;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-    final shown = categories.take(7).toList();
-    return ShopHopSurface(
-      padding: const EdgeInsets.all(8),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final scale = MediaQuery.textScalerOf(context).scale(12) / 12;
-          final columns = scale > 1.4 ? 2 : 4;
-          return Wrap(
-            children: [
-              for (var i = 0; i <= shown.length; i++)
-                SizedBox(
-                  width: constraints.maxWidth / columns,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(6),
-                    onTap: i == shown.length
-                        ? onAll
-                        : () => onCategory(shown[i]),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 4,
-                        vertical: 10,
-                      ),
-                      child: Column(
-                        children: [
-                          Icon(
-                            i == shown.length
-                                ? CupertinoIcons.square_grid_2x2
-                                : buyerCategoryIcon(shown[i].icon),
-                            size: 25,
-                            color: colors.primary,
-                          ),
-                          const SizedBox(height: 8),
-                          SizedBox(
-                            height: 34 * scale,
-                            child: Center(
-                              child: Text(
-                                i == shown.length
-                                    ? 'All Categories'
-                                    : shown[i].name,
-                                textAlign: TextAlign.center,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 10,
-                                  height: 1.5,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          );
-        },
-      ),
     );
   }
 }

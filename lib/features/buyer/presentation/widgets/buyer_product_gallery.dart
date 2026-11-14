@@ -90,12 +90,14 @@ class BuyerProductGallery extends StatefulWidget {
     required this.index,
     required this.onChanged,
     this.active = true,
+    this.showThumbnails = true,
   });
   final List<BuyerMediaItem> media;
   final PageController controller;
   final int index;
   final ValueChanged<int> onChanged;
   final bool active;
+  final bool showThumbnails;
   @override
   State<BuyerProductGallery> createState() => _BuyerProductGalleryState();
 }
@@ -195,7 +197,7 @@ class _BuyerProductGalleryState extends State<BuyerProductGallery> {
               ],
             ),
           ),
-          if (widget.media.length > 1)
+          if (widget.showThumbnails && widget.media.length > 1)
             SizedBox(
               height: 62,
               child: ListView.separated(

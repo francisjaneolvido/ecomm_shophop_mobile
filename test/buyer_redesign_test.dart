@@ -8,7 +8,6 @@ import 'package:shophop/core/theme/app_theme.dart';
 import 'package:shophop/features/buyer/data/services/buyer_catalog_service.dart';
 import 'package:shophop/features/buyer/presentation/pages/buyer_home_page.dart';
 import 'package:shophop/features/buyer/presentation/pages/buyer_catalog_page.dart';
-import 'package:shophop/features/buyer/presentation/pages/buyer_categories_page.dart';
 import 'package:shophop/features/buyer/presentation/pages/buyer_product_detail_page.dart';
 import 'package:shophop/features/buyer/presentation/widgets/buyer_product_card.dart';
 
@@ -72,7 +71,7 @@ Map<String, dynamic> home(String name) => {
 
 void main() {
   testWidgets(
-    'Home uses web content, opens categories and refreshes visible products',
+    'Home keeps category product shortcuts without a directory and refreshes products',
     (tester) async {
       tester.view.physicalSize = const Size(390, 844);
       tester.view.devicePixelRatio = 1;
@@ -80,7 +79,9 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
       var name = 'Original listing';
       var homeCalls = 0;
-      var allCategories = 0;
+      var searches = 0;
+      String? selectedCategory;
+      var messages = 0;
       await http.runWithClient(
         () async {
           await tester.pumpWidget(
@@ -90,24 +91,30 @@ void main() {
                 body: BuyerHomePage(
                   token: 'test',
                   onSessionExpired: () async {},
-                  onOpenSearch: () {},
-                  onOpenCategory: (_) {},
+                  onOpenSearch: () => searches++,
+                  onOpenCategory: (category) => selectedCategory = category.slug,
                   onOpenProduct: (_) {},
                   onOpenCart: () {},
                   onOpenOrders: () {},
-                  onOpenMessages: () {},
-                  onOpenAllCategories: () => allCategories++,
+                  onOpenMessages: () => messages++,
                 ),
               ),
             ),
           );
           await tester.pumpAndSettle();
+          await tester.tap(find.byTooltip('Messages'));
+          expect(messages, 1);
           expect(
             find.text('Everything you love, just a hop away.'),
             findsOneWidget,
           );
-          await tester.tap(find.text('Shop Categories'));
-          expect(allCategories, 1);
+          expect(find.text('All Categories'), findsNothing);
+          await tester.tap(find.text('Shop now'));
+          expect(searches, 1);
+          await tester.scrollUntilVisible(find.text('Pet Supplies'), 180,
+            scrollable: find.byType(Scrollable).first);
+          await tester.tap(find.text('Pet Supplies'));
+          expect(selectedCategory, 'pet-supplies');
           await tester.scrollUntilVisible(
             find.text('Daily Discover'),
             300,
@@ -135,44 +142,22 @@ void main() {
     },
   );
 
-  testWidgets(
-    'All Categories searches web subcategories and opens their real filter',
-    (tester) async {
-      String? selectedCategory;
-      String? selectedSubcategory;
-      await http.runWithClient(() async {
-        await tester.pumpWidget(
-          MaterialApp(
-            theme: AppTheme.light,
-            home: BuyerCategoriesPage(
-              token: 'test',
-              onSessionExpired: () async {},
-              onOpenCategory: (category, subcategory) {
-                selectedCategory = category.slug;
-                selectedSubcategory = subcategory;
-              },
-            ),
-          ),
-        );
-        await tester.pumpAndSettle();
-        await tester.enterText(find.byType(TextField), 'furniture');
-        await tester.pumpAndSettle();
-        expect(find.text('Pet Supplies'), findsNothing);
-        await tester.tap(find.text('Furniture & Decor'));
-        await tester.pumpAndSettle();
-        expect(selectedCategory, 'home-and-garden');
-        expect(selectedSubcategory, 'Furniture & Decor');
-        await tester.enterText(find.byType(TextField), 'no match');
-        await tester.pumpAndSettle();
-        expect(find.text('No matching categories'), findsOneWidget);
-        await tester.tap(find.text('Show all categories'));
-        await tester.pumpAndSettle();
-        expect(find.text('Pet Supplies'), findsOneWidget);
-        expect(tester.takeException(), isNull);
-        await tester.pumpWidget(const SizedBox());
-      }, () => MockClient((_) async => response(categories)));
-    },
-  );
+  testWidgets('category product listing retains subcategory filtering', (tester) async {
+    await http.runWithClient(() async {
+      await tester.pumpWidget(MaterialApp(theme: AppTheme.light,
+        home: BuyerCatalogPage(token: 'test', category: BuyerCategoryData.fromJson(categories[1]),
+          initialSubcategory: 'Furniture & Decor', onSessionExpired: () async {}, onOpenProduct: (_) {})));
+      await tester.pumpAndSettle();
+      expect(find.text('Available desk lamp'), findsOneWidget);
+      expect(find.text('Browse Categories'), findsNothing);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+    }, () => MockClient((request) async {
+      expect(request.url.queryParameters['category'], 'home-and-garden');
+      expect(request.url.queryParameters['subcategory'], 'Furniture & Decor');
+      return response(listing([product(1, 'Available desk lamp')]));
+    }));
+  });
 
   testWidgets('Search ignores an older response after the query changes', (
     tester,
@@ -313,6 +298,8 @@ void main() {
             ),
           );
           await tester.pumpAndSettle();
+          await tester.ensureVisible(find.text('Variation & quantity'));
+          await tester.pumpAndSettle();
           await tester.tap(find.text('Variation & quantity'));
           await tester.pumpAndSettle();
           await tester.tap(find.byTooltip('Increase quantity'));
@@ -377,10 +364,7 @@ void main() {
             ),
           );
           await tester.pumpAndSettle();
-          await tester.drag(
-            find.byType(CustomScrollView).first,
-            const Offset(0, -500),
-          );
+          await tester.ensureVisible(find.text('View reviews'));
           await tester.pumpAndSettle();
           expect(find.text('View reviews').hitTestable(), findsOneWidget);
           expect(find.text('Third review comment'), findsNothing);
@@ -439,6 +423,10 @@ void main() {
   testWidgets(
     'Details keeps variant selection and Buy Now connected to the cart',
     (tester) async {
+      tester.view.physicalSize = const Size(320, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
       Map<String, dynamic>? added;
       String? openedLine;
       await http.runWithClient(
@@ -458,6 +446,22 @@ void main() {
             ),
           );
           await tester.pumpAndSettle();
+          await tester.tap(find.text('Shop'));
+          await tester.pumpAndSettle();
+          expect(find.text('Shop details'), findsOneWidget);
+          await tester.tap(find.byTooltip('Close shop details'));
+          await tester.pumpAndSettle();
+          await tester.tap(find.text('Chat'));
+          await tester.pumpAndSettle();
+          expect(
+            find.text('Say hello to start the conversation.'),
+            findsOneWidget,
+          );
+          await tester.pageBack();
+          await tester.pumpAndSettle();
+          expect(find.byTooltip('Add to Cart'), findsOneWidget);
+          await tester.ensureVisible(find.text('Variation & quantity'));
+          await tester.pumpAndSettle();
           await tester.tap(find.text('Variation & quantity'));
           await tester.pumpAndSettle();
           await tester.tap(find.text('Blue'));
@@ -474,12 +478,28 @@ void main() {
           await tester.pumpWidget(const SizedBox());
         },
         () => MockClient((request) async {
+          if (request.url.path.endsWith('/chat/open')) {
+            expect(jsonDecode(request.body)['seller_id'], 99);
+            return http.Response(
+              jsonEncode({'ok': true, 'chat_id': 4}),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          if (request.url.path.contains('/chat/')) {
+            return http.Response(
+              jsonEncode({'ok': true, 'messages': []}),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
           if (request.method == 'POST') {
             added = jsonDecode(request.body) as Map<String, dynamic>;
             return response({'cart_count': 1, 'line_key': 'line-1'});
           }
           return response({
             ...product(1, 'Variant lamp'),
+            'seller': {'user_id': 99, 'business_name': 'Test Shop'},
             'has_variants': true,
             'variants': [
               {

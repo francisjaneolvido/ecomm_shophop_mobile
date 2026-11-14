@@ -48,7 +48,7 @@ try {
     }
 }
 if (-not $apiReady) {
-    throw "ShopHop API is not reachable on PC port $Port. In ecomm_shophop_web, run: php artisan serve --host=127.0.0.1 --port=$Port"
+    throw "ShopHop API is not reachable on PC port $Port. In ecomm_shophop_web, run: .\scripts\serve-mobile.ps1 -Port $Port"
 }
 
 & $adbPath -s $DeviceId reverse "tcp:$Port" "tcp:$Port"

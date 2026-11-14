@@ -481,6 +481,7 @@ class BuyerReviewData {
     required this.image,
     required this.helpful,
     this.sellerReply = '',
+    this.media,
   });
 
   final int id;
@@ -492,6 +493,12 @@ class BuyerReviewData {
   final String image;
   final int helpful;
   final String sellerReply;
+  final List<BuyerMediaItem>? media;
+  List<BuyerMediaItem> get attachments => media?.isNotEmpty == true
+      ? media!
+      : image.isNotEmpty
+      ? [BuyerMediaItem(type: 'image', url: image)]
+      : const [];
 
   factory BuyerReviewData.fromJson(Map<String, dynamic> json) {
     return BuyerReviewData(
@@ -504,6 +511,7 @@ class BuyerReviewData {
       image: _productImageUrl(json),
       helpful: _asInt(json['helpful']),
       sellerReply: json['seller_reply']?.toString() ?? '',
+      media: _mapList(json['media'], BuyerMediaItem.fromJson),
     );
   }
 }
@@ -544,13 +552,6 @@ class BuyerCatalogService {
     final body = await _get('/buyer/home', token: token);
     final data = _requireDataMap(body, 'Buyer Home');
     return BuyerHomeData.fromJson(data);
-  }
-
-  static Future<List<BuyerCategoryData>> getCategories({
-    required String token,
-  }) async {
-    final body = await _get('/buyer/categories', token: token);
-    return _mapList(body['data'], BuyerCategoryData.fromJson);
   }
 
   static Future<BuyerProductListData> getProducts({

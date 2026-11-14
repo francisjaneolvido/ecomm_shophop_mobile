@@ -10,8 +10,11 @@ Enable USB debugging, connect the phone, and approve the computer on the phone.
 In the web project, keep the Laravel server running:
 
 ```powershell
-php artisan serve --host=127.0.0.1 --port=8000
+.\scripts\serve-mobile.ps1
 ```
+
+The backend launcher applies the review upload limits to the serving process only.
+See `ecomm_shophop_web/docs/mobile-review-uploads.md` for details.
 
 In the mobile project:
 

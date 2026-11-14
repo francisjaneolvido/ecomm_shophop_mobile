@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:shophop/core/config/api_config.dart';
 import 'package:shophop/core/theme/app_colors.dart';
 import 'package:shophop/features/buyer/data/services/buyer_order_service.dart';
-import 'package:shophop/features/buyer/presentation/widgets/buyer_item_rating_sheet.dart';
+import 'package:shophop/features/buyer/presentation/pages/buyer_item_rating_page.dart';
 
 class BuyerOrdersPage extends StatefulWidget {
   const BuyerOrdersPage({
@@ -11,10 +11,12 @@ class BuyerOrdersPage extends StatefulWidget {
     required this.token,
     required this.onSessionExpired,
     required this.onBrowseProducts,
+    this.initialStatusGroup,
   });
   final String token;
   final Future<void> Function() onSessionExpired;
   final VoidCallback onBrowseProducts;
+  final String? initialStatusGroup;
 
   @override
   State<BuyerOrdersPage> createState() => _BuyerOrdersPageState();
@@ -35,13 +37,16 @@ class _BuyerOrdersPageState extends State<BuyerOrdersPage> {
   @override
   void initState() {
     super.initState();
+    _statusGroup = widget.initialStatusGroup;
     _load();
   }
 
   @override
   void didUpdateWidget(covariant BuyerOrdersPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.token != widget.token) {
+    if (oldWidget.token != widget.token ||
+        oldWidget.initialStatusGroup != widget.initialStatusGroup) {
+      _statusGroup = widget.initialStatusGroup;
       _orders = const [];
       _counts = const {};
       _load();
@@ -158,20 +163,19 @@ class _BuyerOrdersPageState extends State<BuyerOrdersPage> {
       : _groups.firstWhere((group) => group.id == _statusGroup).label;
 
   Future<void> _rateItem(BuyerOrderData order, BuyerOrderItemData item) async {
-    final saved = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      isDismissible: false,
-      enableDrag: false,
-      builder: (_) => BuyerItemRatingSheet(
-        item: item,
-        onSessionExpired: widget.onSessionExpired,
-        onSubmit: (rating, comment) => BuyerOrderService.rateItem(
-          token: widget.token,
-          orderId: order.id,
-          itemId: item.id,
-          rating: rating,
-          comment: comment,
+    final saved = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => BuyerItemRatingPage(
+          item: item,
+          onSessionExpired: widget.onSessionExpired,
+          onSubmit: (rating, comment, media) => BuyerOrderService.rateItem(
+            token: widget.token,
+            orderId: order.id,
+            itemId: item.id,
+            rating: rating,
+            comment: comment,
+            media: media,
+          ),
         ),
       ),
     );
@@ -663,7 +667,10 @@ class _BuyerOrdersPageState extends State<BuyerOrdersPage> {
                                   color: AppColors.textMuted,
                                 ),
                               ),
-                              SelectableText(
+                              // SelectableText has an internal scroll position that shares
+                              // this tile's PageStorage key with its boolean expansion state.
+                              // Use the explicit Copy action for this read-only reference.
+                              Text(
                                 order.trackingCode!,
                                 style: const TextStyle(
                                   fontSize: 12,

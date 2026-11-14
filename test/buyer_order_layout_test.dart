@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -62,6 +63,71 @@ Widget page({double textScale = 1}) => MaterialApp(
 
 void main() {
   testWidgets(
+    'tracking panel survives selection, collapse, scroll and refresh and copies the current reference',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      var tracking = 'SHP-20261113-000001-LONG-TRACKING-REFERENCE';
+      String? copied;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'Clipboard.setData') {
+            copied = (call.arguments as Map)['text'] as String;
+          }
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+      await http.runWithClient(
+        () async {
+          await tester.pumpWidget(page());
+          await tester.pumpAndSettle();
+          for (var cycle = 0; cycle < 3; cycle++) {
+            await tester.scrollUntilVisible(
+              find.text('Delivery & tracking'),
+              180,
+            );
+            await tester.tap(find.text('Delivery & tracking'));
+            await tester.pumpAndSettle();
+            await tester.ensureVisible(find.text(tracking));
+            await tester.longPress(find.text(tracking));
+            await tester.pumpAndSettle();
+            await tester.tap(find.byTooltip('Copy tracking number'));
+            await tester.pumpAndSettle();
+            expect(copied, tracking);
+            await tester.ensureVisible(find.text('Delivery & tracking'));
+            await tester.tap(find.text('Delivery & tracking'));
+            await tester.pumpAndSettle();
+            await tester.fling(
+              find.byType(ListView).first,
+              const Offset(0, 1200),
+              1500,
+            );
+            await tester.pumpAndSettle();
+            tracking = 'SHP-20261113-00000${cycle + 2}-UPDATED';
+            await tester.tap(find.byTooltip('Refresh orders'));
+            await tester.pumpAndSettle();
+            expect(tester.takeException(), isNull);
+          }
+        },
+        () => MockClient((request) async {
+          final data = order(1, 'completed');
+          data['tracking_code'] = tracking;
+          return response([data]);
+        }),
+      );
+    },
+  );
+
+  testWidgets(
     'completed item rating saves stars and comment and refreshes eligibility',
     (tester) async {
       tester.view.physicalSize = const Size(390, 844);
@@ -90,7 +156,7 @@ void main() {
           await tester.tap(find.text('Submit rating'));
           await tester.pumpAndSettle();
           expect(submissions, 1);
-          expect(find.text('Rate your item'), findsNothing);
+          expect(find.text('Rate product'), findsNothing);
           await tester.scrollUntilVisible(find.text('★ Your rating: 4/5'), 150);
           expect(find.text('Rate item'), findsNothing);
           expect(tester.takeException(), isNull);
@@ -108,7 +174,10 @@ void main() {
             });
             saved = true;
             submissions++;
-            return http.Response('{"success":true,"data":{}}', 200);
+            return http.Response(
+              '{"success":true,"data":{"review_id":1,"rating":4}}',
+              200,
+            );
           }
           final data = order(1, 'completed');
           (data['items'] as List).first.addAll({

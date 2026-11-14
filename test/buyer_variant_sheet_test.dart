@@ -43,6 +43,78 @@ BuyerProductDetailData detail({bool unavailable = false}) =>
     });
 
 void main() {
+  testWidgets(
+    'Color cards and size chips select only real stocked combinations',
+    (tester) async {
+      final data = BuyerProductDetailData.fromJson({
+        'id': 2,
+        'name': 'Trousers',
+        'price': 189,
+        'stock': 20,
+        'has_variants': true,
+        'variants': [
+          for (final entry in [
+            (1, 'Gray', 'M', 3),
+            (2, 'Gray', 'L', 0),
+            (3, 'Black', 'L', 2),
+          ])
+            {
+              'id': entry.$1,
+              'name': '${entry.$2} ${entry.$3}',
+              'attributes': {'Color': entry.$2, 'Size': entry.$3},
+              'price': entry.$1 == 3 ? 200 : 189,
+              'stock': entry.$4,
+              'status': 'active',
+              'in_stock': entry.$4 > 0,
+            },
+        ],
+      });
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            body: BuyerVariantSheet(
+              detail: data,
+              selected: data.variants.first,
+              quantity: 3,
+            ),
+          ),
+        ),
+      );
+      expect(find.text('Color (2)'), findsOneWidget);
+      expect(find.text('Size'), findsOneWidget);
+      expect(
+        tester
+            .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'L'))
+            .onSelected,
+        isNull,
+      );
+      await tester.tap(find.text('Black'));
+      await tester.pumpAndSettle();
+      expect(find.text('2 available'), findsOneWidget);
+      expect(find.byKey(const ValueKey('selection-quantity')), findsOneWidget);
+      expect(
+        tester
+            .widget<Text>(find.byKey(const ValueKey('selection-quantity')))
+            .data,
+        '2',
+      );
+      expect(
+        tester
+            .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'L'))
+            .selected,
+        isTrue,
+      );
+      expect(
+        tester
+            .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'M'))
+            .onSelected,
+        isNull,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('Variant sheet caps stock and confirms the selected quantity', (
     tester,
   ) async {
@@ -83,13 +155,13 @@ void main() {
     );
     expect(
       tester
-          .widget<ChoiceChip>(
+          .widget<InkWell>(
             find.ancestor(
               of: find.text('Black'),
-              matching: find.byType(ChoiceChip),
+              matching: find.byType(InkWell),
             ),
           )
-          .onSelected,
+          .onTap,
       isNull,
     );
     await tester.tap(find.text('Blue'));

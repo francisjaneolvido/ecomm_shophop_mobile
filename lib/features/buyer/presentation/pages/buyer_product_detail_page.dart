@@ -1,3 +1,4 @@
+import 'package:shophop/features/buyer/presentation/pages/buyer_messages_page.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:shophop/shared/realtime/foreground_refresh.dart';
@@ -284,12 +285,15 @@ class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
     final detail = _detail!;
     final product = detail.product;
     final gallery = buyerProductMedia(detail);
+    final hasDiscount =
+        _selectedVariant == null &&
+        product.originalPrice != null &&
+        product.originalPrice! > product.price;
     final size = MediaQuery.sizeOf(context);
-    final photoHeight = (size.height * .42).clamp(
+    final photoHeight = (size.width * 1.05).clamp(
       220.0,
-      size.width.clamp(220.0, 460.0),
+      (size.height * .53).clamp(220.0, 560.0),
     );
-    final expandedHeight = photoHeight + (gallery.length > 1 ? 62 : 0);
     return Scaffold(
       backgroundColor: colors.surfaceContainer,
       body: RefreshIndicator(
@@ -297,88 +301,76 @@ class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            SliverLayoutBuilder(
-              builder: (context, constraints) {
-                final collapsed =
-                    constraints.scrollOffset >= expandedHeight - 58;
-                return SliverAppBar(
-                  pinned: true,
-                  toolbarHeight: 48,
-                  expandedHeight: expandedHeight,
-                  titleSpacing: 0,
-                  backgroundColor: collapsed
-                      ? colors.surface
-                      : Colors.transparent,
-                  surfaceTintColor: Colors.transparent,
-                  scrolledUnderElevation: 0,
-                  leading: _GalleryAction(
-                    label: 'Back',
-                    icon: CupertinoIcons.arrow_left,
-                    onTap: () => Navigator.of(context).maybePop(),
-                  ),
-                  title: collapsed
-                      ? InkWell(
-                          onTap: widget.onOpenSearch,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: colors.surfaceContainerLow,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  CupertinoIcons.search,
-                                  size: 16,
-                                  color: colors.onSurfaceVariant,
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    'Search ShopHop',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: colors.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ),
-                              ],
+            SliverAppBar(
+              pinned: true,
+              toolbarHeight: 56,
+              titleSpacing: 0,
+              backgroundColor: colors.surface,
+              surfaceTintColor: Colors.transparent,
+              scrolledUnderElevation: 1,
+              leading: _GalleryAction(
+                label: 'Back',
+                icon: CupertinoIcons.arrow_left,
+                onTap: () => Navigator.of(context).maybePop(),
+              ),
+              title: Material(
+                color: colors.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(24),
+                child: InkWell(
+                  onTap: widget.onOpenSearch,
+                  borderRadius: BorderRadius.circular(24),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          CupertinoIcons.search,
+                          size: 17,
+                          color: colors.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Search ShopHop',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: colors.onSurfaceVariant,
                             ),
                           ),
-                        )
-                      : null,
-                  actions: [
-                    if (!collapsed)
-                      _GalleryAction(
-                        label: 'Search',
-                        icon: CupertinoIcons.search,
-                        onTap: widget.onOpenSearch,
-                      ),
-                    _GalleryAction(
-                      label: 'Cart',
-                      icon: CupertinoIcons.cart,
-                      onTap: () => widget.onOpenCart(),
-                    ),
-                    const SizedBox(width: 6),
-                  ],
-                  flexibleSpace: FlexibleSpaceBar(
-                    collapseMode: CollapseMode.pin,
-                    background: BuyerProductGallery(
-                      media: gallery,
-                      controller: _galleryController,
-                      index: _galleryIndex,
-                      active: !collapsed,
-                      onChanged: (index) =>
-                          setState(() => _galleryIndex = index),
+                        ),
+                      ],
                     ),
                   ),
-                );
-              },
+                ),
+              ),
+              actions: [
+                _GalleryAction(
+                  label: 'Cart',
+                  icon: CupertinoIcons.cart,
+                  onTap: () => widget.onOpenCart(),
+                ),
+                const SizedBox(width: 6),
+              ],
+            ),
+            SliverLayoutBuilder(
+              builder: (context, constraints) => SliverToBoxAdapter(
+                child: SizedBox(
+                  height: photoHeight,
+                  child: BuyerProductGallery(
+                    media: gallery,
+                    controller: _galleryController,
+                    index: _galleryIndex,
+                    active: constraints.scrollOffset < photoHeight,
+                    showThumbnails: false,
+                    onChanged: (index) => setState(() => _galleryIndex = index),
+                  ),
+                ),
+              ),
             ),
             SliverToBoxAdapter(
               child: Column(
@@ -392,19 +384,19 @@ class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
                           runSpacing: 4,
                           crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
+                            if (hasDiscount)
+                              _DiscountLabel(percent: product.discountPercent),
                             Text(
                               buyerPrice(_displayPrice),
                               key: const ValueKey('product-price'),
                               style: TextStyle(
-                                fontSize: 23,
-                                fontWeight: FontWeight.w700,
+                                fontSize: 28,
+                                fontWeight: FontWeight.w800,
                                 color: colors.primary,
                                 height: 1.25,
                               ),
                             ),
-                            if (_selectedVariant == null &&
-                                product.originalPrice != null &&
-                                product.originalPrice! > product.price) ...[
+                            if (hasDiscount) ...[
                               Text(
                                 buyerPrice(product.originalPrice!),
                                 style: TextStyle(
@@ -413,7 +405,6 @@ class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
                                   decoration: TextDecoration.lineThrough,
                                 ),
                               ),
-                              _DiscountLabel(percent: product.discountPercent),
                             ],
                           ],
                         ),
@@ -428,8 +419,8 @@ class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
                                   maxLines: 3,
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
                                     height: 1.4,
                                   ),
                                 ),
@@ -472,7 +463,7 @@ class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
                               ),
                             if (product.sold > 0)
                               Text(
-                                '${product.sold} completed sales',
+                                '${product.sold} sold',
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: colors.onSurfaceVariant,
@@ -619,6 +610,66 @@ class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
       bottomNavigationBar: _CompactPurchaseBar(
         stock: _availableStock,
         busy: _cartBusy,
+        onShop: () => showModalBottomSheet<void>(
+          context: context,
+          useSafeArea: true,
+          isScrollControlled: true,
+          builder: (context) => SafeArea(
+            top: false,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.only(top: 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      const SizedBox(width: 16),
+                      const Expanded(
+                        child: Text(
+                          'Shop details',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Close shop details',
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(CupertinoIcons.xmark, size: 20),
+                      ),
+                    ],
+                  ),
+                  _SellerSummary(seller: detail.seller),
+                ],
+              ),
+            ),
+          ),
+        ),
+        onChat: () {
+          final sellerUserId = detail.seller.userId;
+          if (sellerUserId == null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Seller messaging is unavailable for this product.',
+                ),
+              ),
+            );
+            return;
+          }
+          Navigator.push(
+            context,
+            MaterialPageRoute<void>(
+              builder: (_) => BuyerChatPage(
+                token: widget.token,
+                sellerUserId: sellerUserId,
+                name: detail.seller.businessName,
+                onSessionExpired: widget.onSessionExpired,
+              ),
+            ),
+          );
+        },
         onAddToCart: () => _addToCart(buyNow: false),
         onBuyNow: () => _addToCart(buyNow: true),
       ),
@@ -724,12 +775,16 @@ class _DiscountLabel extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
     decoration: BoxDecoration(
-      color: Theme.of(context).colorScheme.primaryContainer,
-      borderRadius: BorderRadius.circular(3),
+      color: Theme.of(context).colorScheme.error,
+      borderRadius: BorderRadius.circular(6),
     ),
     child: Text(
       '-$percent%',
-      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
+      style: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w700,
+        color: Theme.of(context).colorScheme.onError,
+      ),
     ),
   );
 }
@@ -744,7 +799,7 @@ class _DetailSection extends StatelessWidget {
     width: double.infinity,
     margin: const EdgeInsets.only(bottom: 6),
     color: Theme.of(context).colorScheme.surface,
-    padding: const EdgeInsets.all(12),
+    padding: const EdgeInsets.all(16),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1105,22 +1160,46 @@ class _ReviewPreview extends StatelessWidget {
               ),
             ),
           ),
-        if (review.image.isNotEmpty)
+        if (review.attachments.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 8),
-            child: GestureDetector(
-              onTap: () => showBuyerMediaViewer(
-                context,
-                media: [BuyerMediaItem(type: 'image', url: review.image)],
-                title: 'Review photo',
-              ),
-              child: SizedBox.square(
-                dimension: 64,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: BuyerMediaImage(url: review.image, fit: BoxFit.cover),
-                ),
-              ),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: List.generate(review.attachments.length, (index) {
+                final attachment = review.attachments[index];
+                return Semantics(
+                  button: true,
+                  label:
+                      'Open review ${attachment.isVideo ? 'video' : 'photo'} ${index + 1}',
+                  child: InkWell(
+                    onTap: () => showBuyerMediaViewer(
+                      context,
+                      media: review.attachments,
+                      initialIndex: index,
+                      title: 'Review media',
+                    ),
+                    child: SizedBox.square(
+                      dimension: 72,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: attachment.isVideo
+                            ? ColoredBox(
+                                color: colors.secondaryContainer,
+                                child: const Icon(
+                                  Icons.play_circle_outline,
+                                  size: 30,
+                                ),
+                              )
+                            : BuyerMediaImage(
+                                url: attachment.url,
+                                fit: BoxFit.cover,
+                              ),
+                      ),
+                    ),
+                  ),
+                );
+              }),
             ),
           ),
         if (review.sellerReply.isNotEmpty)
@@ -1156,11 +1235,15 @@ class _CompactPurchaseBar extends StatelessWidget {
     required this.busy,
     required this.onAddToCart,
     required this.onBuyNow,
+    required this.onShop,
+    required this.onChat,
   });
   final int stock;
   final bool busy;
   final VoidCallback onAddToCart;
   final VoidCallback onBuyNow;
+  final VoidCallback onShop;
+  final VoidCallback onChat;
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
@@ -1176,10 +1259,23 @@ class _CompactPurchaseBar extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Expanded(
+              _PurchaseShortcut(
+                label: 'Shop',
+                icon: CupertinoIcons.bag,
+                onTap: onShop,
+              ),
+              _PurchaseShortcut(
+                label: 'Chat',
+                icon: CupertinoIcons.chat_bubble,
+                onTap: onChat,
+              ),
+              const SizedBox(width: 8),
+              Tooltip(
+                message: 'Add to Cart',
                 child: OutlinedButton(
                   onPressed: enabled ? onAddToCart : null,
                   style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(52, 48),
                     backgroundColor: colors.primaryContainer,
                     foregroundColor: colors.onPrimaryContainer,
                     side: BorderSide(color: colors.primary),
@@ -1193,7 +1289,11 @@ class _CompactPurchaseBar extends StatelessWidget {
                           dimension: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('Add to Cart', textAlign: TextAlign.center),
+                      : const Icon(
+                          CupertinoIcons.cart_badge_plus,
+                          semanticLabel: 'Add to Cart',
+                          size: 23,
+                        ),
                 ),
               ),
               const SizedBox(width: 8),
@@ -1215,4 +1315,44 @@ class _CompactPurchaseBar extends StatelessWidget {
       ),
     );
   }
+}
+
+class _PurchaseShortcut extends StatelessWidget {
+  const _PurchaseShortcut({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    label: label,
+    excludeSemantics: true,
+    child: SizedBox(
+      width: 48,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(6),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 5),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 21,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(height: 2),
+              Text(label, style: const TextStyle(fontSize: 10)),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
 }

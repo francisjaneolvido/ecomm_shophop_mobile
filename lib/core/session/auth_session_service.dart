@@ -138,6 +138,18 @@ class AuthSessionService {
     await _clearPersistedSession();
   }
 
+  static Future<bool> isRemembered() async =>
+      await _storage.read(key: _rememberKey) == 'true';
+
+  /// Keep the current session in memory while removing saved sign-in details.
+  static Future<void> forgetRememberedSession() async {
+    _memorySession = await readSession();
+    // Unlike logout cleanup, a failure must reach the settings screen.
+    for (final key in [_rememberKey, _tokenKey, _emailKey, _accountTypeKey]) {
+      await _storage.delete(key: key);
+    }
+  }
+
   static Future<void> _clearPersistedSession() async {
     for (final key in const [
       _tokenKey,

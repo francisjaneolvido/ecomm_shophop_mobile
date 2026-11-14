@@ -1,6 +1,10 @@
 import 'dart:convert';
+import 'dart:async';
+import 'package:file_picker/file_picker.dart';
 
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
+import 'package:mime/mime.dart';
 import 'package:shophop/core/config/api_config.dart';
 
 class BuyerOrderException implements Exception {
@@ -143,6 +147,55 @@ class BuyerOrderPageData {
 class BuyerOrderService {
   BuyerOrderService._();
 
+  /// Picker bytes are a snapshot, so uploads never depend on a temporary URI.
+  static String reviewMediaType(PlatformFile file) {
+    final bytes = file.bytes;
+    if (bytes == null || bytes.isEmpty) {
+      throw BuyerOrderException(
+        'Could not read ${file.name}. Remove it and select the file again.',
+      );
+    }
+    final extension = file.extension?.toLowerCase();
+    final type = lookupMimeType('', headerBytes: bytes);
+    final video = extension == 'mp4';
+    if ((video && type != 'video/mp4') ||
+        (!video &&
+            (!['jpg', 'jpeg', 'png', 'webp'].contains(extension) ||
+                !['image/jpeg', 'image/png', 'image/webp'].contains(type)))) {
+      throw BuyerOrderException(
+        '${file.name} is not a supported photo or MP4 video. Select a JPG, PNG, WebP photo or an MP4 video.',
+      );
+    }
+    if (bytes.length > (video ? 30 : 5) * 1024 * 1024) {
+      throw BuyerOrderException(
+        '${file.name} is too large. Photos: up to 5 MB; videos: up to 30 MB.',
+      );
+    }
+    return type!;
+  }
+
+  static void validateReviewMedia(List<PlatformFile> media) {
+    var images = 0, videos = 0;
+    for (final file in media) {
+      reviewMediaType(file).startsWith('video/') ? videos++ : images++;
+    }
+    if (images > 6 || videos > 2) {
+      throw const BuyerOrderException(
+        'You can attach up to 6 photos and 2 videos.',
+      );
+    }
+  }
+
+  static void _confirmSaved(Map<String, dynamic> data) {
+    final id = int.tryParse('${data['review_id']}');
+    final rating = int.tryParse('${data['rating']}');
+    if (id == null || id <= 0 || rating == null || rating < 1 || rating > 5) {
+      throw const BuyerOrderException(
+        'The server did not confirm your saved review. Refresh your orders before retrying.',
+      );
+    }
+  }
+
   static Future<BuyerOrderPageData> list({
     required String token,
     int page = 1,
@@ -193,12 +246,69 @@ class BuyerOrderService {
     required int itemId,
     required int rating,
     required String comment,
+    List<PlatformFile> media = const [],
   }) async {
-    await _request(
-      '/buyer/orders/$orderId/items/$itemId/review',
-      token: token,
-      post: true,
-      body: {'rating': rating, 'comment': comment.trim()},
+    if (media.isNotEmpty) {
+      validateReviewMedia(media);
+      final client = http.Client();
+      try {
+        final request = http.MultipartRequest(
+          'POST',
+          Uri.parse(
+            '${ApiConfig.baseUrl}/buyer/orders/$orderId/items/$itemId/review',
+          ),
+        );
+        request.headers.addAll({
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        });
+        request.fields.addAll({'rating': '$rating', 'comment': comment.trim()});
+        var images = 0;
+        var videos = 0;
+        for (final file in media) {
+          if (file.bytes == null || file.bytes!.isEmpty) {
+            throw BuyerOrderException(
+              'Could not read ${file.name}. Select the file again.',
+            );
+          }
+          final field = file.extension?.toLowerCase() == 'mp4'
+              ? 'videos[${videos++}]'
+              : 'images[${images++}]';
+          request.files.add(
+            http.MultipartFile.fromBytes(
+              field,
+              file.bytes!,
+              filename: file.name,
+              contentType: MediaType.parse(reviewMediaType(file)),
+            ),
+          );
+        }
+        final response = await (() async => http.Response.fromStream(
+          await client.send(request),
+        ))().timeout(const Duration(minutes: 3));
+        _confirmSaved(_parseResponse(response));
+        return;
+      } on BuyerOrderException {
+        rethrow;
+      } on TimeoutException {
+        throw const BuyerOrderException(
+          'Upload timed out. Refresh your orders before retrying to check whether the review was saved.',
+        );
+      } catch (_) {
+        throw const BuyerOrderException(
+          'Could not upload review media. Check your connection and try again.',
+        );
+      } finally {
+        client.close();
+      }
+    }
+    _confirmSaved(
+      await _request(
+        '/buyer/orders/$orderId/items/$itemId/review',
+        token: token,
+        post: true,
+        body: {'rating': rating, 'comment': comment.trim()},
+      ),
     );
   }
 
@@ -226,32 +336,7 @@ class BuyerOrderService {
           : await http
                 .get(url, headers: headers)
                 .timeout(const Duration(seconds: 15));
-      Map<String, dynamic> result = {};
-      try {
-        final decoded = jsonDecode(response.body);
-        if (decoded is Map) result = Map<String, dynamic>.from(decoded);
-      } catch (_) {
-        // A non-JSON error is reported with its HTTP status below.
-      }
-      if (response.statusCode < 200 ||
-          response.statusCode >= 300 ||
-          result['success'] != true) {
-        final errors = result['errors'];
-        final firstError = errors is Map && errors.isNotEmpty
-            ? errors.values.first
-            : null;
-        final firstMessage = firstError is List && firstError.isNotEmpty
-            ? firstError.first.toString()
-            : null;
-        throw BuyerOrderException(
-          firstMessage ??
-              result['message']?.toString() ??
-              'Could not load ShopHop orders.',
-          statusCode: response.statusCode,
-        );
-      }
-      final data = result['data'];
-      return data is Map ? Map<String, dynamic>.from(data) : {};
+      return _parseResponse(response);
     } on BuyerOrderException {
       rethrow;
     } catch (_) {
@@ -259,5 +344,53 @@ class BuyerOrderService {
         'Connection unavailable. Please try again.',
       );
     }
+  }
+
+  static Map<String, dynamic> _parseResponse(http.Response response) {
+    Map<String, dynamic> result = {};
+    try {
+      final decoded = jsonDecode(response.body);
+      if (decoded is Map) result = Map<String, dynamic>.from(decoded);
+    } catch (_) {
+      // A non-JSON error is reported with its HTTP status below.
+    }
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300 ||
+        result['success'] != true) {
+      final errors = result['errors'];
+      final firstError = errors is Map && errors.isNotEmpty
+          ? errors.values.first
+          : null;
+      final firstMessage = firstError is List && firstError.isNotEmpty
+          ? firstError.first.toString()
+          : null;
+      final field = errors is Map && errors.isNotEmpty
+          ? errors.keys.first.toString()
+          : '';
+      if (response.statusCode == 413) {
+        throw const BuyerOrderException(
+          'The server could not accept this upload. Your draft is kept. Remove an attachment or try again later.',
+          statusCode: 413,
+        );
+      }
+      if ((field.startsWith('images') || field.startsWith('videos')) &&
+          (firstMessage?.contains('failed to upload') ?? false)) {
+        final kind = field.startsWith('images') ? 'photo' : 'video';
+        throw BuyerOrderException(
+          'A $kind could not reach the server. Try again, or remove it and submit without attachments.',
+          statusCode: response.statusCode,
+        );
+      }
+      throw BuyerOrderException(
+        firstMessage ??
+            result['message']?.toString() ??
+            (response.statusCode == 413
+                ? 'Selected media exceeds the server upload limit.'
+                : 'Could not load ShopHop orders.'),
+        statusCode: response.statusCode,
+      );
+    }
+    final data = result['data'];
+    return data is Map ? Map<String, dynamic>.from(data) : {};
   }
 }
