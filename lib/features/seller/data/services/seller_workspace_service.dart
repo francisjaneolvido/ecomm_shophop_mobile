@@ -27,6 +27,54 @@ class SellerWorkspaceService {
     Map<String, dynamic> payload,
   ) => _send('POST', token, path, payload);
 
+  static Future<AuthApiResult> updateLogo({
+    required String token,
+    PlatformFile? logo,
+    bool remove = false,
+  }) async {
+    final client = http.Client();
+    try {
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('${ApiConfig.baseUrl}/seller/profile/logo'),
+      );
+      request.headers.addAll({
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      });
+      if (remove) request.fields['remove_logo'] = '1';
+      if (logo != null && logo.bytes != null) {
+        request.files.add(
+          http.MultipartFile.fromBytes(
+            'logo',
+            logo.bytes!,
+            filename: logo.name,
+          ),
+        );
+      }
+      final streamed = await client
+          .send(request)
+          .timeout(const Duration(seconds: 30));
+      return AuthApiResult.fromResponse(
+        await http.Response.fromStream(streamed),
+      );
+    } on TimeoutException {
+      return const AuthApiResult(
+        success: false,
+        status: 'timeout',
+        message: 'Logo upload timed out. Please retry.',
+      );
+    } catch (_) {
+      return const AuthApiResult(
+        success: false,
+        status: 'network_error',
+        message: 'Could not update shop logo. Check your connection.',
+      );
+    } finally {
+      client.close();
+    }
+  }
+
   /// Simple product fields + optional product photos (shared Seller Web database).
   static Future<AuthApiResult> saveProduct({
     required String token,

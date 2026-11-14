@@ -7,6 +7,7 @@ import 'package:shophop/shared/widgets/shop_hop_ui.dart';
 
 import 'package:shophop/features/buyer/data/services/buyer_catalog_service.dart';
 import 'package:shophop/features/buyer/presentation/widgets/buyer_product_card.dart';
+import 'package:shophop/features/buyer/presentation/pages/buyer_shop_page.dart';
 
 class BuyerCatalogPage extends StatefulWidget {
   const BuyerCatalogPage({
@@ -45,6 +46,7 @@ class _BuyerCatalogPageState extends State<BuyerCatalogPage> {
   bool _requestBusy = false;
 
   final List<BuyerProductData> _products = [];
+  List<BuyerShopSearchData> _shops = [];
   BuyerCatalogException? _error;
   BuyerPaginationData? _pagination;
   bool _loading = true;
@@ -159,6 +161,7 @@ class _BuyerCatalogPageState extends State<BuyerCatalogPage> {
           _products
             ..clear()
             ..addAll(refreshed);
+          _shops = result.shops;
         } else {
           final existing = _products.map((item) => item.id).toSet();
           _products.addAll(
@@ -483,6 +486,53 @@ class _BuyerCatalogPageState extends State<BuyerCatalogPage> {
                 ),
               ),
             ),
+            if (widget.category == null &&
+                _shops.isNotEmpty &&
+                _searchController.text.trim().isNotEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Matching shops', style: theme.textTheme.titleSmall),
+                      const SizedBox(height: 6),
+                      for (final shop in _shops)
+                        Card(
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              foregroundImage: shop.logoUrl.isEmpty
+                                  ? null
+                                  : NetworkImage(shop.logoUrl),
+                              child: shop.logoUrl.isEmpty
+                                  ? const Icon(Icons.storefront_outlined)
+                                  : null,
+                            ),
+                            title: Text(
+                              shop.businessName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            subtitle: Text(
+                              '${shop.businessCategory} · ${shop.productsCount} products',
+                            ),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => BuyerShopPage(
+                                  token: widget.token,
+                                  sellerId: shop.id,
+                                  onOpenProduct: widget.onOpenProduct,
+                                  onSessionExpired: widget.onSessionExpired,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
             if (_error != null && _products.isNotEmpty)
               SliverToBoxAdapter(
                 child: Padding(
@@ -519,9 +569,13 @@ class _BuyerCatalogPageState extends State<BuyerCatalogPage> {
                   padding: const EdgeInsets.all(16),
                   child: ShopHopEmptyState(
                     icon: CupertinoIcons.search,
-                    title: 'No products found',
+                    title: _shops.isNotEmpty
+                        ? 'No matching products'
+                        : 'No products found',
                     description: _searchController.text.isNotEmpty
-                        ? 'Try another product name or keyword.'
+                        ? _shops.isNotEmpty
+                              ? 'Explore the matching shop above.'
+                              : 'Try another product name or keyword.'
                         : 'Approved, available products will appear here.',
                     actionLabel: _searchController.text.isNotEmpty
                         ? 'Clear search'

@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shophop/core/theme/app_theme.dart';
 import 'package:shophop/features/buyer/data/services/buyer_catalog_service.dart';
 import 'package:shophop/features/buyer/presentation/widgets/buyer_variant_sheet.dart';
+import 'package:shophop/features/buyer/presentation/widgets/buyer_product_gallery.dart';
 
 BuyerProductDetailData detail({bool unavailable = false}) =>
     BuyerProductDetailData.fromJson({
@@ -62,6 +63,7 @@ void main() {
               'id': entry.$1,
               'name': '${entry.$2} ${entry.$3}',
               'attributes': {'Color': entry.$2, 'Size': entry.$3},
+              'image': '/storage/products/${entry.$2}.png',
               'price': entry.$1 == 3 ? 200 : 189,
               'stock': entry.$4,
               'status': 'active',
@@ -91,6 +93,24 @@ void main() {
       );
       await tester.tap(find.text('Black'));
       await tester.pumpAndSettle();
+      expect(
+        tester.widget<BuyerMediaImage>(find.byType(BuyerMediaImage).first).url,
+        contains('/storage/products/Black.png'),
+      );
+      final blackCard = find
+          .ancestor(of: find.text('Black'), matching: find.byType(InkWell))
+          .first;
+      expect(
+        tester
+            .widget<BuyerMediaImage>(
+              find.descendant(
+                of: blackCard,
+                matching: find.byType(BuyerMediaImage),
+              ),
+            )
+            .url,
+        contains('/storage/products/Black.png'),
+      );
       expect(find.text('2 available'), findsOneWidget);
       expect(find.byKey(const ValueKey('selection-quantity')), findsOneWidget);
       expect(

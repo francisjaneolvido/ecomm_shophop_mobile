@@ -145,6 +145,7 @@ class _BuyerProductGalleryState extends State<BuyerProductGallery> {
                         ? ShopHopVideoPlayer(
                             key: ValueKey(item.url),
                             url: item.url,
+                            autoplay: true,
                             active:
                                 widget.active &&
                                 !_viewerOpen &&
@@ -333,6 +334,7 @@ class _BuyerMediaViewerState extends State<BuyerMediaViewer> {
                         child: ShopHopVideoPlayer(
                           key: ValueKey(widget.media[index].url),
                           url: widget.media[index].url,
+                          autoplay: true,
                           active: index == _index,
                         ),
                       )

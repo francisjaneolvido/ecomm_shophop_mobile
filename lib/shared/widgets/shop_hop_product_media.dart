@@ -145,9 +145,15 @@ class ShopHopVideoPreview {
 /// Gallery and preview video player with pause, mute, retry/error behavior.
 /// Does not auto-start other videos when scrolling a product list.
 class ShopHopVideoPlayer extends StatefulWidget {
-  const ShopHopVideoPlayer({super.key, required this.url, this.active = true});
+  const ShopHopVideoPlayer({
+    super.key,
+    required this.url,
+    this.active = true,
+    this.autoplay = false,
+  });
   final String url;
   final bool active;
+  final bool autoplay;
   @override
   State<ShopHopVideoPlayer> createState() => _ShopHopVideoPlayerState();
 }
@@ -177,6 +183,7 @@ class _ShopHopVideoPlayerState extends State<ShopHopVideoPlayer> {
       if (!mounted || !identical(_controller, controller)) return;
       await controller.setLooping(true);
       await controller.setVolume(0);
+      if (widget.active && widget.autoplay) await controller.play();
       if (mounted) {
         setState(() {
           _ready = true;
@@ -205,6 +212,8 @@ class _ShopHopVideoPlayerState extends State<ShopHopVideoPlayer> {
       _init();
     } else if (!widget.active && oldWidget.active) {
       _controller?.pause();
+    } else if (widget.active && !oldWidget.active && widget.autoplay) {
+      _controller?.play();
     }
   }
 

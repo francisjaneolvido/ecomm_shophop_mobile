@@ -255,17 +255,20 @@ class BuyerProductSellerData {
     required this.id,
     required this.businessName,
     required this.municipality,
+    required this.logoUrl,
   });
 
   final int? id;
   final String businessName;
   final String municipality;
+  final String logoUrl;
 
   factory BuyerProductSellerData.fromJson(Map<String, dynamic> json) {
     return BuyerProductSellerData(
       id: json['id'] == null ? null : _asInt(json['id']),
       businessName: json['business_name']?.toString() ?? 'ShopHop Seller',
       municipality: json['municipality']?.toString() ?? '',
+      logoUrl: ApiConfig.resolveMediaUrl(json['logo_url']?.toString()),
     );
   }
 }
@@ -285,10 +288,15 @@ class BuyerLikesData {
 }
 
 class BuyerProductListData {
-  const BuyerProductListData({required this.items, required this.pagination});
+  const BuyerProductListData({
+    required this.items,
+    required this.pagination,
+    this.shops = const [],
+  });
 
   final List<BuyerProductData> items;
   final BuyerPaginationData pagination;
+  final List<BuyerShopSearchData> shops;
 
   factory BuyerProductListData.fromJson(Map<String, dynamic> json) {
     final paginationJson = json['pagination'] is Map
@@ -297,9 +305,35 @@ class BuyerProductListData {
 
     return BuyerProductListData(
       items: _mapList(json['items'], BuyerProductData.fromJson),
+      shops: _mapList(json['shops'], BuyerShopSearchData.fromJson),
       pagination: BuyerPaginationData.fromJson(paginationJson),
     );
   }
+}
+
+class BuyerShopSearchData {
+  const BuyerShopSearchData({
+    required this.id,
+    required this.businessName,
+    required this.businessCategory,
+    required this.logoUrl,
+    required this.productsCount,
+  });
+
+  final int id;
+  final String businessName;
+  final String businessCategory;
+  final String logoUrl;
+  final int productsCount;
+
+  factory BuyerShopSearchData.fromJson(Map<String, dynamic> json) =>
+      BuyerShopSearchData(
+        id: _asInt(json['id']),
+        businessName: json['business_name']?.toString() ?? 'ShopHop Seller',
+        businessCategory: json['business_category']?.toString() ?? '',
+        logoUrl: ApiConfig.resolveMediaUrl(json['logo_url']?.toString()),
+        productsCount: _asInt(json['products_count']),
+      );
 }
 
 class BuyerPaginationData {
@@ -420,6 +454,7 @@ class BuyerVariantData {
     required this.stock,
     required this.status,
     required this.inStock,
+    this.image = '',
   });
 
   final int id;
@@ -430,6 +465,7 @@ class BuyerVariantData {
   final int stock;
   final String status;
   final bool inStock;
+  final String image;
 
   factory BuyerVariantData.fromJson(Map<String, dynamic> json) {
     return BuyerVariantData(
@@ -443,6 +479,7 @@ class BuyerVariantData {
       stock: _asInt(json['stock']),
       status: json['status']?.toString() ?? '',
       inStock: json['in_stock'] == true,
+      image: ApiConfig.resolveMediaUrl(json['image']?.toString()),
     );
   }
 }
@@ -524,6 +561,7 @@ class BuyerSellerDetailData {
     required this.municipality,
     required this.joined,
     required this.productsCount,
+    required this.logoUrl,
   });
 
   final int? id;
@@ -532,6 +570,7 @@ class BuyerSellerDetailData {
   final String municipality;
   final String joined;
   final int productsCount;
+  final String logoUrl;
 
   factory BuyerSellerDetailData.fromJson(Map<String, dynamic> json) {
     return BuyerSellerDetailData(
@@ -541,6 +580,66 @@ class BuyerSellerDetailData {
       municipality: json['municipality']?.toString() ?? '',
       joined: json['joined']?.toString() ?? '',
       productsCount: _asInt(json['products_count']),
+      logoUrl: ApiConfig.resolveMediaUrl(json['logo_url']?.toString()),
+    );
+  }
+}
+
+class BuyerShopData {
+  const BuyerShopData({
+    required this.id,
+    required this.userId,
+    required this.businessName,
+    required this.businessCategory,
+    required this.municipality,
+    required this.province,
+    required this.joined,
+    required this.logoUrl,
+    required this.coverUrl,
+    required this.productsCount,
+    required this.rating,
+    required this.reviewsCount,
+    required this.categories,
+    required this.products,
+    required this.hasMore,
+  });
+
+  final int id;
+  final int userId;
+  final String businessName;
+  final String businessCategory;
+  final String municipality;
+  final String province;
+  final String joined;
+  final String logoUrl;
+  final String coverUrl;
+  final int productsCount;
+  final double rating;
+  final int reviewsCount;
+  final List<String> categories;
+  final List<BuyerProductData> products;
+  final bool hasMore;
+
+  factory BuyerShopData.fromJson(Map<String, dynamic> json) {
+    final pagination = json['pagination'] is Map
+        ? Map<String, dynamic>.from(json['pagination'] as Map)
+        : <String, dynamic>{};
+    return BuyerShopData(
+      id: _asInt(json['id']),
+      userId: _asInt(json['user_id']),
+      businessName: json['business_name']?.toString() ?? 'ShopHop Seller',
+      businessCategory: json['business_category']?.toString() ?? '',
+      municipality: json['municipality']?.toString() ?? '',
+      province: json['province']?.toString() ?? '',
+      joined: json['joined']?.toString() ?? '',
+      logoUrl: ApiConfig.resolveMediaUrl(json['logo_url']?.toString()),
+      coverUrl: ApiConfig.resolveMediaUrl(json['cover_url']?.toString()),
+      productsCount: _asInt(json['products_count']),
+      rating: double.tryParse(json['rating']?.toString() ?? '') ?? 0,
+      reviewsCount: _asInt(json['reviews_count']),
+      categories: _stringList(json['categories']),
+      products: _mapList(json['products'], BuyerProductData.fromJson),
+      hasMore: pagination['has_more'] == true,
     );
   }
 }
@@ -592,6 +691,23 @@ class BuyerCatalogService {
     final body = await _get('/buyer/products/$productId', token: token);
     final data = _requireDataMap(body, 'product');
     return BuyerProductDetailData.fromJson(data);
+  }
+
+  static Future<BuyerShopData> getShop({
+    required String token,
+    required int sellerId,
+    String? category,
+    int page = 1,
+  }) async {
+    final body = await _get(
+      '/buyer/shops/$sellerId',
+      token: token,
+      queryParameters: {
+        'page': '$page',
+        if (category != null && category.isNotEmpty) 'category': category,
+      },
+    );
+    return BuyerShopData.fromJson(_requireDataMap(body, 'shop'));
   }
 
   static Future<BuyerLikesData> getLikes({required String token}) async {

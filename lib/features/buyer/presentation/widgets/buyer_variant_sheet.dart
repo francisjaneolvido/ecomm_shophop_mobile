@@ -240,7 +240,9 @@ class _BuyerVariantSheetState extends State<BuyerVariantSheet> {
                     width: width,
                     child: _VariantPhotoCard(
                       label: axis == null ? _label(variant) : value,
-                      image: widget.detail.product.image,
+                      image: variant.image.isNotEmpty
+                          ? variant.image
+                          : widget.detail.product.image,
                       selected: selected,
                       onTap: candidates.isEmpty
                           ? null
@@ -296,7 +298,11 @@ class _BuyerVariantSheetState extends State<BuyerVariantSheet> {
                     borderRadius: BorderRadius.circular(12),
                     child: SizedBox.square(
                       dimension: 88,
-                      child: BuyerMediaImage(url: product.image),
+                      child: BuyerMediaImage(
+                        url: _variant?.image.isNotEmpty == true
+                            ? _variant!.image
+                            : product.image,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),

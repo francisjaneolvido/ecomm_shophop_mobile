@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:shophop/core/config/api_config.dart';
 import 'package:shophop/features/seller/data/services/seller_workspace_service.dart';
 
 class SellerAccountScreen extends StatefulWidget {
@@ -100,6 +102,73 @@ class _SellerAccountScreenState extends State<SellerAccountScreen> {
     }
   }
 
+  Future<void> _updateLogo({bool remove = false}) async {
+    if (_saving) return;
+    PlatformFile? selected;
+    if (remove) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Remove shop logo?'),
+          content: const Text(
+            'Your shop will show its initial until you upload another logo.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Remove'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+    } else {
+      try {
+        final picked = await FilePicker.pickFiles(
+          type: FileType.custom,
+          allowedExtensions: const ['jpg', 'jpeg', 'png', 'webp'],
+          withData: true,
+        );
+        if (picked == null || picked.files.isEmpty || !mounted) return;
+        selected = picked.files.first;
+        if (selected.bytes == null || selected.size > 2 * 1024 * 1024) {
+          setState(
+            () => _message = 'Choose a JPG, PNG or WebP image up to 2 MB.',
+          );
+          return;
+        }
+      } catch (_) {
+        if (mounted) {
+          setState(() => _message = 'Could not read that image. Please retry.');
+        }
+        return;
+      }
+    }
+    if (!mounted) return;
+    setState(() {
+      _saving = true;
+      _message = null;
+    });
+    final result = await SellerWorkspaceService.updateLogo(
+      token: widget.token,
+      logo: selected,
+      remove: remove,
+    );
+    if (!mounted) return;
+    setState(() {
+      _saving = false;
+      _message = result.message;
+      if (result.success) _data['logo_url'] = result.data['logo_url'];
+    });
+    if (result.statusCode == 401 || result.statusCode == 403) {
+      await widget.onSessionExpired();
+    }
+  }
+
   @override
   void dispose() {
     for (final field in [..._profile.values, ..._passwords.values]) {
@@ -129,6 +198,66 @@ class _SellerAccountScreenState extends State<SellerAccountScreen> {
               if (_data.isEmpty)
                 TextButton(onPressed: _load, child: const Text('Retry')),
               if (_data.isNotEmpty) ...[
+                const SizedBox(height: 18),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 32,
+                          foregroundImage:
+                              ApiConfig.resolveMediaUrl(
+                                _data['logo_url']?.toString(),
+                              ).isEmpty
+                              ? null
+                              : NetworkImage(
+                                  ApiConfig.resolveMediaUrl(
+                                    _data['logo_url']?.toString(),
+                                  ),
+                                ),
+                          child: const Icon(Icons.storefront_outlined),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Shop logo',
+                                style: TextStyle(fontWeight: FontWeight.w700),
+                              ),
+                              const Text(
+                                'Visible to buyers on your shop page.',
+                                style: TextStyle(fontSize: 11),
+                              ),
+                              Wrap(
+                                spacing: 6,
+                                children: [
+                                  TextButton(
+                                    onPressed: _saving
+                                        ? null
+                                        : () => _updateLogo(),
+                                    child: const Text('Upload photo'),
+                                  ),
+                                  if (ApiConfig.resolveMediaUrl(
+                                    _data['logo_url']?.toString(),
+                                  ).isNotEmpty)
+                                    TextButton(
+                                      onPressed: _saving
+                                          ? null
+                                          : () => _updateLogo(remove: true),
+                                      child: const Text('Remove'),
+                                    ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 20),
                 const Text(
                   'Personal information',

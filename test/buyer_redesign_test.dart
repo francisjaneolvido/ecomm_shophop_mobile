@@ -9,6 +9,7 @@ import 'package:shophop/features/buyer/data/services/buyer_catalog_service.dart'
 import 'package:shophop/features/buyer/presentation/pages/buyer_home_page.dart';
 import 'package:shophop/features/buyer/presentation/pages/buyer_catalog_page.dart';
 import 'package:shophop/features/buyer/presentation/pages/buyer_product_detail_page.dart';
+import 'package:shophop/features/buyer/presentation/pages/buyer_shop_page.dart';
 import 'package:shophop/features/buyer/presentation/widgets/buyer_product_card.dart';
 
 Map<String, dynamic> product(int id, String name) => {
@@ -92,7 +93,8 @@ void main() {
                   token: 'test',
                   onSessionExpired: () async {},
                   onOpenSearch: () => searches++,
-                  onOpenCategory: (category) => selectedCategory = category.slug,
+                  onOpenCategory: (category) =>
+                      selectedCategory = category.slug,
                   onOpenProduct: (_) {},
                   onOpenCart: () {},
                   onOpenOrders: () {},
@@ -111,8 +113,11 @@ void main() {
           expect(find.text('All Categories'), findsNothing);
           await tester.tap(find.text('Shop now'));
           expect(searches, 1);
-          await tester.scrollUntilVisible(find.text('Pet Supplies'), 180,
-            scrollable: find.byType(Scrollable).first);
+          await tester.scrollUntilVisible(
+            find.text('Pet Supplies'),
+            180,
+            scrollable: find.byType(Scrollable).first,
+          );
           await tester.tap(find.text('Pet Supplies'));
           expect(selectedCategory, 'pet-supplies');
           await tester.scrollUntilVisible(
@@ -142,21 +147,35 @@ void main() {
     },
   );
 
-  testWidgets('category product listing retains subcategory filtering', (tester) async {
-    await http.runWithClient(() async {
-      await tester.pumpWidget(MaterialApp(theme: AppTheme.light,
-        home: BuyerCatalogPage(token: 'test', category: BuyerCategoryData.fromJson(categories[1]),
-          initialSubcategory: 'Furniture & Decor', onSessionExpired: () async {}, onOpenProduct: (_) {})));
-      await tester.pumpAndSettle();
-      expect(find.text('Available desk lamp'), findsOneWidget);
-      expect(find.text('Browse Categories'), findsNothing);
-      expect(tester.takeException(), isNull);
-      await tester.pumpWidget(const SizedBox());
-    }, () => MockClient((request) async {
-      expect(request.url.queryParameters['category'], 'home-and-garden');
-      expect(request.url.queryParameters['subcategory'], 'Furniture & Decor');
-      return response(listing([product(1, 'Available desk lamp')]));
-    }));
+  testWidgets('category product listing retains subcategory filtering', (
+    tester,
+  ) async {
+    await http.runWithClient(
+      () async {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: AppTheme.light,
+            home: BuyerCatalogPage(
+              token: 'test',
+              category: BuyerCategoryData.fromJson(categories[1]),
+              initialSubcategory: 'Furniture & Decor',
+              onSessionExpired: () async {},
+              onOpenProduct: (_) {},
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Available desk lamp'), findsOneWidget);
+        expect(find.text('Browse Categories'), findsNothing);
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox());
+      },
+      () => MockClient((request) async {
+        expect(request.url.queryParameters['category'], 'home-and-garden');
+        expect(request.url.queryParameters['subcategory'], 'Furniture & Decor');
+        return response(listing([product(1, 'Available desk lamp')]));
+      }),
+    );
   });
 
   testWidgets('Search ignores an older response after the query changes', (
@@ -196,6 +215,58 @@ void main() {
             product(2, query == 'chair' ? 'Current chair' : 'Initial product'),
           ]),
         );
+      }),
+    );
+  });
+
+  testWidgets('Searching a business opens its connected mobile shop', (
+    tester,
+  ) async {
+    await http.runWithClient(
+      () async {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: AppTheme.light,
+            home: BuyerCatalogPage(
+              token: 'test',
+              initialQuery: 'Adidas',
+              onSessionExpired: () async {},
+              onOpenProduct: (_) {},
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Matching shops'), findsOneWidget);
+        await tester.tap(find.text('Adidas Finds'));
+        await tester.pumpAndSettle();
+        expect(find.byType(BuyerShopPage), findsOneWidget);
+        expect(find.text('Running Shoes'), findsOneWidget);
+        expect(find.text('Chat with shop'), findsOneWidget);
+        await tester.pumpWidget(const SizedBox());
+      },
+      () => MockClient((request) async {
+        if (request.url.path.endsWith('/buyer/shops/5')) {
+          return response({
+            'id': 5,
+            'user_id': 99,
+            'business_name': 'Adidas Finds',
+            'products_count': 1,
+            'products': [product(1, 'Running Shoes')],
+            'categories': ['Fashion'],
+            'pagination': {'has_more': false},
+          });
+        }
+        return response({
+          ...listing([]),
+          'shops': [
+            {
+              'id': 5,
+              'business_name': 'Adidas Finds',
+              'business_category': 'Fashion',
+              'products_count': 1,
+            },
+          ],
+        });
       }),
     );
   });
@@ -448,8 +519,9 @@ void main() {
           await tester.pumpAndSettle();
           await tester.tap(find.text('Shop'));
           await tester.pumpAndSettle();
-          expect(find.text('Shop details'), findsOneWidget);
-          await tester.tap(find.byTooltip('Close shop details'));
+          expect(find.byType(BuyerShopPage), findsOneWidget);
+          expect(find.text('Test Shop'), findsWidgets);
+          await tester.pageBack();
           await tester.pumpAndSettle();
           await tester.tap(find.text('Chat'));
           await tester.pumpAndSettle();
@@ -478,6 +550,17 @@ void main() {
           await tester.pumpWidget(const SizedBox());
         },
         () => MockClient((request) async {
+          if (request.url.path.endsWith('/buyer/shops/5')) {
+            return response({
+              'id': 5,
+              'user_id': 99,
+              'business_name': 'Test Shop',
+              'products_count': 1,
+              'products': [product(1, 'Variant lamp')],
+              'categories': ['Home and Garden'],
+              'pagination': {'has_more': false},
+            });
+          }
           if (request.url.path.endsWith('/chat/open')) {
             expect(jsonDecode(request.body)['seller_id'], 99);
             return http.Response(
@@ -499,7 +582,7 @@ void main() {
           }
           return response({
             ...product(1, 'Variant lamp'),
-            'seller': {'user_id': 99, 'business_name': 'Test Shop'},
+            'seller': {'id': 5, 'user_id': 99, 'business_name': 'Test Shop'},
             'has_variants': true,
             'variants': [
               {

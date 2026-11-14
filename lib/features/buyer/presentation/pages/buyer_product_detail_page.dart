@@ -9,6 +9,7 @@ import 'package:shophop/features/buyer/presentation/widgets/buyer_variant_sheet.
 import 'package:shophop/features/buyer/data/services/buyer_catalog_service.dart';
 import 'package:shophop/features/buyer/data/services/buyer_cart_service.dart';
 import 'package:shophop/features/buyer/presentation/widgets/buyer_product_card.dart';
+import 'package:shophop/features/buyer/presentation/pages/buyer_shop_page.dart';
 
 class BuyerProductDetailPage extends StatefulWidget {
   const BuyerProductDetailPage({
@@ -133,6 +134,10 @@ class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
                 .map((item) => item.id),
           ]);
       });
+      if (!silent &&
+          !(detail.mediaFirst == 'video' && detail.videoUrl.isNotEmpty)) {
+        _focusVariantImage();
+      }
     } on BuyerCatalogException catch (error) {
       if (!mounted || requestId != _requestId) return;
       if (error.isUnauthorized) {
@@ -156,6 +161,35 @@ class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
     final detail = _detail;
     if (detail == null) return 0;
     return _selectedVariant?.price ?? detail.product.price;
+  }
+
+  List<BuyerMediaItem> _visibleMedia(BuyerProductDetailData detail) {
+    final media = buyerProductMedia(detail);
+    final image = _selectedVariant?.image ?? '';
+    if (image.isNotEmpty && !media.any((item) => item.url == image)) {
+      return [BuyerMediaItem(type: 'image', url: image), ...media];
+    }
+    return media;
+  }
+
+  void _focusVariantImage() {
+    final detail = _detail;
+    if (detail == null) return;
+    final image = _selectedVariant?.image.isNotEmpty == true
+        ? _selectedVariant!.image
+        : detail.product.image;
+    final media = _visibleMedia(detail);
+    var index = media.indexWhere(
+      (item) => item.type == 'image' && item.url == image,
+    );
+    if (index < 0) index = media.indexWhere((item) => item.type == 'image');
+    if (index < 0) return;
+    setState(() => _galleryIndex = index);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _galleryController.hasClients) {
+        _galleryController.jumpToPage(index);
+      }
+    });
   }
 
   Future<void> _toggleLike(BuyerProductData product) async {
@@ -236,6 +270,7 @@ class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
       _selectedVariant = selection.variant;
       _quantity = selection.quantity;
     });
+    _focusVariantImage();
   }
 
   @override
@@ -284,7 +319,7 @@ class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
     }
     final detail = _detail!;
     final product = detail.product;
-    final gallery = buyerProductMedia(detail);
+    final gallery = _visibleMedia(detail);
     final hasDiscount =
         _selectedVariant == null &&
         product.originalPrice != null &&
@@ -610,42 +645,20 @@ class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
       bottomNavigationBar: _CompactPurchaseBar(
         stock: _availableStock,
         busy: _cartBusy,
-        onShop: () => showModalBottomSheet<void>(
-          context: context,
-          useSafeArea: true,
-          isScrollControlled: true,
-          builder: (context) => SafeArea(
-            top: false,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.only(top: 16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    children: [
-                      const SizedBox(width: 16),
-                      const Expanded(
-                        child: Text(
-                          'Shop details',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        tooltip: 'Close shop details',
-                        onPressed: () => Navigator.pop(context),
-                        icon: const Icon(CupertinoIcons.xmark, size: 20),
-                      ),
-                    ],
-                  ),
-                  _SellerSummary(seller: detail.seller),
-                ],
+        onShop: () {
+          final sellerId = detail.seller.id;
+          if (sellerId == null) return;
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => BuyerShopPage(
+                token: widget.token,
+                sellerId: sellerId,
+                onOpenProduct: widget.onOpenProduct,
+                onSessionExpired: widget.onSessionExpired,
               ),
             ),
-          ),
-        ),
+          );
+        },
         onChat: () {
           final sellerUserId = detail.seller.userId;
           if (sellerUserId == null) {
@@ -842,7 +855,20 @@ class _SellerSummary extends StatelessWidget {
               color: colors.primaryContainer,
               borderRadius: BorderRadius.circular(6),
             ),
-            child: Icon(CupertinoIcons.bag, color: colors.primary, size: 23),
+            child: seller.logoUrl.isEmpty
+                ? Icon(CupertinoIcons.bag, color: colors.primary, size: 23)
+                : ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: Image.network(
+                      seller.logoUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => Icon(
+                        CupertinoIcons.bag,
+                        color: colors.primary,
+                        size: 23,
+                      ),
+                    ),
+                  ),
           ),
           const SizedBox(width: 10),
           Expanded(
