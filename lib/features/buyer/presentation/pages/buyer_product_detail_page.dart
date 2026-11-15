@@ -1,8 +1,10 @@
+import 'package:flutter/services.dart';
+import 'package:shophop/features/buyer/presentation/widgets/buyer_page_chrome.dart';
+import 'package:shophop/core/theme/app_colors.dart';
 import 'package:shophop/features/buyer/presentation/pages/buyer_messages_page.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:shophop/shared/realtime/foreground_refresh.dart';
-import 'package:flutter/services.dart';
 import 'package:shophop/features/buyer/presentation/widgets/buyer_product_gallery.dart';
 import 'package:shophop/features/buyer/presentation/widgets/buyer_variant_sheet.dart';
 
@@ -46,6 +48,7 @@ class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
   BuyerVariantData? _selectedVariant;
   bool _loading = true;
   bool _cartBusy = false;
+  bool _optionsOpen = false;
   final Set<int> _likedProductIds = <int>{};
   int _galleryIndex = 0;
   int _quantity = 1;
@@ -60,6 +63,7 @@ class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
           mounted &&
           !_requestBusy &&
           !_cartBusy &&
+          !_optionsOpen &&
           (ModalRoute.of(context)?.isCurrent ?? true),
     );
   }
@@ -97,16 +101,20 @@ class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
         productId: widget.productId,
       );
 
-      if (!mounted || requestId != _requestId) return;
+      if (!mounted || requestId != _requestId || (silent && _optionsOpen)) {
+        return;
+      }
 
-      final availableVariants = detail.variants.where((item) => item.inStock);
+      final availableVariants = detail.variants.where(
+        (item) => buyerSelectionStock(detail, item) > 0,
+      );
       setState(() {
         _detail = detail;
         final previousId = _selectedVariant?.id;
         final previous = availableVariants.where((v) => v.id == previousId);
         _selectedVariant = silent && previous.isNotEmpty
             ? previous.first
-            : (availableVariants.isNotEmpty ? availableVariants.first : null);
+            : null;
         if (!silent) {
           _quantity = 1;
           _galleryIndex = 0;
@@ -154,8 +162,17 @@ class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
     }
   }
 
-  int get _availableStock =>
-      _detail == null ? 0 : buyerSelectionStock(_detail!, _selectedVariant);
+  int get _availableStock {
+    final detail = _detail;
+    if (detail == null) return 0;
+    if (!detail.product.hasVariants || _selectedVariant != null) {
+      return buyerSelectionStock(detail, _selectedVariant);
+    }
+    return detail.variants.fold(0, (stock, variant) {
+      final available = buyerSelectionStock(detail, variant);
+      return available > stock ? available : stock;
+    });
+  }
 
   double get _displayPrice {
     final detail = _detail;
@@ -164,10 +181,12 @@ class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
   }
 
   List<BuyerMediaItem> _visibleMedia(BuyerProductDetailData detail) {
-    final media = buyerProductMedia(detail);
-    final image = _selectedVariant?.image ?? '';
-    if (image.isNotEmpty && !media.any((item) => item.url == image)) {
-      return [BuyerMediaItem(type: 'image', url: image), ...media];
+    final media = [...buyerProductMedia(detail)];
+    for (final variant in detail.variants) {
+      if (variant.image.isNotEmpty &&
+          !media.any((item) => item.url == variant.image)) {
+        media.add(BuyerMediaItem(type: 'image', url: variant.image));
+      }
     }
     return media;
   }
@@ -256,29 +275,35 @@ class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
     }
   }
 
-  Future<void> _openOptions() async {
+  Future<bool> _openOptions() async {
     final detail = _detail;
-    if (detail == null || _cartBusy) return;
-    final selection = await showBuyerVariantSheet(
-      context,
-      detail: detail,
-      selected: _selectedVariant,
-      quantity: _quantity,
-    );
-    if (!mounted || selection == null) return;
-    setState(() {
-      _selectedVariant = selection.variant;
-      _quantity = selection.quantity;
-    });
-    _focusVariantImage();
+    if (detail == null || _cartBusy || _optionsOpen) return false;
+    _optionsOpen = true;
+    try {
+      final selection = await showBuyerVariantSheet(
+        context,
+        detail: detail,
+        selected: _selectedVariant,
+        quantity: _quantity,
+      );
+      if (!mounted || selection == null || _detail != detail) return false;
+      setState(() {
+        _selectedVariant = selection.variant;
+        _quantity = selection.quantity;
+      });
+      _focusVariantImage();
+      return true;
+    } finally {
+      _optionsOpen = false;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     if (_loading || _error != null || _detail == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Product Details')),
+      return BuyerScaffold(
+        appBar: BuyerAppBar(title: const Text('Product Details')),
         body: _loading
             ? const Center(child: CircularProgressIndicator())
             : Center(
@@ -325,11 +350,11 @@ class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
         product.originalPrice != null &&
         product.originalPrice! > product.price;
     final size = MediaQuery.sizeOf(context);
-    final photoHeight = (size.width * 1.05).clamp(
+    final photoHeight = (size.width * .90).clamp(
       220.0,
-      (size.height * .53).clamp(220.0, 560.0),
+      (size.height * .46).clamp(220.0, 500.0),
     );
-    return Scaffold(
+    return BuyerScaffold(
       backgroundColor: colors.surfaceContainer,
       body: RefreshIndicator(
         onRefresh: () => _loadProduct(silent: true),
@@ -338,22 +363,24 @@ class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
           slivers: [
             SliverAppBar(
               pinned: true,
-              toolbarHeight: 56,
+              toolbarHeight: 64,
               titleSpacing: 0,
-              backgroundColor: colors.surface,
+              backgroundColor: AppColors.pink,
+              foregroundColor: Colors.white,
+              systemOverlayStyle: SystemUiOverlayStyle.light,
               surfaceTintColor: Colors.transparent,
-              scrolledUnderElevation: 1,
+              scrolledUnderElevation: 0,
               leading: _GalleryAction(
                 label: 'Back',
                 icon: CupertinoIcons.arrow_left,
                 onTap: () => Navigator.of(context).maybePop(),
               ),
               title: Material(
-                color: colors.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(24),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(6),
                 child: InkWell(
                   onTap: widget.onOpenSearch,
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(6),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
@@ -395,13 +422,13 @@ class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
             SliverLayoutBuilder(
               builder: (context, constraints) => SliverToBoxAdapter(
                 child: SizedBox(
-                  height: photoHeight,
+                  height: photoHeight + (gallery.length > 1 ? 62 : 0),
                   child: BuyerProductGallery(
                     media: gallery,
                     controller: _galleryController,
                     index: _galleryIndex,
                     active: constraints.scrollOffset < photoHeight,
-                    showThumbnails: false,
+                    showThumbnails: true,
                     onChanged: (index) => setState(() => _galleryIndex = index),
                   ),
                 ),
@@ -414,34 +441,44 @@ class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 4,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            if (hasDiscount)
-                              _DiscountLabel(percent: product.discountPercent),
-                            Text(
-                              buyerPrice(_displayPrice),
-                              key: const ValueKey('product-price'),
-                              style: TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w800,
-                                color: colors.primary,
-                                height: 1.25,
-                              ),
-                            ),
-                            if (hasDiscount) ...[
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.pinkSoft,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Wrap(
+                            spacing: 8,
+                            runSpacing: 4,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              if (hasDiscount)
+                                _DiscountLabel(
+                                  percent: product.discountPercent,
+                                ),
                               Text(
-                                buyerPrice(product.originalPrice!),
+                                buyerPrice(_displayPrice),
+                                key: const ValueKey('product-price'),
                                 style: TextStyle(
-                                  fontSize: 12,
-                                  color: colors.onSurfaceVariant,
-                                  decoration: TextDecoration.lineThrough,
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.commercePink,
+                                  height: 1.25,
                                 ),
                               ),
+                              if (hasDiscount) ...[
+                                Text(
+                                  buyerPrice(product.originalPrice!),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: colors.onSurfaceVariant,
+                                    decoration: TextDecoration.lineThrough,
+                                  ),
+                                ),
+                              ],
                             ],
-                          ],
+                          ),
                         ),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -543,6 +580,9 @@ class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
                                   const SizedBox(height: 3),
                                   Text(
                                     [
+                                      if (product.hasVariants &&
+                                          _selectedVariant == null)
+                                        'Choose a variation',
                                       if (_selectedVariant != null)
                                         (_selectedVariant!.label.isEmpty
                                             ? _selectedVariant!.name
@@ -612,7 +652,11 @@ class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
                     _DetailSection(
                       title: 'You may also like',
                       child: SizedBox(
-                        height: BuyerProductCard.extent(context, 136),
+                        height: BuyerProductCard.extent(
+                          context,
+                          136,
+                          video: true,
+                        ),
                         child: ListView.separated(
                           scrollDirection: Axis.horizontal,
                           itemCount: detail.relatedProducts.length,
@@ -621,14 +665,19 @@ class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
                             final related = detail.relatedProducts[index];
                             return SizedBox(
                               width: 136,
-                              child: BuyerProductCard(
-                                product: related.copyWith(
-                                  isLiked: _likedProductIds.contains(
-                                    related.id,
+                              child: Align(
+                                alignment: Alignment.topCenter,
+                                child: SizedBox(
+                                  height: BuyerProductCard.extent(
+                                    context,
+                                    136,
+                                    video: BuyerProductCard.hasVideo(related),
+                                  ),
+                                  child: BuyerProductCard(
+                                    product: related,
+                                    onTap: () => widget.onOpenProduct(related),
                                   ),
                                 ),
-                                onTap: () => widget.onOpenProduct(related),
-                                onLike: () => _toggleLike(related),
                               ),
                             );
                           },
@@ -694,16 +743,10 @@ class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
     if (detail == null || _cartBusy || _availableStock <= 0) return;
 
     if (detail.product.hasVariants && _selectedVariant == null) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          const SnackBar(
-            behavior: SnackBarBehavior.floating,
-            content: Text('Please select an available variation first.'),
-          ),
-        );
-      return;
+      if (!await _openOptions()) return;
+      if (!mounted || _detail != detail || _cartBusy) return;
     }
+    if (buyerSelectionStock(detail, _selectedVariant) <= 0) return;
 
     setState(() => _cartBusy = true);
 
@@ -773,9 +816,8 @@ class _GalleryAction extends StatelessWidget {
     tooltip: label,
     onPressed: onTap,
     style: IconButton.styleFrom(
-      backgroundColor: Theme.of(
-        context,
-      ).colorScheme.surface.withValues(alpha: .92),
+      backgroundColor: Colors.white.withValues(alpha: .18),
+      foregroundColor: Colors.white,
     ),
     icon: Icon(icon, size: 21),
   );
@@ -788,15 +830,15 @@ class _DiscountLabel extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
     decoration: BoxDecoration(
-      color: Theme.of(context).colorScheme.error,
-      borderRadius: BorderRadius.circular(6),
+      color: AppColors.commercePink,
+      borderRadius: BorderRadius.circular(4),
     ),
     child: Text(
       '-$percent%',
       style: TextStyle(
         fontSize: 12,
         fontWeight: FontWeight.w700,
-        color: Theme.of(context).colorScheme.onError,
+        color: Colors.white,
       ),
     ),
   );
@@ -977,144 +1019,271 @@ class _DescriptionSectionState extends State<_DescriptionSection> {
   }
 }
 
-class _CompactReviews extends StatelessWidget {
-  const _CompactReviews({required this.detail});
-  final BuyerProductDetailData detail;
-  void _open(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      builder: (context) => DraggableScrollableSheet(
-        expand: false,
-        initialChildSize: .85,
-        minChildSize: .5,
-        maxChildSize: .95,
-        builder: (context, scroll) => CustomScrollView(
-          controller: scroll,
-          slivers: [
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 12, 4, 0),
-                child: Row(
-                  children: [
-                    const Expanded(
-                      child: Text(
-                        'Product reviews',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      tooltip: 'Close reviews',
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(CupertinoIcons.xmark, size: 18),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      detail.product.reviews > detail.reviews.length
-                          ? 'Latest ${detail.reviews.length} of ${detail.product.reviews} reviews'
-                          : '${detail.product.reviews} reviews',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 12,
-                      runSpacing: 6,
-                      children: [
-                        for (var stars = 5; stars >= 1; stars--)
-                          Text(
-                            '$stars stars: ${detail.ratingBreakdown[stars] ?? 0}',
-                            style: const TextStyle(fontSize: 11),
-                          ),
-                      ],
-                    ),
-                    const Divider(height: 20),
-                  ],
-                ),
-              ),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
-              sliver: SliverList.separated(
-                itemCount: detail.reviews.length,
-                separatorBuilder: (_, _) => const Divider(height: 20),
-                itemBuilder: (context, index) =>
-                    _ReviewPreview(review: detail.reviews[index], full: true),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+List<BuyerReviewData> _filterReviews(
+  List<BuyerReviewData> reviews,
+  String filter,
+) => reviews
+    .where(
+      (review) =>
+          filter == 'all' ||
+          (filter == 'media'
+              ? review.attachments.isNotEmpty
+              : review.rating.toString() == filter),
+    )
+    .toList();
+
+class _ReviewFilters extends StatelessWidget {
+  const _ReviewFilters({
+    required this.reviews,
+    required this.selected,
+    required this.onChanged,
+  });
+  final List<BuyerReviewData> reviews;
+  final String selected;
+  final ValueChanged<String> onChanged;
 
   @override
-  Widget build(BuildContext context) => _DetailSection(
-    title: 'Product ratings',
-    trailing: detail.reviews.length > 2
-        ? TextButton(
-            onPressed: () => _open(context),
-            child: const Text('View reviews'),
-          )
-        : null,
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget build(BuildContext context) => SingleChildScrollView(
+    scrollDirection: Axis.horizontal,
+    child: Row(
       children: [
-        if (detail.product.reviews > 0) ...[
-          Row(
-            children: [
-              const Icon(
-                Icons.star_rounded,
-                color: Color(0xFFF4AA23),
-                size: 17,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                '${detail.product.rating.toStringAsFixed(1)} / 5',
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+        for (final filter in ['all', 'media', '5', '4', '3', '2', '1'])
+          Padding(
+            padding: const EdgeInsets.only(right: 7),
+            child: Semantics(
+              selected: selected == filter,
+              child: OutlinedButton(
+                key: ValueKey('review-filter-$filter'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.navy,
+                  backgroundColor: selected == filter
+                      ? AppColors.pinkSoft
+                      : Colors.white,
+
+                  side: BorderSide(
+                    color: selected == filter
+                        ? AppColors.commercePink
+                        : AppColors.border,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 11,
+                    vertical: 8,
+                  ),
+                  textStyle: TextStyle(
+                    fontSize: 11,
+                    fontWeight: selected == filter
+                        ? FontWeight.w700
+                        : FontWeight.w500,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Flexible(
+                onPressed: () => onChanged(filter),
                 child: Text(
-                  '${detail.product.reviews} ratings',
-                  style: const TextStyle(fontSize: 12),
+                  '${filter == 'all'
+                      ? 'All'
+                      : filter == 'media'
+                      ? 'With photo / video'
+                      : '$filter stars'} (${_filterReviews(reviews, filter).length})',
                 ),
               ),
-            ],
-          ),
-          const Divider(height: 20),
-        ],
-        if (detail.reviews.isEmpty)
-          const Text('No buyer reviews yet.', style: TextStyle(fontSize: 12))
-        else
-          for (var i = 0; i < detail.reviews.take(2).length; i++) ...[
-            if (i > 0) const Divider(height: 20),
-            _ReviewPreview(
-              review: detail.reviews[i],
-              onExpand: () => _open(context),
             ),
-          ],
+          ),
       ],
     ),
   );
+}
+
+class _CompactReviews extends StatefulWidget {
+  const _CompactReviews({required this.detail});
+  final BuyerProductDetailData detail;
+  @override
+  State<_CompactReviews> createState() => _CompactReviewsState();
+}
+
+class _CompactReviewsState extends State<_CompactReviews> {
+  String _filter = 'all';
+  void _open(BuildContext context) => showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
+    builder: (_) =>
+        _ReviewsSheet(detail: widget.detail, initialFilter: _filter),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final detail = widget.detail;
+    final reviews = _filterReviews(detail.reviews, _filter);
+    return _DetailSection(
+      title: 'Product ratings',
+      trailing: detail.reviews.isNotEmpty
+          ? TextButton(
+              onPressed: () => _open(context),
+              child: const Text('View reviews'),
+            )
+          : null,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (detail.product.reviews > 0) ...[
+            Row(
+              children: [
+                const Icon(
+                  Icons.star_rounded,
+                  color: Color(0xFFF4AA23),
+                  size: 20,
+                ),
+                const SizedBox(width: 5),
+                Text(
+                  '${detail.product.rating.toStringAsFixed(1)} / 5',
+                  style: const TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.commercePink,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    '${detail.product.reviews} ratings',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+          ],
+          if (detail.reviews.isNotEmpty) ...[
+            _ReviewFilters(
+              reviews: detail.reviews,
+              selected: _filter,
+              onChanged: (value) => setState(() => _filter = value),
+            ),
+            if (detail.product.reviews > detail.reviews.length)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  'Filters apply to the latest ${detail.reviews.length} reviews.',
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+              ),
+            const Divider(height: 20),
+          ],
+          if (reviews.isEmpty)
+            Text(
+              detail.reviews.isEmpty
+                  ? 'No buyer reviews yet.'
+                  : 'No reviews match this filter.',
+              style: const TextStyle(fontSize: 12),
+            )
+          else
+            for (var i = 0; i < reviews.take(2).length; i++) ...[
+              if (i > 0) const Divider(height: 20),
+              _ReviewPreview(
+                review: reviews[i],
+                onExpand: () => _open(context),
+              ),
+            ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ReviewsSheet extends StatefulWidget {
+  const _ReviewsSheet({required this.detail, required this.initialFilter});
+  final BuyerProductDetailData detail;
+  final String initialFilter;
+  @override
+  State<_ReviewsSheet> createState() => _ReviewsSheetState();
+}
+
+class _ReviewsSheetState extends State<_ReviewsSheet> {
+  late String _filter = widget.initialFilter;
+  @override
+  Widget build(BuildContext context) {
+    final detail = widget.detail;
+    final reviews = _filterReviews(detail.reviews, _filter);
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: .85,
+      minChildSize: .5,
+      maxChildSize: .95,
+      builder: (context, scroll) => CustomScrollView(
+        controller: scroll,
+        slivers: [
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 12, 4, 0),
+              child: Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Product reviews',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Close reviews',
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(CupertinoIcons.xmark, size: 18),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    detail.product.reviews > detail.reviews.length
+                        ? 'Showing ${reviews.length} of the latest ${detail.reviews.length} reviews'
+                        : 'Showing ${reviews.length} of ${detail.product.reviews} reviews',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  _ReviewFilters(
+                    reviews: detail.reviews,
+                    selected: _filter,
+                    onChanged: (value) => setState(() => _filter = value),
+                  ),
+                  const Divider(height: 20),
+                  if (reviews.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 20),
+                      child: Text('No reviews match this filter.'),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
+            sliver: SliverList.separated(
+              itemCount: reviews.length,
+              separatorBuilder: (_, _) => const Divider(height: 20),
+              itemBuilder: (context, index) =>
+                  _ReviewPreview(review: reviews[index], full: true),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _ReviewPreview extends StatelessWidget {
@@ -1327,6 +1496,8 @@ class _CompactPurchaseBar extends StatelessWidget {
                 child: FilledButton(
                   onPressed: enabled ? onBuyNow : null,
                   style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.commercePink,
+                    foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 10,
                       vertical: 10,

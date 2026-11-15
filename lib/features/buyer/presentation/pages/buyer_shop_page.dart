@@ -1,3 +1,4 @@
+import 'package:shophop/features/buyer/presentation/widgets/buyer_page_chrome.dart';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -78,8 +79,8 @@ class _BuyerShopPageState extends State<BuyerShopPage> {
   Widget build(BuildContext context) {
     final shop = _shop;
     final colors = Theme.of(context).colorScheme;
-    return Scaffold(
-      appBar: AppBar(title: Text(shop?.businessName ?? 'Shop')),
+    return BuyerScaffold(
+      appBar: BuyerAppBar(title: Text(shop?.businessName ?? 'Shop')),
       body: RefreshIndicator(
         onRefresh: () => _load(),
         child: ListView(
@@ -277,6 +278,7 @@ class _BuyerShopPageState extends State<BuyerShopPage> {
                       gridDelegate: BuyerProductCard.gridDelegate(
                         context,
                         constraints.maxWidth - 32,
+                        _products,
                       ),
                       itemCount: _products.length,
                       itemBuilder: (context, index) => BuyerProductCard(

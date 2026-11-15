@@ -601,7 +601,11 @@ class _AddressStepState extends State<AddressStep> {
         const SizedBox(height: 8),
 
         DropdownButtonFormField<String>(
-          style: Theme.of(context).textTheme.bodyMedium,
+          isDense: true,
+          itemHeight: 48,
+          borderRadius: BorderRadius.circular(6),
+          menuMaxHeight: 224,
+          style: const TextStyle(color: AppColors.navy, fontSize: 12),
           // Re-create the form field when an upstream selection resets it.
           // initialValue by itself is not a controlled value.
           key: ValueKey<String>('$label|$value'),
@@ -612,11 +616,18 @@ class _AddressStepState extends State<AddressStep> {
             Icons.keyboard_arrow_down_rounded,
             color: AppColors.navy.withValues(alpha: enabled ? 0.55 : 0.25),
           ),
-          decoration: _inputDecoration(
-            hint: hint,
-            icon: icon,
-            enabled: enabled,
-          ),
+          decoration: _inputDecoration(hint: hint, icon: icon, enabled: enabled)
+              .copyWith(
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                prefixIconConstraints: const BoxConstraints(
+                  minWidth: 40,
+                  minHeight: 40,
+                ),
+              ),
           items: items.map((location) {
             return DropdownMenuItem<String>(
               value: location.code,
@@ -625,7 +636,7 @@ class _AddressStepState extends State<AddressStep> {
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   color: AppColors.navy,
-                  fontSize: 13,
+                  fontSize: 12,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -743,7 +754,7 @@ class _AddressStepState extends State<AddressStep> {
 
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: AppColors.teal, width: 1.5),
+        borderSide: const BorderSide(color: AppColors.pink, width: 1.5),
       ),
 
       errorBorder: OutlineInputBorder(

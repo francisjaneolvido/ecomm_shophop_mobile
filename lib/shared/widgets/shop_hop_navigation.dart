@@ -102,9 +102,7 @@ class ShopHopNavigation extends StatelessWidget {
                                       width: 56,
                                       height: 56,
                                       decoration: BoxDecoration(
-                                        color: selected == i
-                                            ? AppColors.tealDark
-                                            : AppColors.teal,
+                                        color: AppColors.pink,
                                         shape: BoxShape.circle,
                                         border: Border.all(
                                           color: Colors.white,
@@ -112,8 +110,9 @@ class ShopHopNavigation extends StatelessWidget {
                                         ),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: AppColors.tealDark
-                                                .withValues(alpha: .28),
+                                            color: AppColors.pink.withValues(
+                                              alpha: .28,
+                                            ),
                                             blurRadius: 14,
                                             offset: const Offset(0, 4),
                                           ),
@@ -151,7 +150,7 @@ class ShopHopNavigation extends StatelessWidget {
                                                       : items[i].icon,
                                                   size: 23,
                                                   color: selected == i
-                                                      ? AppColors.tealDark
+                                                      ? AppColors.pink
                                                       : AppColors.textMuted,
                                                 ),
                                               ),
@@ -190,7 +189,7 @@ class ShopHopNavigation extends StatelessWidget {
         fontSize: 10.5,
         height: 1.5,
         fontWeight: selected == itemIndex ? FontWeight.w600 : FontWeight.w400,
-        color: selected == itemIndex ? AppColors.tealDark : AppColors.textMuted,
+        color: selected == itemIndex ? AppColors.pink : AppColors.textMuted,
       ),
     ),
   );

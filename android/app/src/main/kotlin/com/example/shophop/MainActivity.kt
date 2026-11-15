@@ -11,7 +11,16 @@ class MainActivity : FlutterActivity() {
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "shophop/device_settings")
             .setMethodCallHandler { call, result ->
-                if (call.method != "notifications") {
+                if (call.method == "appInfo") {
+                    try {
+                        @Suppress("DEPRECATION")
+                        val info = packageManager.getPackageInfo(packageName, 0)
+                        @Suppress("DEPRECATION")
+                        result.success(mapOf("version" to info.versionName, "build_number" to info.versionCode.toString()))
+                    } catch (error: Exception) {
+                        result.error("unavailable", "Cannot read app information", null)
+                    }
+                } else if (call.method != "notifications") {
                     result.notImplemented()
                 } else {
                     try {

@@ -1,3 +1,4 @@
+import 'package:shophop/shared/widgets/shop_hop_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:shophop/core/session/auth_session_service.dart';
 import 'package:shophop/features/auth/data/services/auth_service.dart';
@@ -203,7 +204,18 @@ class _SellerEarningsScreenState extends State<SellerEarningsScreen> {
           }),
           const SizedBox(height: 18),
           OutlinedButton.icon(
-            onPressed: _busy ? null : () => _logout(),
+            onPressed: _busy
+                ? null
+                : () async {
+                    final confirmed = await showShopHopConfirmation(
+                      context,
+                      title: 'Sign out of ShopHop?',
+                      message:
+                          'Are you sure you want to sign out? You can sign back in anytime.',
+                      confirmLabel: 'Sign out',
+                    );
+                    if (confirmed && mounted) await _logout();
+                  },
             icon: const Icon(Icons.logout),
             label: const Text('Sign out'),
           ),

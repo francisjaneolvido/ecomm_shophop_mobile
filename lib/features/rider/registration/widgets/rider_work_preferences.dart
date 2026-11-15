@@ -190,7 +190,7 @@ class _RiderWorkPreferencesState extends State<RiderWorkPreferences> {
                     dense: true,
                     contentPadding: EdgeInsets.zero,
                     controlAffinity: ListTileControlAffinity.leading,
-                    activeColor: AppColors.tealDark,
+                    activeColor: AppColors.pink,
                     title: Text(
                       p['label'].toString(),
                       style: const TextStyle(fontSize: 12),

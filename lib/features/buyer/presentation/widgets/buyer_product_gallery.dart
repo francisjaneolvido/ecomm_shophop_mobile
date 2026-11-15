@@ -1,3 +1,4 @@
+import 'package:shophop/core/theme/app_colors.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -221,7 +222,7 @@ class _BuyerProductGalleryState extends State<BuyerProductGallery> {
                       decoration: BoxDecoration(
                         border: Border.all(
                           color: index == widget.index
-                              ? colors.primary
+                              ? AppColors.pink
                               : colors.outline,
                           width: index == widget.index ? 2 : 1,
                         ),

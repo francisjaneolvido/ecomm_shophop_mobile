@@ -1,3 +1,4 @@
+import 'package:shophop/features/buyer/presentation/widgets/buyer_page_chrome.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shophop/core/session/auth_session_service.dart';
@@ -59,8 +60,8 @@ class _BuyerOrderSettingsPageState extends State<BuyerOrderSettingsPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Order Settings')),
+  Widget build(BuildContext context) => BuyerScaffold(
+    appBar: BuyerAppBar(title: const Text('Order Settings')),
     body: SafeArea(
       top: false,
       child: ListView(
@@ -162,8 +163,8 @@ class _BuyerPrivacySettingsPageState extends State<BuyerPrivacySettingsPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Privacy Settings')),
+  Widget build(BuildContext context) => BuyerScaffold(
+    appBar: BuyerAppBar(title: const Text('Privacy Settings')),
     body: SafeArea(
       top: false,
       child: ListView(
@@ -226,8 +227,8 @@ class _BuyerNotificationSettingsPageState
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Notification Settings')),
+  Widget build(BuildContext context) => BuyerScaffold(
+    appBar: BuyerAppBar(title: const Text('Notification Settings')),
     body: SafeArea(
       top: false,
       child: ListView(

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 enum ScanFeedbackEvent { verified, complete, error }
 
@@ -47,9 +48,52 @@ class ShopHopScanFeedback {
       _now = now ?? DateTime.now;
 
   static ShopHopScanFeedback instance = ShopHopScanFeedback();
-  // Session preferences shared across all scanner screens.
+  // Device preferences shared across all scanner screens.
   static final soundEnabled = ValueNotifier(true);
   static final vibrationEnabled = ValueNotifier(true);
+  static const _storage = FlutterSecureStorage();
+  static int _preferenceRevision = 0;
+  static Future<void> _writes = Future<void>.value();
+
+  static Future<void> loadPreferences() async {
+    final revision = _preferenceRevision;
+    try {
+      final sound = await _storage.read(key: 'shophop_scan_sound');
+      final vibration = await _storage.read(key: 'shophop_scan_vibration');
+      if (revision != _preferenceRevision) return;
+      soundEnabled.value = sound != 'false';
+      vibrationEnabled.value = vibration != 'false';
+    } catch (_) {
+      // Storage availability must not prevent using the scanner.
+    }
+  }
+
+  static Future<bool> setSoundEnabled(bool value) =>
+      _savePreference(soundEnabled, 'shophop_scan_sound', value);
+  static Future<bool> setVibrationEnabled(bool value) =>
+      _savePreference(vibrationEnabled, 'shophop_scan_vibration', value);
+
+  static Future<bool> _savePreference(
+    ValueNotifier<bool> notifier,
+    String key,
+    bool value,
+  ) async {
+    _preferenceRevision++;
+    notifier.value = value;
+    var saved = false;
+    final write = _writes.then((_) async {
+      try {
+        await _storage.write(key: key, value: '$value');
+        saved = true;
+      } catch (_) {
+        // Keep the session preference even when persistence fails.
+      }
+    });
+    _writes = write;
+    await write;
+    return saved;
+  }
+
   final ScanFeedbackOutput _output;
   final DateTime Function() _now;
   final Map<String, DateTime> _recent = {};

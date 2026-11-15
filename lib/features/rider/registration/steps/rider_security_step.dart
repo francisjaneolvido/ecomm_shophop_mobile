@@ -63,12 +63,12 @@ class _RiderSecurityStepState extends State<RiderSecurityStep> {
         width: 44,
         height: 44,
         decoration: BoxDecoration(
-          color: AppColors.tealLight,
+          color: AppColors.pinkSoft,
           borderRadius: BorderRadius.circular(8),
         ),
         child: const Icon(
           Icons.lock_outline_rounded,
-          color: AppColors.tealDark,
+          color: AppColors.pink,
         ),
       ),
       const SizedBox(width: 13),
@@ -216,9 +216,9 @@ class _RiderSecurityStepState extends State<RiderSecurityStep> {
           height: 17,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: done ? AppColors.teal : Colors.white,
+            color: done ? AppColors.pink : Colors.white,
             border: Border.all(
-              color: done ? AppColors.teal : AppColors.grayBorder,
+              color: done ? AppColors.pink : AppColors.grayBorder,
             ),
           ),
           child: done
@@ -231,7 +231,7 @@ class _RiderSecurityStepState extends State<RiderSecurityStep> {
             text,
             style: TextStyle(
               color: done
-                  ? AppColors.tealDark
+                  ? AppColors.pink
                   : AppColors.navy.withValues(alpha: 0.46),
               fontSize: 10.5,
               height: 1.4,
@@ -246,9 +246,9 @@ class _RiderSecurityStepState extends State<RiderSecurityStep> {
     width: double.infinity,
     padding: const EdgeInsets.all(13),
     decoration: BoxDecoration(
-      color: AppColors.tealLight.withValues(alpha: 0.45),
+      color: AppColors.pinkSoft.withValues(alpha: 0.45),
       borderRadius: BorderRadius.circular(8),
-      border: Border.all(color: AppColors.teal.withValues(alpha: 0.15)),
+      border: Border.all(color: AppColors.pink.withValues(alpha: 0.15)),
     ),
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -256,7 +256,7 @@ class _RiderSecurityStepState extends State<RiderSecurityStep> {
         const Icon(
           Icons.info_outline_rounded,
           size: 18,
-          color: AppColors.tealDark,
+          color: AppColors.pink,
         ),
         const SizedBox(width: 10),
         Expanded(
@@ -295,7 +295,7 @@ class _RiderSecurityStepState extends State<RiderSecurityStep> {
                 color: field.hasError
                     ? const Color(0xFFD93F4C)
                     : checked
-                    ? AppColors.teal.withValues(alpha: 0.60)
+                    ? AppColors.pink.withValues(alpha: 0.60)
                     : AppColors.grayBorder,
               ),
             ),
@@ -309,7 +309,7 @@ class _RiderSecurityStepState extends State<RiderSecurityStep> {
                     field.didChange(next);
                     widget.onTermsChanged(next);
                   },
-                  activeColor: AppColors.teal,
+                  activeColor: AppColors.pink,
                 ),
                 Expanded(
                   child: Wrap(
@@ -327,7 +327,7 @@ class _RiderSecurityStepState extends State<RiderSecurityStep> {
                         child: const Text(
                           'Terms and Conditions',
                           style: TextStyle(
-                            color: AppColors.tealDark,
+                            color: AppColors.pink,
                             fontSize: 10.5,
                             fontWeight: FontWeight.w700,
                           ),
@@ -339,7 +339,7 @@ class _RiderSecurityStepState extends State<RiderSecurityStep> {
                         child: const Text(
                           'Privacy Policy',
                           style: TextStyle(
-                            color: AppColors.tealDark,
+                            color: AppColors.pink,
                             fontSize: 10.5,
                             fontWeight: FontWeight.w700,
                           ),

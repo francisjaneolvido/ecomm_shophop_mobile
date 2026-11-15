@@ -1,3 +1,4 @@
+import 'package:shophop/features/buyer/presentation/widgets/buyer_page_chrome.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shophop/core/config/api_config.dart';
@@ -218,15 +219,14 @@ class _BuyerOrdersPageState extends State<BuyerOrdersPage> {
   @override
   Widget build(BuildContext context) {
     final visibleCount = _counts[_statusGroup ?? 'all'];
-    return Scaffold(
+    return BuyerScaffold(
       backgroundColor: AppColors.page,
-      appBar: AppBar(
-        title: const Text(
-          'My Orders',
-          style: TextStyle(fontWeight: FontWeight.w800),
+      appBar: BuyerAppBar(
+        automaticallyImplyLeading: false,
+        title: const BuyerPageHeading(
+          title: 'My Orders',
+          icon: Icons.receipt_long_outlined,
         ),
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
         actions: [
           IconButton(
             tooltip: 'Refresh orders',
@@ -237,10 +237,10 @@ class _BuyerOrdersPageState extends State<BuyerOrdersPage> {
       ),
       body: RefreshIndicator(
         onRefresh: _load,
-        color: AppColors.navy,
+        color: AppColors.pink,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 110),
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
           children: [
             _purchaseShortcuts(),
             const SizedBox(height: 22),
@@ -304,7 +304,7 @@ class _BuyerOrdersPageState extends State<BuyerOrdersPage> {
   Widget _purchaseShortcuts() => Container(
     decoration: BoxDecoration(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(8),
       border: Border.all(color: AppColors.border),
     ),
     padding: const EdgeInsets.fromLTRB(12, 6, 12, 14),
@@ -352,10 +352,10 @@ class _BuyerOrdersPageState extends State<BuyerOrdersPage> {
                     excludeSemantics: true,
                     child: Material(
                       color: selected ? AppColors.pinkSoft : Colors.white,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(6),
                       child: InkWell(
                         key: ValueKey('order-filter-${group.id}'),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(6),
                         onTap: () => _selectGroup(group.id),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
@@ -374,7 +374,7 @@ class _BuyerOrdersPageState extends State<BuyerOrdersPage> {
                                     Icon(
                                       group.icon,
                                       size: 28,
-                                      color: AppColors.navy,
+                                      color: AppColors.pink,
                                     ),
                                     if (count != null && count > 0)
                                       Positioned(
@@ -389,7 +389,7 @@ class _BuyerOrdersPageState extends State<BuyerOrdersPage> {
                                             minWidth: 20,
                                           ),
                                           decoration: BoxDecoration(
-                                            color: AppColors.navy,
+                                            color: AppColors.pink,
                                             borderRadius: BorderRadius.circular(
                                               20,
                                             ),
@@ -429,7 +429,7 @@ class _BuyerOrdersPageState extends State<BuyerOrdersPage> {
                                 height: 3,
                                 decoration: BoxDecoration(
                                   color: selected
-                                      ? AppColors.navy
+                                      ? AppColors.pink
                                       : Colors.transparent,
                                   borderRadius: BorderRadius.circular(3),
                                 ),
@@ -526,7 +526,7 @@ class _BuyerOrdersPageState extends State<BuyerOrdersPage> {
       color: Colors.white,
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(8),
         side: const BorderSide(color: AppColors.border),
       ),
       child: Padding(

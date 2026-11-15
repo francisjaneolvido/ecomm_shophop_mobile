@@ -260,9 +260,13 @@ class PersonalDetailsStep extends StatelessWidget {
         const SizedBox(height: 8),
 
         DropdownButtonFormField<String>(
+          isDense: true,
+          itemHeight: 48,
+          borderRadius: BorderRadius.circular(6),
+          menuMaxHeight: 224,
           style: const TextStyle(
             fontFamily: 'Poppins',
-            fontSize: 14,
+            fontSize: 12,
             fontWeight: FontWeight.w400,
             color: AppColors.text,
           ),
@@ -272,10 +276,21 @@ class PersonalDetailsStep extends StatelessWidget {
             Icons.keyboard_arrow_down_rounded,
             color: AppColors.navy,
           ),
-          decoration: _inputDecoration(
-            hint: 'Select sex',
-            icon: Icons.groups_2_outlined,
-          ),
+          decoration:
+              _inputDecoration(
+                hint: 'Select sex',
+                icon: Icons.groups_2_outlined,
+              ).copyWith(
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                prefixIconConstraints: const BoxConstraints(
+                  minWidth: 40,
+                  minHeight: 40,
+                ),
+              ),
           items: const [
             DropdownMenuItem(value: 'Male', child: Text('Male')),
             DropdownMenuItem(value: 'Female', child: Text('Female')),
@@ -484,7 +499,7 @@ class PersonalDetailsStep extends StatelessWidget {
 
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: AppColors.teal, width: 1.5),
+        borderSide: const BorderSide(color: AppColors.pink, width: 1.5),
       ),
 
       errorBorder: OutlineInputBorder(

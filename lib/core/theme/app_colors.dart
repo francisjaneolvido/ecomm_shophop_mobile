@@ -5,8 +5,9 @@ class AppColors {
   AppColors._();
   static const navy = Color(0xFF10193C);
   static const navyHover = Color(0xFF26305A);
-  static const pink = Color(0xFFEDA3AE);
-  static const pinkHover = Color(0xFFE1909E);
+  static const pink = Color(0xFFFA3E68);
+  static const pinkHover = Color(0xFFE9325B);
+  static const pinkMuted = Color(0xFFEDA3AE);
   static const pinkSoft = Color(0xFFFCECEF);
   static const cream = Color(0xFFFBF6EE);
   static const page = cream;
@@ -27,6 +28,7 @@ class AppColors {
   static const warning = Color(0xFFF59E0B);
 
   // Compatibility aliases keep existing role screens on the shared palette.
+  static const commercePink = pink;
   static const teal = navy;
   static const tealDark = navy;
   static const tealLight = pinkSoft;

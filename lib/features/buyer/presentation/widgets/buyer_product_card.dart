@@ -1,8 +1,11 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/material.dart';
 import 'package:shophop/core/theme/app_colors.dart';
 import 'package:shophop/core/theme/app_theme.dart';
 import 'package:shophop/features/buyer/data/services/buyer_catalog_service.dart';
+
+part 'buyer_product_grid.dart';
 
 /// Shared by Home, catalog, Likes, and related products.
 class BuyerProductCard extends StatelessWidget {
@@ -10,39 +13,43 @@ class BuyerProductCard extends StatelessWidget {
     super.key,
     required this.product,
     required this.onTap,
-    this.onLike,
     this.compact = false,
   });
   final BuyerProductData product;
   final VoidCallback onTap;
-  final VoidCallback? onLike;
   final bool compact;
 
-  /// A square photo plus enough room for actual content and enlarged text.
-  static double extent(BuildContext context, double width) =>
-      width + 142 * MediaQuery.textScalerOf(context).scale(12) / 12;
+  static bool hasVideo(BuyerProductData product) =>
+      product.videoFirst && product.videoUrl.isNotEmpty;
 
-  static SliverGridDelegate gridDelegate(BuildContext context, double width) {
-    final columns = width >= 1050
+  static double contentExtent(BuildContext context) =>
+      148 * MediaQuery.textScalerOf(context).scale(12) / 12;
+
+  static double extent(
+    BuildContext context,
+    double width, {
+    bool video = false,
+  }) => width / (video ? .75 : 1) + contentExtent(context);
+
+  static SliverGridDelegate gridDelegate(
+    BuildContext context,
+    double width,
+    List<BuyerProductData> products,
+  ) => _ProductGridDelegate(
+    columns: width >= 1050
         ? 5
         : width >= 780
         ? 4
         : width >= 560
         ? 3
-        : 2;
-    final cellWidth = (width - (columns - 1) * 12) / columns;
-    return SliverGridDelegateWithFixedCrossAxisCount(
-      crossAxisCount: columns,
-      crossAxisSpacing: 12,
-      mainAxisSpacing: 12,
-      mainAxisExtent: extent(context, cellWidth),
-    );
-  }
+        : 2,
+    contentHeight: contentExtent(context),
+    videos: products.map(hasVideo).toList(),
+  );
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
+    final colors = Theme.of(context).colorScheme;
     final discounted =
         product.originalPrice != null && product.originalPrice! > product.price;
     return Material(
@@ -57,7 +64,8 @@ class BuyerProductCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
+            AspectRatio(
+              aspectRatio: hasVideo(product) ? .75 : 1,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -69,7 +77,7 @@ class BuyerProductCard extends StatelessWidget {
                             product.image,
                             webHtmlElementStrategy:
                                 WebHtmlElementStrategy.fallback,
-                            fit: BoxFit.contain,
+                            fit: BoxFit.cover,
                             errorBuilder: (_, _, _) =>
                                 _PhotoUnavailable(category: product.category),
                             loadingBuilder: (context, child, progress) =>
@@ -93,47 +101,52 @@ class BuyerProductCard extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: colors.onSurface,
+                          color: product.discountPercent > 0
+                              ? AppColors.commercePink
+                              : colors.onSurface,
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
                           product.discountPercent > 0
                               ? '-${product.discountPercent}%'
                               : 'LOW STOCK',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: colors.surface,
-                            fontSize: 10,
-                          ),
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(color: Colors.white, fontSize: 10),
                         ),
                       ),
                     ),
-                  if (onLike != null)
+                  if (hasVideo(product))
                     Positioned(
-                      right: 0,
-                      bottom: 0,
-                      child: IconButton(
-                        onPressed: onLike,
-                        tooltip:
-                            '${product.isLiked ? 'Remove' : 'Save'} ${product.name} ${product.isLiked ? 'from' : 'to'} Likes',
-                        style: IconButton.styleFrom(
-                          backgroundColor: colors.surface.withValues(
-                            alpha: .95,
-                          ),
-                          foregroundColor: product.isLiked
-                              ? colors.primary
-                              : colors.onSurfaceVariant,
+                      left: 8,
+                      bottom: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 4,
                         ),
-                        icon: Icon(
-                          product.isLiked
-                              ? CupertinoIcons.heart_fill
-                              : CupertinoIcons.heart,
-                          size: 21,
+                        decoration: BoxDecoration(
+                          color: AppColors.navy.withValues(alpha: .8),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.play_arrow_rounded,
+                              size: 14,
+                              color: Colors.white,
+                            ),
+                            SizedBox(width: 3),
+                            Text(
+                              'Video',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                  if (product.videoFirst && product.videoUrl.isNotEmpty)
-                    const Center(
-                      child: Icon(CupertinoIcons.play_circle_fill, size: 36),
                     ),
                   if (!product.isAvailable)
                     Align(
@@ -145,77 +158,114 @@ class BuyerProductCard extends StatelessWidget {
                         child: Text(
                           'Currently unavailable',
                           textAlign: TextAlign.center,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: colors.surface,
-                          ),
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(color: colors.surface),
                         ),
                       ),
                     ),
                 ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    product.category,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      fontSize: 10,
-                      color: colors.onSurfaceVariant,
+            SizedBox(
+              height: contentExtent(context),
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      product.category,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 10,
+                        height: 1.3,
+                        color: colors.onSurfaceVariant,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    product.name,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w500,
-                      height: 1.4,
+                    const SizedBox(height: 4),
+                    SizedBox(
+                      height: MediaQuery.textScalerOf(context).scale(12) * 3,
+                      child: Text(
+                        product.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12,
+                          height: 1.5,
+                          fontWeight: FontWeight.w500,
+                          color: colors.onSurface,
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    buyerPrice(product.price),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      color: AppColors.pink,
-                      fontWeight: FontWeight.w800,
+                    const SizedBox(height: 6),
+                    Text(
+                      buyerPrice(product.price),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        height: 1.3,
+                        color: AppColors.commercePink,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    discounted ? buyerPrice(product.originalPrice!) : ' ',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      fontSize: 10,
-                      color: colors.onSurfaceVariant,
-                      decoration: discounted
-                          ? TextDecoration.lineThrough
-                          : null,
+                    if (discounted)
+                      Text(
+                        buyerPrice(product.originalPrice!),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 10,
+                          height: 1.2,
+                          color: colors.onSurfaceVariant,
+                          decoration: TextDecoration.lineThrough,
+                        ),
+                      ),
+                    const SizedBox(height: 5),
+                    Row(
+                      children: [
+                        Icon(
+                          product.reviews > 0
+                              ? Icons.star_rounded
+                              : Icons.star_outline_rounded,
+                          size: 13,
+                          color: product.reviews > 0
+                              ? const Color(0xFFF4AA23)
+                              : colors.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 3),
+                        Expanded(
+                          child: Text(
+                            product.reviews > 0
+                                ? '${product.rating.toStringAsFixed(1)} (${product.reviews})'
+                                : 'No reviews yet',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 10,
+                              height: 1.2,
+                              color: colors.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    product.reviews > 0
-                        ? '\u2605 ${product.rating.toStringAsFixed(1)} \u00b7 ${product.reviews} reviews'
-                        : product.sold > 0
-                        ? '${product.sold} completed sales'
-                        : '${product.stock} in stock',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      fontSize: 10,
-                      color: colors.onSurfaceVariant,
+                    const SizedBox(height: 4),
+                    Text(
+                      product.sold > 0
+                          ? '${product.sold} sold'
+                          : '${product.stock} in stock',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 10,
+                        height: 1.2,
+                        color: colors.onSurfaceVariant,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],

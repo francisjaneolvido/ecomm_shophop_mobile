@@ -34,7 +34,7 @@ class ShopHopBrand extends StatelessWidget {
                   ),
                   const TextSpan(
                     text: 'Hop',
-                    style: TextStyle(color: AppColors.pinkHover),
+                    style: TextStyle(color: AppColors.commercePink),
                   ),
                 ],
               ),

@@ -1,3 +1,5 @@
+import 'package:shophop/features/auth/presentation/widgets/shop_hop_auth_theme.dart';
+import 'package:shophop/features/auth/presentation/widgets/registration_completion.dart';
 import 'package:shophop/features/rider/registration/widgets/rider_work_preferences.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -6,7 +8,6 @@ import 'package:shophop/features/auth/data/services/auth_service.dart';
 import 'package:shophop/core/theme/app_colors.dart';
 import 'package:shophop/shared/registration/steps/address_step.dart';
 import 'package:shophop/shared/registration/steps/personal_details_step.dart';
-import 'package:shophop/features/auth/presentation/screens/login_screen.dart';
 import 'package:shophop/features/auth/presentation/screens/email_verification_screen.dart';
 import 'package:shophop/features/auth/domain/registration_role.dart';
 import 'package:shophop/features/rider/registration/steps/rider_details_step.dart';
@@ -257,6 +258,7 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
   void _openEmailVerification() {
     final email = _email.text.trim();
 
+    AuthApiResult? verifiedResult;
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -268,6 +270,7 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
               email: email,
               code: code,
             );
+            if (result.success) verifiedResult = result;
             return result.success ? null : result.message;
           },
           onResendCode: () async {
@@ -277,12 +280,8 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
             return result.success ? null : result.message;
           },
           onVerified: () {
-            if (!mounted) return;
-
-            Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(builder: (_) => const LoginScreen()),
-              (route) => false,
-            );
+            final result = verifiedResult;
+            if (result != null) completeRegistration(context, result);
           },
         ),
       ),
@@ -310,7 +309,10 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) =>
+      ShopHopAuthTheme(child: Builder(builder: _buildContent));
+
+  Widget _buildContent(BuildContext context) => Scaffold(
     backgroundColor: AppColors.grayBg,
     body: SafeArea(
       child: Column(
@@ -886,7 +888,7 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
                       : _next,
                   style: ElevatedButton.styleFrom(
                     elevation: 0,
-                    backgroundColor: AppColors.teal,
+                    backgroundColor: AppColors.pink,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),

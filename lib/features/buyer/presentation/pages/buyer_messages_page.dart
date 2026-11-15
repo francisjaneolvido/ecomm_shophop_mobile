@@ -1,3 +1,4 @@
+import 'package:shophop/features/buyer/presentation/widgets/buyer_page_chrome.dart';
 import 'package:shophop/features/buyer/presentation/widgets/buyer_icon_tile.dart';
 import 'package:shophop/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
@@ -83,12 +84,11 @@ class _BuyerMessagesPageState extends State<BuyerMessagesPage> {
                   item.last.toLowerCase().contains(query)),
         )
         .toList();
-    return Scaffold(
+    return BuyerScaffold(
       backgroundColor: AppColors.page,
-      appBar: AppBar(
+      appBar: BuyerAppBar(
         title: const Text('Chats'),
-        backgroundColor: AppColors.surface,
-        surfaceTintColor: Colors.transparent,
+
         actions: [
           IconButton(
             tooltip: 'Refresh messages',
@@ -615,11 +615,9 @@ class _BuyerChatPageState extends State<BuyerChatPage> {
     final colors = Theme.of(context).colorScheme;
     final items = _messages.values.toList()
       ..sort((a, b) => b.id.compareTo(a.id));
-    return Scaffold(
+    return BuyerScaffold(
       backgroundColor: AppColors.page,
-      appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        surfaceTintColor: Colors.transparent,
+      appBar: BuyerAppBar(
         titleSpacing: 0,
         title: Row(
           children: [
@@ -640,10 +638,7 @@ class _BuyerChatPageState extends State<BuyerChatPage> {
                   ),
                   Text(
                     'Shop conversation',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: colors.onSurfaceVariant,
-                    ),
+                    style: const TextStyle(fontSize: 10, color: Colors.white),
                   ),
                 ],
               ),

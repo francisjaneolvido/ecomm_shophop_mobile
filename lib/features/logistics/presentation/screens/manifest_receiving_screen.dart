@@ -167,7 +167,7 @@ class _ManifestReceivingScreenState extends State<ManifestReceivingScreen> {
       builder: (context) => AlertDialog(
         title: Text(
           manifest['transport_mode'] == 'road'
-              ? 'Acknowledge road arrival?'
+              ? 'Acknowledge linehaul arrival?'
               : 'Confirm carrier cargo arrival?',
         ),
         content: Text(
@@ -443,7 +443,7 @@ class _ManifestReceivingScreenState extends State<ManifestReceivingScreen> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      '${(m['transport_mode'] ?? 'road').toString().toUpperCase()} · ${(m['trip_status'] ?? '').toString().replaceAll('_', ' ')}',
+                      '${m['transport_mode'] == 'road' ? 'LINEHAUL' : (m['transport_mode'] ?? '').toString().toUpperCase()} · ${(m['trip_status'] ?? '').toString().replaceAll('_', ' ')}',
                       style: const TextStyle(
                         color: _teal,
                         fontSize: 11,
@@ -538,7 +538,7 @@ class _ManifestReceivingScreenState extends State<ManifestReceivingScreen> {
                       SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Transport manifest received and completed. Vehicle release applies only to road trips.',
+                          'Transport manifest received and completed. The vehicle is released after the Linehaul trip is complete.',
                         ),
                       ),
                     ],

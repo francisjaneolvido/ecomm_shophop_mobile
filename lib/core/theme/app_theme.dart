@@ -78,6 +78,7 @@ class AppTheme {
           displayColor: AppColors.text,
         );
     const selected = AppColors.navy;
+    const navigationSelected = AppColors.pink;
     const unselected = AppColors.textMuted;
     const scheme = ColorScheme.light(
       primary: selected,
@@ -304,7 +305,7 @@ class AppTheme {
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         type: BottomNavigationBarType.fixed,
         backgroundColor: scheme.surface,
-        selectedItemColor: selected,
+        selectedItemColor: navigationSelected,
         unselectedItemColor: unselected,
         selectedLabelStyle: navLabel.copyWith(fontWeight: FontWeight.w700),
         unselectedLabelStyle: navLabel.copyWith(fontWeight: FontWeight.w500),
@@ -323,7 +324,7 @@ class AppTheme {
           (states) => IconThemeData(
             size: 24,
             color: states.contains(WidgetState.selected)
-                ? selected
+                ? navigationSelected
                 : unselected,
           ),
         ),
@@ -333,7 +334,7 @@ class AppTheme {
                 ? FontWeight.w700
                 : FontWeight.w500,
             color: states.contains(WidgetState.selected)
-                ? selected
+                ? navigationSelected
                 : unselected,
           ),
         ),

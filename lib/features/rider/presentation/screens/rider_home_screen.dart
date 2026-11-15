@@ -1,3 +1,6 @@
+import 'package:shophop/features/rider/data/services/rider_management_service.dart';
+import 'package:shophop/features/rider/presentation/widgets/rider_home_availability.dart';
+import 'package:shophop/features/rider/presentation/screens/rider_account_page.dart';
 import 'package:shophop/features/rider/presentation/widgets/rider_delivery_completion.dart';
 import 'package:shophop/features/rider/presentation/screens/rider_application_status_screen.dart';
 import 'package:shophop/features/rider/presentation/screens/rider_cod_remittance_screen.dart';
@@ -21,7 +24,6 @@ import 'package:shophop/features/rider/data/services/rider_delivery_service.dart
 import 'package:shophop/features/rider/data/services/rider_return_service.dart';
 import 'package:shophop/features/rider/data/services/rider_transit_service.dart';
 import 'package:shophop/features/rider/presentation/screens/rider_custody_scanner.dart';
-import 'package:shophop/shared/widgets/shop_hop_ui.dart';
 import 'package:shophop/shared/widgets/shop_hop_navigation.dart';
 
 enum _RiderTaskKind { pickup, transfer, delivery, returnTask }
@@ -90,12 +92,16 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
   String? _error;
   String? _token;
   String _name = 'Rider';
+  String? _photoUrl;
+  String? _availability;
+  bool _updatingAvailability = false;
   String _logisticsCenter = 'Logistics / Sorting Center';
   String? _sortingCenterName;
   String? _sortingCenterCode;
   String? _sortingCenterAddress;
   String? _coverageArea;
   String _operationalAreaSummary = '';
+  String _operationalAreaDetails = '';
   String _operationalAreaMode = 'legacy';
   double _pendingEarnings = 0;
   double _availableEarnings = 0;
@@ -110,6 +116,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
       canRefresh: () =>
           mounted &&
           _requestFuture == null &&
+          !_updatingAvailability &&
           _tab != 2 &&
           _busyDeliveryId == null &&
           _busyReturnId == null &&
@@ -139,6 +146,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
   Future<void>? _requestFuture;
 
   Future<void> _load({bool showLoader = true, bool silent = false}) {
+    if (_updatingAvailability) return Future<void>.value();
     final pending = _requestFuture;
     if (pending != null) {
       if (silent) return pending;
@@ -215,6 +223,16 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
 
       setState(() {
         _name = me.data['name']?.toString() ?? 'Rider';
+        _photoUrl = me.data['photo_url']?.toString();
+        final availability =
+            me.data['availability'] ?? me.data['availability_status'];
+        _availability = switch (availability) {
+          'available' || 'online' => 'online',
+          'on_break' => 'on_break',
+          'offline' => 'offline',
+          'busy' => 'busy',
+          _ => null,
+        };
         _logisticsCenter =
             me.data['logistics_company']?.toString() ??
             me.data['logistics_center']?.toString() ??
@@ -232,12 +250,14 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
               .map((item) => item['label']?.toString() ?? '')
               .where((value) => value.trim().isNotEmpty)
               .toList();
+          _operationalAreaDetails = labels.join('\n');
           _operationalAreaSummary = labels.take(4).join(' · ');
           if (labels.length > 4) {
             _operationalAreaSummary += ' · +${labels.length - 4} more';
           }
         } else {
           _operationalAreaSummary = '';
+          _operationalAreaDetails = '';
         }
         _profileLoaded = true;
       });
@@ -769,7 +789,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
         index: _tab,
         onChanged: (value) {
           setState(() => _tab = value);
-          if (value == 3 && !_loading) _load(showLoader: false);
+          if ((value == 0 || value == 3) && !_loading) _load(showLoader: false);
         },
         items: ShopHopRole.rider.destinations,
         badges: {1: _todayTasks.length, 3: _codToRemit.length},
@@ -817,7 +837,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
       key: PageStorageKey('rider-$_tab-$_tasksCompleted'),
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 20),
       children: [
-        _todayHeader(allTasks.length),
+        _todayHeader(),
         if (_error != null) ...[
           const SizedBox(height: 12),
           _notice(_error!, Icons.sync_problem_rounded),
@@ -1143,6 +1163,19 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
             setState(() => _tasksCompleted = values.first),
         showSelectedIcon: false,
         style: ButtonStyle(
+          backgroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected)
+                ? AppColors.pink
+                : Colors.white,
+          ),
+          foregroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected)
+                ? Colors.white
+                : AppColors.navy,
+          ),
+          shape: WidgetStateProperty.all(
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+          ),
           visualDensity: VisualDensity.compact,
           textStyle: WidgetStateProperty.all(const TextStyle(fontSize: 11)),
         ),
@@ -1200,24 +1233,53 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
     ],
   );
 
-  Widget _todayHeader(int taskCount) {
-    final branch = _sortingCenterName?.trim().isNotEmpty == true
-        ? _sortingCenterName!.trim()
-        : _logisticsCenter;
-
-    return ShopHopRoleIntro(
-      title: '$_greeting, $_name',
-      subtitle: [
-        branch,
-        if (_operationalAreaSummary.isNotEmpty)
-          _operationalAreaSummary
-        else if (_coverageArea?.trim().isNotEmpty == true)
-          _coverageArea!.trim(),
-      ].join(' / '),
-      icon: Icons.two_wheeler_outlined,
-      badge: '$taskCount assigned task${taskCount == 1 ? '' : 's'} remaining',
-    );
+  Future<void> _changeAvailability(String state) async {
+    if (_updatingAvailability ||
+        _requestFuture != null ||
+        _token == null ||
+        _availability == state ||
+        _availability == 'busy') {
+      return;
+    }
+    setState(() => _updatingAvailability = true);
+    final result = await RiderManagementService.availability(_token!, state);
+    if (!mounted) return;
+    setState(() => _updatingAvailability = false);
+    if (result.statusCode == 401) {
+      await _leaveSession();
+      return;
+    }
+    if (result.success) {
+      setState(
+        () => _availability = result.data['availability']?.toString() ?? state,
+      );
+      _message(
+        'Availability updated: ${state == 'on_break'
+            ? 'On break'
+            : state == 'online'
+            ? 'Online'
+            : 'Offline'}.',
+      );
+    } else {
+      _message(result.message, isError: true);
+    }
+    await _load(showLoader: false);
   }
+
+  Widget _todayHeader() => RiderHomeAvailability(
+    name: _name,
+    token: _token ?? '',
+    photoUrl: _photoUrl,
+    greeting: _greeting,
+    state: _availability,
+    saving: _updatingAvailability,
+    enabled:
+        _requestFuture == null &&
+        _busyDeliveryId == null &&
+        _busyReturnId == null &&
+        _busyCodDeliveryId == null,
+    onChanged: _changeAvailability,
+  );
 
   Widget _codAlert() {
     return InkWell(
@@ -1270,9 +1332,9 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
       label: Text('$label $count'),
       selected: selected,
       showCheckmark: false,
-      selectedColor: AppColors.navy,
+      selectedColor: AppColors.pink,
       backgroundColor: Colors.white,
-      side: BorderSide(color: selected ? AppColors.navy : AppColors.grayBorder),
+      side: BorderSide(color: selected ? AppColors.pink : AppColors.grayBorder),
       labelStyle: TextStyle(
         color: selected ? Colors.white : AppColors.navy,
         fontSize: 11.5,
@@ -1291,7 +1353,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: emphasized ? AppColors.tealDark : AppColors.grayBorder,
+          color: emphasized ? AppColors.pink : AppColors.grayBorder,
           width: emphasized ? 1.4 : 1,
         ),
       ),
@@ -2019,140 +2081,43 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
     );
   }
 
-  Widget _accountPage() {
-    return ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 18, 16, 100),
+  Widget _accountPage() => RiderAccountPage(
+    token: _token ?? '',
+    name: _name,
+    company: _logisticsCenter,
+    onSessionExpired: _leaveSession,
+    onLogout: _logout,
+    onOpenWorkSettings: () async {
+      await Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const RiderApplicationStatusScreen()),
+      );
+      if (mounted) await _load(showLoader: false);
+    },
+    workDetails: Column(
       children: [
-        const Text(
-          'Account',
-          style: TextStyle(
-            color: AppColors.navy,
-            fontSize: 22,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 14),
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.grayBorder),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 58,
-                height: 58,
-                decoration: BoxDecoration(
-                  color: AppColors.tealLight,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.two_wheeler_rounded,
-                  size: 29,
-                  color: AppColors.tealDark,
-                ),
-              ),
-              const SizedBox(width: 13),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _name,
-                      style: const TextStyle(
-                        color: AppColors.navy,
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      _logisticsCenter,
-                      style: TextStyle(
-                        color: AppColors.navy.withValues(alpha: 0.52),
-                        fontSize: 11,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      '● Active Rider',
-                      style: TextStyle(
-                        color: AppColors.tealDark,
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 14),
         _branchSummary(),
         const SizedBox(height: 12),
-        OutlinedButton.icon(
-          onPressed: () async {
-            await Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => const RiderApplicationStatusScreen(),
-              ),
-            );
-            if (mounted) await _load(showLoader: false);
-          },
-          icon: const Icon(Icons.assignment_ind_outlined),
-          label: const Text('Availability, schedules & rider status'),
-        ),
-        if (_operationalAreaSummary.isNotEmpty) ...[
-          const SizedBox(height: 12),
+        if (_operationalAreaSummary.isNotEmpty)
           _accountInfoCard(
             Icons.delivery_dining_outlined,
             'Assigned pickup / delivery service areas',
-            _operationalAreaSummary,
-          ),
-        ] else if (_operationalAreaMode == 'configured') ...[
-          const SizedBox(height: 12),
+            _operationalAreaDetails,
+          )
+        else if (_operationalAreaMode == 'configured')
           _accountInfoCard(
             Icons.warning_amber_rounded,
             'Rider barangay assignment required',
             'No operational barangays assigned. Contact your branch manager.',
-          ),
-        ] else if (_coverageArea?.trim().isNotEmpty == true) ...[
-          const SizedBox(height: 12),
+          )
+        else if (_coverageArea?.trim().isNotEmpty == true)
           _accountInfoCard(
             Icons.map_outlined,
             'Coverage area',
             _coverageArea!.trim(),
           ),
-        ],
-        const SizedBox(height: 18),
-        _notice(
-          'Assignments and operational permissions are controlled by your Logistics branch in the web system.',
-          Icons.admin_panel_settings_outlined,
-        ),
-        const SizedBox(height: 18),
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: () async {
-              final confirmed = await showShopHopConfirmation(
-                context,
-                title: 'Sign out of Rider portal?',
-                message: 'You can sign in again to view assigned tasks.',
-                confirmLabel: 'Sign out',
-              );
-              if (confirmed) await _logout();
-            },
-            icon: const Icon(Icons.logout_rounded),
-            label: const Text('Sign out'),
-          ),
-        ),
       ],
-    );
-  }
+    ),
+  );
 
   Widget _accountInfoCard(IconData icon, String label, String value) {
     return Container(

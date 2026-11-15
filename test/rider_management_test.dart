@@ -267,7 +267,11 @@ void main() {
           FilledButton,
           'Accept assigned Branch & coverage',
         );
-        await tester.scrollUntilVisible(button, 300);
+        await tester.scrollUntilVisible(
+          button,
+          300,
+          scrollable: find.byType(Scrollable).first,
+        );
         expect(tester.widget<FilledButton>(button).onPressed, isNull);
         final coverage = find.byType(CheckboxListTile);
         await tester.ensureVisible(coverage);
@@ -357,7 +361,11 @@ void main() {
           );
           await tester.pumpAndSettle();
           final button = find.text('Record physical cash handover');
-          await tester.scrollUntilVisible(button, 250);
+          await tester.scrollUntilVisible(
+            button,
+            250,
+            scrollable: find.byType(Scrollable).first,
+          );
           await Scrollable.ensureVisible(
             tester.element(button),
             alignment: 0.5,

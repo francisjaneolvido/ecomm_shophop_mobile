@@ -46,19 +46,7 @@ class VerificationCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.grayBorder),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.navy.withValues(alpha: 0.045),
-            blurRadius: 22,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
+      padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -72,7 +60,7 @@ class VerificationCard extends StatelessWidget {
           ),
           const SizedBox(height: 7),
           _emailCard(),
-          const SizedBox(height: 22),
+          const SizedBox(height: 18),
           Text(
             'Verification code',
             style: VerificationUi.text(
@@ -116,7 +104,7 @@ class VerificationCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
       decoration: BoxDecoration(
         color: AppColors.grayBg,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: AppColors.grayBorder),
       ),
       child: Row(
@@ -155,7 +143,7 @@ class VerificationCard extends StatelessWidget {
         const SizedBox(width: 6),
         Expanded(
           child: Text(
-            'The code expires after 10 minutes.',
+            'The code expires after 5 minutes.',
             style: VerificationUi.text(
               color: AppColors.navy.withValues(alpha: 0.40),
               fontSize: 10,
@@ -169,16 +157,16 @@ class VerificationCard extends StatelessWidget {
   Widget _verifyButton() {
     return SizedBox(
       width: double.infinity,
-      height: 52,
+      height: 42,
       child: ElevatedButton(
         onPressed: canVerify ? onVerify : null,
         style: ElevatedButton.styleFrom(
           elevation: 0,
-          backgroundColor: AppColors.teal,
+          backgroundColor: AppColors.navy,
           foregroundColor: Colors.white,
           disabledBackgroundColor: AppColors.teal.withValues(alpha: 0.35),
           disabledForegroundColor: Colors.white.withValues(alpha: 0.85),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         ),
         child: isVerifying
             ? const SizedBox(
@@ -202,8 +190,9 @@ class VerificationCard extends StatelessWidget {
   }
 
   Widget _resendRow() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         Text(
           'Didn’t receive the code?',
@@ -252,7 +241,7 @@ class VerificationCard extends StatelessWidget {
       padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
         color: AppColors.tealLight.withValues(alpha: 0.42),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: AppColors.teal.withValues(alpha: 0.13)),
       ),
       child: Row(
@@ -313,7 +302,7 @@ class VerificationCard extends StatelessWidget {
         color: isError
             ? const Color(0xFFFFF4F4)
             : AppColors.tealLight.withValues(alpha: 0.48),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(
           color: isError
               ? const Color(0xFFF0CECE)

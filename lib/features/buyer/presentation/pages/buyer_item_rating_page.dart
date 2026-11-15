@@ -1,3 +1,4 @@
+import 'package:shophop/features/buyer/presentation/widgets/buyer_page_chrome.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:shophop/core/theme/app_colors.dart';
@@ -123,9 +124,9 @@ class _BuyerItemRatingPageState extends State<BuyerItemRatingPage> {
     final blocked = _saving || _picking;
     return PopScope(
       canPop: !blocked,
-      child: Scaffold(
+      child: BuyerScaffold(
         backgroundColor: AppColors.page,
-        appBar: AppBar(
+        appBar: BuyerAppBar(
           title: const Text(
             'Rate product',
             style: TextStyle(fontWeight: FontWeight.w700, fontSize: 19),
@@ -135,8 +136,6 @@ class _BuyerItemRatingPageState extends State<BuyerItemRatingPage> {
             onPressed: blocked ? null : () => Navigator.of(context).pop(false),
             icon: const Icon(Icons.arrow_back_rounded),
           ),
-          backgroundColor: Colors.white,
-          surfaceTintColor: Colors.white,
         ),
         body: Align(
           alignment: Alignment.topCenter,

@@ -6,6 +6,8 @@ import 'package:shophop/features/buyer/presentation/widgets/buyer_category_carou
 import 'package:shophop/features/buyer/presentation/widgets/buyer_product_card.dart';
 import 'package:shophop/shared/realtime/foreground_refresh.dart';
 import 'package:shophop/shared/widgets/shop_hop_ui.dart';
+import 'package:shophop/core/theme/app_colors.dart';
+import 'package:flutter/services.dart';
 
 class BuyerHomePage extends StatefulWidget {
   const BuyerHomePage({
@@ -41,8 +43,6 @@ class _BuyerHomePageState extends State<BuyerHomePage>
   BuyerHomeData? _home;
   BuyerCatalogException? _error;
   late final ForegroundRefresh _liveRefresh;
-  final Set<int> _liked = {};
-  final Set<int> _pendingLikes = {};
   bool _loading = true;
   bool _refreshing = false;
   int _requestId = 0;
@@ -96,17 +96,6 @@ class _BuyerHomePageState extends State<BuyerHomePage>
         _bannerIndex = home.banners.isEmpty
             ? 0
             : _bannerIndex.clamp(0, home.banners.length - 1);
-        final products = [
-          ...home.topProducts,
-          ...home.dealProducts,
-          ...home.discoverProducts,
-        ];
-        for (final product in products) {
-          if (_pendingLikes.contains(product.id)) {
-            continue;
-          }
-          product.isLiked ? _liked.add(product.id) : _liked.remove(product.id);
-        }
       });
     } on BuyerCatalogException catch (error) {
       if (!mounted || requestId != _requestId) return;
@@ -116,39 +105,6 @@ class _BuyerHomePageState extends State<BuyerHomePage>
         _error = error;
       });
       if (error.isUnauthorized) await widget.onSessionExpired();
-    }
-  }
-
-  Future<void> _toggleLike(BuyerProductData product) async {
-    if (!_pendingLikes.add(product.id)) return;
-    final wasLiked = _liked.contains(product.id);
-    setState(() {
-      wasLiked ? _liked.remove(product.id) : _liked.add(product.id);
-    });
-    try {
-      final liked = await BuyerCatalogService.setFavorite(
-        token: widget.token,
-        productId: product.id,
-        liked: !wasLiked,
-      );
-      if (!mounted) return;
-      setState(() {
-        liked ? _liked.add(product.id) : _liked.remove(product.id);
-      });
-    } on BuyerCatalogException catch (error) {
-      if (!mounted) return;
-      setState(() {
-        wasLiked ? _liked.add(product.id) : _liked.remove(product.id);
-      });
-      if (error.isUnauthorized) {
-        await widget.onSessionExpired();
-        return;
-      }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.message)));
-    } finally {
-      _pendingLikes.remove(product.id);
     }
   }
 
@@ -184,6 +140,7 @@ class _BuyerHomePageState extends State<BuyerHomePage>
       );
     }
     return SafeArea(
+      top: false,
       bottom: false,
       child: RefreshIndicator(
         onRefresh: _loadHome,
@@ -193,10 +150,17 @@ class _BuyerHomePageState extends State<BuyerHomePage>
             SliverAppBar(
               pinned: true,
               automaticallyImplyLeading: false,
-              toolbarHeight: 72,
+              toolbarHeight: 64,
+              backgroundColor: AppColors.pink,
+              foregroundColor: Colors.white,
+              iconTheme: const IconThemeData(color: Colors.white),
+              actionsIconTheme: const IconThemeData(color: Colors.white),
+              surfaceTintColor: Colors.transparent,
+              systemOverlayStyle: SystemUiOverlayStyle.light,
+              scrolledUnderElevation: 0,
               titleSpacing: 16,
               title: Material(
-                color: colors.surfaceContainerLow,
+                color: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppTheme.inputRadius),
                   side: BorderSide(color: colors.outline),
@@ -207,7 +171,7 @@ class _BuyerHomePageState extends State<BuyerHomePage>
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
-                      vertical: 15,
+                      vertical: 12,
                     ),
                     child: Row(
                       children: [
@@ -235,11 +199,13 @@ class _BuyerHomePageState extends State<BuyerHomePage>
               actions: [
                 IconButton(
                   tooltip: 'Messages',
+                  style: IconButton.styleFrom(foregroundColor: Colors.white),
                   onPressed: widget.onOpenMessages,
                   icon: const Icon(CupertinoIcons.chat_bubble),
                 ),
                 IconButton(
                   tooltip: 'Cart',
+                  style: IconButton.styleFrom(foregroundColor: Colors.white),
                   onPressed: widget.onOpenCart,
                   icon: Badge.count(
                     count: home.cartCount < 0 ? 0 : home.cartCount,
@@ -382,13 +348,13 @@ class _BuyerHomePageState extends State<BuyerHomePage>
             gridDelegate: BuyerProductCard.gridDelegate(
               context,
               constraints.crossAxisExtent,
+              products,
             ),
             delegate: SliverChildBuilderDelegate((context, index) {
               final product = products[index];
               return BuyerProductCard(
-                product: product.copyWith(isLiked: _liked.contains(product.id)),
+                product: product,
                 onTap: () => widget.onOpenProduct(product),
-                onLike: () => _toggleLike(product),
               );
             }, childCount: products.length),
           ),
@@ -463,7 +429,7 @@ class _MarketplaceBanner extends StatelessWidget {
                       Text(
                         banner.eyebrow,
                         style: theme.textTheme.labelSmall?.copyWith(
-                          color: colors.primaryContainer,
+                          color: Colors.white,
                           letterSpacing: 1,
                         ),
                       ),
@@ -471,19 +437,23 @@ class _MarketplaceBanner extends StatelessWidget {
                       Text(
                         banner.heading,
                         style: theme.textTheme.headlineSmall?.copyWith(
-                          color: colors.onSecondary,
+                          color: Colors.white,
                         ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         banner.description,
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: colors.onSecondary.withValues(alpha: .85),
+                          color: Colors.white.withValues(alpha: .92),
                         ),
                       ),
                       const SizedBox(height: 14),
                       FilledButton(
                         onPressed: onTap,
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: AppColors.pink,
+                        ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -523,7 +493,7 @@ class _MarketplaceBanner extends StatelessWidget {
                     icon: Icon(
                       Icons.circle,
                       size: index == i ? 8 : 6,
-                      color: index == i ? colors.primary : colors.outline,
+                      color: index == i ? AppColors.pink : colors.outline,
                     ),
                   ),
               ],

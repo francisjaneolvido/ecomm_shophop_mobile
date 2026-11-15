@@ -1,3 +1,6 @@
+import 'package:shophop/features/auth/data/services/auth_service.dart';
+import 'package:shophop/features/auth/presentation/screens/application_status_screen.dart';
+import 'package:shophop/features/rider/presentation/screens/rider_application_status_screen.dart';
 import 'dart:math';
 import 'dart:async';
 
@@ -228,27 +231,39 @@ class _SplashScreenState extends State<SplashScreen>
     if (!mounted) return;
 
     if (rememberedSession != null) {
-      switch (rememberedSession.accountType) {
-        case 'buyer':
-          nextScreen = const BuyerHomeScreen();
-          break;
-        case 'seller':
-          nextScreen = const SellerWorkspaceScreen();
-          break;
-        case 'rider':
-          nextScreen = const RiderHomeScreen();
-          break;
-        case 'linehaul_driver':
-          nextScreen = const LinehaulDriverHomeScreen();
-          break;
-        case 'logistics':
-        case 'logistics_staff':
-        case 'branch':
-          nextScreen = const LogisticsScannerScreen();
-          break;
+      final result = await AuthService.me(token: rememberedSession.token);
+      if (!mounted) return;
+      final trackAccount =
+          ['buyer', 'seller'].contains(rememberedSession.accountType) &&
+          result.success &&
+          result.status != 'approved' &&
+          result.status != 'email_unverified';
+      if (trackAccount) {
+        nextScreen = const ApplicationStatusScreen();
+      } else if (result.success && result.status == 'rider_application') {
+        nextScreen = const RiderApplicationStatusScreen();
+      } else if (result.success && result.status == 'approved') {
+        switch (rememberedSession.accountType) {
+          case 'buyer':
+            nextScreen = const BuyerHomeScreen();
+            break;
+          case 'seller':
+            nextScreen = const SellerWorkspaceScreen();
+            break;
+          case 'rider':
+            nextScreen = const RiderHomeScreen();
+            break;
+          case 'linehaul_driver':
+            nextScreen = const LinehaulDriverHomeScreen();
+            break;
+          case 'logistics':
+          case 'logistics_staff':
+          case 'branch':
+            nextScreen = const LogisticsScannerScreen();
+            break;
+        }
       }
     }
-
     Navigator.pushReplacement(
       context,
       PageRouteBuilder(

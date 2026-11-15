@@ -1,7 +1,9 @@
+import 'package:shophop/features/auth/presentation/widgets/shop_hop_auth_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:shophop/core/session/auth_session_service.dart';
 import 'package:shophop/core/theme/app_colors.dart';
 import 'package:shophop/features/auth/presentation/screens/login_screen.dart';
+import 'package:shophop/shared/widgets/shop_hop_brand.dart';
 
 /// Compact ShopHop welcome screen with a single primary action.
 class LandingScreen extends StatelessWidget {
@@ -16,7 +18,10 @@ class LandingScreen extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      ShopHopAuthTheme(child: Builder(builder: _buildContent));
+
+  Widget _buildContent(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final compact = size.height < 700;
 
@@ -43,6 +48,10 @@ class LandingScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
+                          const Align(
+                            alignment: Alignment.centerLeft,
+                            child: ShopHopBrand(compact: true),
+                          ),
                           const Spacer(),
                           _HeroMark(compact: compact),
                           SizedBox(height: compact ? 26 : 32),
@@ -81,7 +90,7 @@ class LandingScreen extends StatelessWidget {
                             child: FilledButton(
                               onPressed: () => _getStarted(context),
                               style: FilledButton.styleFrom(
-                                backgroundColor: AppColors.teal,
+                                backgroundColor: AppColors.pink,
                                 foregroundColor: Colors.white,
                                 elevation: 0,
                                 shadowColor: Colors.transparent,

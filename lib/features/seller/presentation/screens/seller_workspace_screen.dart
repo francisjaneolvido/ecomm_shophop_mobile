@@ -11,6 +11,7 @@ import 'package:shophop/core/config/api_config.dart';
 import 'package:shophop/shared/widgets/shop_hop_product_media.dart';
 import 'package:shophop/features/auth/data/services/auth_service.dart';
 import 'package:shophop/features/auth/presentation/screens/login_screen.dart';
+import 'package:shophop/features/auth/presentation/screens/application_status_screen.dart';
 import 'package:shophop/features/seller/data/services/seller_earnings_service.dart';
 import 'package:shophop/features/seller/data/services/seller_workspace_service.dart';
 import 'package:shophop/features/seller/presentation/screens/seller_product_editor_screen.dart';
@@ -117,6 +118,17 @@ class _SellerWorkspaceScreenState extends State<SellerWorkspaceScreen> {
     ]);
     if (!mounted) return;
     if (results.any((r) => r.statusCode == 401 || r.statusCode == 403)) {
+      final account = await AuthService.me(token: session.token);
+      if (!mounted) return;
+      if (account.success &&
+          account.status != 'approved' &&
+          account.status != 'email_unverified') {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const ApplicationStatusScreen()),
+          (_) => false,
+        );
+        return;
+      }
       await _signOut(localOnly: true);
       return;
     }

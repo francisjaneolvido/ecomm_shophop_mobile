@@ -1,3 +1,6 @@
+import 'package:shophop/features/auth/presentation/widgets/shop_hop_auth_theme.dart';
+import 'package:shophop/features/auth/presentation/widgets/registration_completion.dart';
+import 'package:shophop/features/auth/presentation/screens/application_status_screen.dart';
 import 'package:shophop/features/rider/presentation/screens/rider_application_status_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -140,6 +143,7 @@ class _LoginScreenState extends State<LoginScreen> {
         _showMessage(result.message);
         return;
 
+      case 'account_application':
       case 'rider_application':
       case 'approved':
         final token = result.data['token']?.toString();
@@ -204,7 +208,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
-            builder: (_) => accountType == 'seller'
+            builder: (_) => result.status == 'account_application'
+                ? const ApplicationStatusScreen()
+                : accountType == 'seller'
                 ? const SellerWorkspaceScreen()
                 : accountType == 'rider'
                 ? (result.status == 'rider_application'
@@ -265,6 +271,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     final email = _emailController.text.trim();
 
+    AuthApiResult? verifiedResult;
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -277,6 +284,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 : role == RegistrationRole.seller
                 ? await AuthService.verifySellerEmail(email: email, code: code)
                 : await AuthService.verifyBuyerEmail(email: email, code: code);
+            if (result.success) verifiedResult = result;
             return result.success ? null : result.message;
           },
           onResendCode: () async {
@@ -288,13 +296,8 @@ class _LoginScreenState extends State<LoginScreen> {
             return result.success ? null : result.message;
           },
           onVerified: () {
-            if (!mounted) return;
-            Navigator.pop(context);
-            _showMessage(
-              role == RegistrationRole.rider
-                  ? 'Email verified. Your Rider application is now waiting for Logistics / Sorting Center approval.'
-                  : 'Email verified. Your account is now waiting for administrator approval.',
-            );
+            final result = verifiedResult;
+            if (result != null) completeRegistration(context, result);
           },
         ),
       ),
@@ -388,7 +391,10 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      ShopHopAuthTheme(child: Builder(builder: _buildContent));
+
+  Widget _buildContent(BuildContext context) {
     final compact = MediaQuery.sizeOf(context).height < 700;
 
     return Scaffold(
@@ -426,8 +432,16 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         SizedBox(height: compact ? 20 : 26),
-                        const Text(
-                          'Welcome to ShopHop',
+                        const Text.rich(
+                          TextSpan(
+                            text: 'Welcome to Shop',
+                            children: [
+                              TextSpan(
+                                text: 'Hop',
+                                style: TextStyle(color: AppColors.pink),
+                              ),
+                            ],
+                          ),
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: AppColors.navy,
@@ -447,46 +461,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         SizedBox(height: compact ? 20 : 24),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 13,
-                            vertical: 11,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.tealLight.withValues(alpha: .38),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: AppColors.teal.withValues(alpha: .18),
-                            ),
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Padding(
-                                padding: EdgeInsets.only(top: 1),
-                                child: Icon(
-                                  Icons.info_outline_rounded,
-                                  size: 17,
-                                  color: AppColors.tealDark,
-                                ),
-                              ),
-                              const SizedBox(width: 9),
-                              Expanded(
-                                child: Text(
-                                  'Logistics staff can sign in using their approved account.',
-                                  style: TextStyle(
-                                    color: AppColors.navy.withValues(
-                                      alpha: .72,
-                                    ),
-                                    fontSize: 10.8,
-                                    height: 1.45,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(height: compact ? 22 : 27),
                         const Text(
                           'Email address',
                           style: TextStyle(
@@ -565,7 +539,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                             states.contains(
                                               WidgetState.selected,
                                             )
-                                            ? AppColors.teal
+                                            ? AppColors.pink
                                             : Colors.transparent,
                                       ),
                                   checkColor:
@@ -611,7 +585,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             TextButton(
                               onPressed: _forgotPassword,
                               style: TextButton.styleFrom(
-                                foregroundColor: AppColors.tealDark,
+                                foregroundColor: AppColors.pink,
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 4,
                                 ),
@@ -629,9 +603,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: FilledButton(
                             onPressed: _isSigningIn ? null : _signIn,
                             style: FilledButton.styleFrom(
-                              backgroundColor: AppColors.teal,
+                              backgroundColor: AppColors.pink,
                               foregroundColor: Colors.white,
-                              disabledBackgroundColor: AppColors.teal
+                              disabledBackgroundColor: AppColors.pink
                                   .withValues(alpha: .48),
                               disabledForegroundColor: Colors.white,
                               elevation: 0,
@@ -719,7 +693,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             TextButton(
                               onPressed: _signUp,
                               style: TextButton.styleFrom(
-                                foregroundColor: AppColors.tealDark,
+                                foregroundColor: AppColors.navy,
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 7,
                                 ),

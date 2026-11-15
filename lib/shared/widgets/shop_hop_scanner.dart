@@ -14,7 +14,7 @@ class ShopHopScanPreferences extends StatelessWidget {
         child: ValueListenableBuilder<bool>(
           valueListenable: ShopHopScanFeedback.soundEnabled,
           builder: (_, enabled, _) => TextButton.icon(
-            onPressed: () => ShopHopScanFeedback.soundEnabled.value = !enabled,
+            onPressed: () => ShopHopScanFeedback.setSoundEnabled(!enabled),
             icon: Icon(
               enabled ? CupertinoIcons.speaker_2 : CupertinoIcons.speaker_slash,
               size: 17,
@@ -30,8 +30,7 @@ class ShopHopScanPreferences extends StatelessWidget {
         child: ValueListenableBuilder<bool>(
           valueListenable: ShopHopScanFeedback.vibrationEnabled,
           builder: (_, enabled, _) => TextButton.icon(
-            onPressed: () =>
-                ShopHopScanFeedback.vibrationEnabled.value = !enabled,
+            onPressed: () => ShopHopScanFeedback.setVibrationEnabled(!enabled),
             icon: const Icon(Icons.vibration, size: 17),
             label: Text(
               enabled ? 'Vibration on' : 'Vibration off',

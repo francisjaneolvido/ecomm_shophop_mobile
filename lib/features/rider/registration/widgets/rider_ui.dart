@@ -69,7 +69,7 @@ class RiderUi {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: Color(0xFF10193C), width: 1.5),
+        borderSide: const BorderSide(color: AppColors.pink, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),

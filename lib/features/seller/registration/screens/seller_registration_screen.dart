@@ -1,9 +1,11 @@
+import 'package:shophop/features/auth/presentation/widgets/shop_hop_auth_theme.dart';
+import 'package:shophop/shared/registration/registration_policy_screen.dart';
+import 'package:shophop/features/auth/presentation/widgets/registration_completion.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import 'package:shophop/core/theme/app_colors.dart';
 import 'package:shophop/features/auth/data/services/auth_service.dart';
-import 'package:shophop/features/auth/presentation/screens/login_screen.dart';
 import 'package:shophop/features/auth/presentation/screens/email_verification_screen.dart';
 import 'package:shophop/features/auth/domain/registration_role.dart';
 import 'package:shophop/shared/registration/steps/address_step.dart';
@@ -287,6 +289,7 @@ class _SellerRegistrationScreenState extends State<SellerRegistrationScreen> {
 
   void _openEmailVerification() {
     final email = _emailController.text.trim().toLowerCase();
+    AuthApiResult? verifiedResult;
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -298,6 +301,7 @@ class _SellerRegistrationScreenState extends State<SellerRegistrationScreen> {
               email: email,
               code: code,
             );
+            if (result.success) verifiedResult = result;
             return result.success ? null : result.message;
           },
           onResendCode: () async {
@@ -306,36 +310,12 @@ class _SellerRegistrationScreenState extends State<SellerRegistrationScreen> {
             );
             return result.success ? null : result.message;
           },
-          onVerified: _showVerificationSuccess,
+          onVerified: () {
+            final result = verifiedResult;
+            if (result != null) completeRegistration(context, result);
+          },
         ),
       ),
-    );
-  }
-
-  Future<void> _showVerificationSuccess() async {
-    if (!mounted) return;
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Seller email verified!'),
-        content: const Text(
-          'Your seller registration has been submitted. '
-          'Please wait for administrator approval before signing in. '
-          'The Seller mobile dashboard is not available yet.',
-        ),
-        actions: [
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Back to Login'),
-          ),
-        ],
-      ),
-    );
-    if (!mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-      (route) => false,
     );
   }
 
@@ -373,7 +353,10 @@ class _SellerRegistrationScreenState extends State<SellerRegistrationScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      ShopHopAuthTheme(child: Builder(builder: _buildContent));
+
+  Widget _buildContent(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.grayBg,
       resizeToAvoidBottomInset: true,
@@ -545,14 +528,8 @@ class _SellerRegistrationScreenState extends State<SellerRegistrationScreen> {
               _termsAccepted = value;
             });
           },
-          onTermsTap: () {
-            _showMessage(
-              'Seller Terms and Conditions screen will be connected later.',
-            );
-          },
-          onPrivacyTap: () {
-            _showMessage('Privacy Policy screen will be connected later.');
-          },
+          onTermsTap: () => RegistrationPolicyScreen.open(context, 'seller'),
+          onPrivacyTap: () => RegistrationPolicyScreen.open(context, 'privacy'),
         ),
       ),
     );
@@ -684,7 +661,7 @@ class _SellerRegistrationScreenState extends State<SellerRegistrationScreen> {
                       : _nextStep,
                   style: ElevatedButton.styleFrom(
                     elevation: 0,
-                    backgroundColor: AppColors.teal,
+                    backgroundColor: AppColors.pink,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),

@@ -37,7 +37,7 @@ class _SellerSecurityStepState extends State<SellerSecurityStep> {
   bool get _hasUppercase => RegExp(r'[A-Z]').hasMatch(_password);
   bool get _hasLowercase => RegExp(r'[a-z]').hasMatch(_password);
   bool get _hasNumber => RegExp(r'[0-9]').hasMatch(_password);
-  bool get _hasSpecial => RegExp(r'[^A-Za-z0-9]').hasMatch(_password);
+  bool get _hasSpecial => RegExp(r'[^A-Za-z0-9\s]').hasMatch(_password);
 
   @override
   Widget build(BuildContext context) {
@@ -100,7 +100,7 @@ class _SellerSecurityStepState extends State<SellerSecurityStep> {
               return 'Add at least 1 number.';
             }
 
-            if (!RegExp(r'[^A-Za-z0-9]').hasMatch(password)) {
+            if (!RegExp(r'[^A-Za-z0-9\s]').hasMatch(password)) {
               return 'Add at least 1 special character.';
             }
 
@@ -237,14 +237,18 @@ class _SellerSecurityStepState extends State<SellerSecurityStep> {
             width: 17,
             height: 17,
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: complete ? AppColors.teal : Colors.white,
+              borderRadius: BorderRadius.circular(3),
+              color: complete ? AppColors.pink : Colors.white,
               border: Border.all(
-                color: complete ? AppColors.teal : AppColors.grayBorder,
+                color: complete ? AppColors.pink : AppColors.grayBorder,
               ),
             ),
             child: complete
-                ? const Icon(Icons.check_rounded, size: 11, color: Colors.white)
+                ? const Icon(
+                    Icons.check_rounded,
+                    size: 11,
+                    color: AppColors.navy,
+                  )
                 : null,
           ),
           const SizedBox(width: 9),
@@ -253,7 +257,7 @@ class _SellerSecurityStepState extends State<SellerSecurityStep> {
               label,
               style: SellerUi.text(
                 color: complete
-                    ? AppColors.tealDark
+                    ? AppColors.navy
                     : AppColors.navy.withValues(alpha: optional ? 0.34 : 0.46),
                 fontSize: 10.5,
                 fontWeight: complete ? FontWeight.w600 : FontWeight.w500,
@@ -271,9 +275,9 @@ class _SellerSecurityStepState extends State<SellerSecurityStep> {
       width: double.infinity,
       padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
-        color: AppColors.tealLight.withValues(alpha: 0.45),
+        color: AppColors.pinkSoft.withValues(alpha: 0.45),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.teal.withValues(alpha: 0.15)),
+        border: Border.all(color: AppColors.pink.withValues(alpha: 0.15)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -281,7 +285,7 @@ class _SellerSecurityStepState extends State<SellerSecurityStep> {
           const Icon(
             Icons.info_outline_rounded,
             size: 18,
-            color: AppColors.tealDark,
+            color: AppColors.pink,
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -324,7 +328,7 @@ class _SellerSecurityStepState extends State<SellerSecurityStep> {
                   color: field.hasError
                       ? const Color(0xFFD93F4C)
                       : checked
-                      ? AppColors.teal.withValues(alpha: 0.60)
+                      ? AppColors.pink.withValues(alpha: 0.60)
                       : AppColors.grayBorder,
                 ),
               ),
@@ -342,8 +346,8 @@ class _SellerSecurityStepState extends State<SellerSecurityStep> {
                         field.didChange(next);
                         widget.onTermsChanged(next);
                       },
-                      activeColor: AppColors.teal,
-                      checkColor: Colors.white,
+                      activeColor: AppColors.pink,
+                      checkColor: AppColors.navy,
                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(5),
@@ -368,7 +372,7 @@ class _SellerSecurityStepState extends State<SellerSecurityStep> {
                           child: Text(
                             'Seller Terms and Conditions',
                             style: SellerUi.text(
-                              color: AppColors.tealDark,
+                              color: AppColors.pink,
                               fontSize: 10.5,
                               fontWeight: FontWeight.w700,
                               height: 1.5,
@@ -388,7 +392,7 @@ class _SellerSecurityStepState extends State<SellerSecurityStep> {
                           child: Text(
                             'Privacy Policy',
                             style: SellerUi.text(
-                              color: AppColors.tealDark,
+                              color: AppColors.pink,
                               fontSize: 10.5,
                               fontWeight: FontWeight.w700,
                               height: 1.5,

@@ -40,7 +40,7 @@ class _BuyerSecurityStepState extends State<BuyerSecurityStep> {
       RegExp(r'[0-9]').hasMatch(widget.passwordController.text);
 
   bool get _hasSpecial =>
-      RegExp(r'[^A-Za-z0-9]').hasMatch(widget.passwordController.text);
+      RegExp(r'[^A-Za-z0-9\s]').hasMatch(widget.passwordController.text);
 
   bool get _requiredPasswordRulesPassed =>
       _hasMinimumLength &&
@@ -72,7 +72,7 @@ class _BuyerSecurityStepState extends State<BuyerSecurityStep> {
       return 'Add at least 1 number (0–9).';
     }
 
-    if (!RegExp(r'[^A-Za-z0-9]').hasMatch(password)) {
+    if (!RegExp(r'[^A-Za-z0-9\s]').hasMatch(password)) {
       return 'Add at least 1 special character.';
     }
 
@@ -306,15 +306,15 @@ class _BuyerSecurityStepState extends State<BuyerSecurityStep> {
           width: 17,
           height: 17,
           decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: satisfied ? AppColors.teal : Colors.white,
+            borderRadius: BorderRadius.circular(3),
+            color: satisfied ? AppColors.pink : Colors.white,
             border: Border.all(
-              color: satisfied ? AppColors.teal : AppColors.grayBorder,
+              color: satisfied ? AppColors.pink : AppColors.grayBorder,
               width: 1.2,
             ),
           ),
           child: satisfied
-              ? const Icon(Icons.check_rounded, size: 11, color: Colors.white)
+              ? const Icon(Icons.check_rounded, size: 11, color: AppColors.navy)
               : null,
         ),
         const SizedBox(width: 9),
@@ -323,7 +323,7 @@ class _BuyerSecurityStepState extends State<BuyerSecurityStep> {
             text,
             style: TextStyle(
               color: satisfied
-                  ? AppColors.tealDark
+                  ? AppColors.navy
                   : AppColors.navy.withValues(alpha: optional ? 0.34 : 0.46),
               fontSize: 10.5,
               height: 1.4,
@@ -422,8 +422,8 @@ class _BuyerSecurityStepState extends State<BuyerSecurityStep> {
                           field.didChange(next);
                           widget.onTermsChanged(next);
                         },
-                        activeColor: AppColors.teal,
-                        checkColor: Colors.white,
+                        activeColor: AppColors.pink,
+                        checkColor: AppColors.navy,
                         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         side: const BorderSide(
                           color: AppColors.grayBorder,
@@ -538,7 +538,7 @@ class _BuyerSecurityStepState extends State<BuyerSecurityStep> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: AppColors.teal, width: 1.5),
+        borderSide: const BorderSide(color: AppColors.pink, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),

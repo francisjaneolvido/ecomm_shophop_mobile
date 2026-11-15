@@ -1,9 +1,11 @@
+import 'package:shophop/features/auth/presentation/widgets/shop_hop_auth_theme.dart';
+import 'package:shophop/shared/registration/registration_policy_screen.dart';
+import 'package:shophop/features/auth/presentation/widgets/registration_completion.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import 'package:shophop/core/theme/app_colors.dart';
 import 'package:shophop/features/auth/data/services/auth_service.dart';
-import 'package:shophop/features/auth/presentation/screens/login_screen.dart';
 import 'package:shophop/features/auth/presentation/screens/email_verification_screen.dart';
 import 'package:shophop/features/auth/domain/registration_role.dart';
 import 'package:shophop/shared/registration/steps/address_step.dart';
@@ -297,6 +299,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
   }
 
   Future<void> _createAccount() async {
+    if (_isSubmitting) return;
     FocusScope.of(context).unfocus();
 
     final securityValid = _securityFormKey.currentState?.validate() ?? false;
@@ -392,6 +395,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
   void _openEmailVerification() {
     final email = _emailController.text.trim();
 
+    AuthApiResult? verifiedResult;
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -405,6 +409,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
             );
 
             if (result.success) {
+              verifiedResult = result;
               return null;
             }
 
@@ -422,104 +427,12 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
             return result.message;
           },
           onVerified: () {
-            _showVerificationSuccess();
+            final result = verifiedResult;
+            if (result != null) completeRegistration(context, result);
           },
         ),
       ),
     );
-  }
-
-  Future<void> _showVerificationSuccess() async {
-    if (!mounted) {
-      return;
-    }
-
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(22),
-          ),
-          icon: Container(
-            width: 58,
-            height: 58,
-            decoration: BoxDecoration(
-              color: AppColors.tealLight,
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: const Icon(
-              Icons.check_circle_outline_rounded,
-              color: AppColors.tealDark,
-              size: 30,
-            ),
-          ),
-          title: const Text(
-            'Email verified!',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: AppColors.navy,
-              fontSize: 19,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          content: Text(
-            'Your registration has been submitted successfully. '
-            'You can sign in once your account has been approved.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: AppColors.navy.withValues(alpha: 0.54),
-              fontSize: 11.5,
-              height: 1.5,
-            ),
-          ),
-          actionsAlignment: MainAxisAlignment.center,
-          actions: [
-            FilledButton(
-              onPressed: () {
-                Navigator.pop(dialogContext);
-              },
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.teal,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(13),
-                ),
-              ),
-              child: const Text(
-                'Back to Login',
-                style: TextStyle(fontWeight: FontWeight.w700),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (!mounted) {
-      return;
-    }
-
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-      (route) => false,
-    );
-  }
-
-  void _showMessage(String message) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: AppColors.navy,
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
-      );
   }
 
   // ============================================================
@@ -527,7 +440,10 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
   // ============================================================
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      ShopHopAuthTheme(child: Builder(builder: _buildContent));
+
+  Widget _buildContent(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.grayBg,
       resizeToAvoidBottomInset: true,
@@ -944,12 +860,8 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
               _termsAccepted = value;
             });
           },
-          onTermsTap: () {
-            _showMessage('Terms and Conditions page will be connected next.');
-          },
-          onPrivacyTap: () {
-            _showMessage('Privacy Policy page will be connected next.');
-          },
+          onTermsTap: () => RegistrationPolicyScreen.open(context, 'buyer'),
+          onPrivacyTap: () => RegistrationPolicyScreen.open(context, 'privacy'),
         ),
       ),
     );
@@ -1040,7 +952,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                       : _nextStep,
                   style: ElevatedButton.styleFrom(
                     elevation: 0,
-                    backgroundColor: AppColors.teal,
+                    backgroundColor: AppColors.pink,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),

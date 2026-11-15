@@ -1,3 +1,4 @@
+import 'package:shophop/features/buyer/presentation/widgets/buyer_page_chrome.dart';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -175,8 +176,8 @@ class _BuyerAddressEditorPageState extends State<BuyerAddressEditorPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Default delivery address')),
+    return BuyerScaffold(
+      appBar: BuyerAppBar(title: const Text('Default delivery address')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null && _regionCode == null

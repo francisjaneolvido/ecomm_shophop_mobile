@@ -5,12 +5,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shophop/core/theme/app_theme.dart';
+import 'package:shophop/core/theme/app_colors.dart';
 import 'package:shophop/features/buyer/data/services/buyer_catalog_service.dart';
 import 'package:shophop/features/buyer/presentation/pages/buyer_home_page.dart';
 import 'package:shophop/features/buyer/presentation/pages/buyer_catalog_page.dart';
 import 'package:shophop/features/buyer/presentation/pages/buyer_product_detail_page.dart';
 import 'package:shophop/features/buyer/presentation/pages/buyer_shop_page.dart';
 import 'package:shophop/features/buyer/presentation/widgets/buyer_product_card.dart';
+import 'package:shophop/features/buyer/presentation/widgets/buyer_product_gallery.dart';
 
 Map<String, dynamic> product(int id, String name) => {
   'id': id,
@@ -272,10 +274,9 @@ void main() {
   });
 
   testWidgets(
-    'Product card fits enlarged text and keeps Like separate from opening',
+    'Product card fits enlarged text and opens without action buttons',
     (tester) async {
       var opens = 0;
-      var likes = 0;
       await tester.pumpWidget(
         MaterialApp(
           theme: AppTheme.light,
@@ -298,7 +299,6 @@ void main() {
                           ),
                         ),
                         onTap: () => opens++,
-                        onLike: () => likes++,
                       ),
                     ),
                   ),
@@ -310,8 +310,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('\u20b1169.99'), findsOneWidget);
-      await tester.tap(find.byType(IconButton));
-      expect(likes, 1);
+      expect(find.byType(IconButton), findsNothing);
       expect(opens, 0);
       await tester.tap(find.text('Long product name that wraps across lines'));
       expect(opens, 1);
@@ -319,7 +318,7 @@ void main() {
     },
   );
 
-  testWidgets('Unavailable product photo preserves the card and its actions', (
+  testWidgets('Unavailable product photo preserves the card and navigation', (
     tester,
   ) async {
     var opened = false;
@@ -372,6 +371,8 @@ void main() {
           await tester.ensureVisible(find.text('Variation & quantity'));
           await tester.pumpAndSettle();
           await tester.tap(find.text('Variation & quantity'));
+          await tester.pumpAndSettle();
+          await tester.tap(find.text('White'));
           await tester.pumpAndSettle();
           await tester.tap(find.byTooltip('Increase quantity'));
           await tester.tap(find.text('Confirm selection'));
@@ -453,6 +454,50 @@ void main() {
             ),
             findsOneWidget,
           );
+          final fourStars = find.byKey(const ValueKey('review-filter-4')).last;
+          await tester.ensureVisible(fourStars);
+          await tester.pumpAndSettle();
+          await tester.tap(fourStars);
+          await tester.pumpAndSettle();
+          final sheet = find.byType(DraggableScrollableSheet);
+          expect(
+            find.descendant(
+              of: sheet,
+              matching: find.text('Second review comment'),
+            ),
+            findsOneWidget,
+          );
+          expect(
+            find.descendant(
+              of: sheet,
+              matching: find.text('Third review comment'),
+            ),
+            findsNothing,
+          );
+          final media = find.byKey(const ValueKey('review-filter-media')).last;
+          await tester.ensureVisible(media);
+          await tester.pumpAndSettle();
+          await tester.tap(media);
+          await tester.pumpAndSettle();
+          expect(
+            find.descendant(
+              of: sheet,
+              matching: find.text('No reviews match this filter.'),
+            ),
+            findsOneWidget,
+          );
+          final all = find.byKey(const ValueKey('review-filter-all')).last;
+          await tester.ensureVisible(all);
+          await tester.pumpAndSettle();
+          await tester.tap(all);
+          await tester.pumpAndSettle();
+          expect(
+            find.descendant(
+              of: sheet,
+              matching: find.text('Third review comment'),
+            ),
+            findsOneWidget,
+          );
           await tester.tap(find.byTooltip('Close reviews'));
           await tester.pumpAndSettle();
           expect(tester.takeException(), isNull);
@@ -517,6 +562,28 @@ void main() {
             ),
           );
           await tester.pumpAndSettle();
+          final buyButton = tester.widget<FilledButton>(
+            find.widgetWithText(FilledButton, 'Buy Now'),
+          );
+          expect(
+            buyButton.style!.backgroundColor!.resolve({}),
+            AppColors.commercePink,
+          );
+          expect(buyButton.style!.foregroundColor!.resolve({}), Colors.white);
+          expect(
+            tester
+                .widget<BuyerProductGallery>(find.byType(BuyerProductGallery))
+                .showThumbnails,
+            isTrue,
+          );
+          await tester.tap(find.bySemanticsLabel('Select photo 2'));
+          await tester.pumpAndSettle();
+          expect(
+            tester
+                .widget<BuyerProductGallery>(find.byType(BuyerProductGallery))
+                .index,
+            1,
+          );
           await tester.tap(find.text('Shop'));
           await tester.pumpAndSettle();
           expect(find.byType(BuyerShopPage), findsOneWidget);
@@ -532,16 +599,40 @@ void main() {
           await tester.pageBack();
           await tester.pumpAndSettle();
           expect(find.byTooltip('Add to Cart'), findsOneWidget);
-          await tester.ensureVisible(find.text('Variation & quantity'));
+          await tester.tap(find.text('Buy Now'));
           await tester.pumpAndSettle();
-          await tester.tap(find.text('Variation & quantity'));
-          await tester.pumpAndSettle();
+          expect(added, isNull);
+          expect(openedLine, isNull);
+          expect(
+            tester
+                .widget<FilledButton>(
+                  find.widgetWithText(FilledButton, 'Confirm selection'),
+                )
+                .onPressed,
+            isNull,
+          );
           await tester.tap(find.text('Blue'));
+          await tester.pumpAndSettle();
+          await tester.tap(find.byTooltip('Cancel selection'));
+          await tester.pumpAndSettle();
+          expect(added, isNull);
+          expect(openedLine, isNull);
+          await tester.tap(find.text('Buy Now'));
+          await tester.pumpAndSettle();
+          expect(
+            tester
+                .widget<FilledButton>(
+                  find.widgetWithText(FilledButton, 'Confirm selection'),
+                )
+                .onPressed,
+            isNull,
+          );
+          await tester.tap(find.text('Blue'));
+          await tester.pumpAndSettle();
           await tester.tap(find.byTooltip('Increase quantity'));
           await tester.tap(find.text('Confirm selection'));
           await tester.pumpAndSettle();
-          await tester.tap(find.text('Buy Now'));
-          await tester.pumpAndSettle();
+          expect(added?['buy_now'], isTrue);
           expect(added?['product_id'], 1);
           expect(added?['variant_id'], 12);
           expect(added?['qty'], 2);
@@ -582,6 +673,7 @@ void main() {
           }
           return response({
             ...product(1, 'Variant lamp'),
+            'gallery': ['/white-lamp.jpg', '/blue-lamp.jpg'],
             'seller': {'id': 5, 'user_id': 99, 'business_name': 'Test Shop'},
             'has_variants': true,
             'variants': [

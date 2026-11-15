@@ -1,0 +1,36 @@
+{
+  "buyer": {
+    "title": "Buyer Terms and Conditions",
+    "introduction": "Review these terms before creating your ShopHop Buyer account. Accepting them is your choice and is required to register.",
+    "sections": [
+      {"title": "Your account", "body": "Provide accurate registration and delivery information. Verify your email and complete the account review required by ShopHop. Keep your password and verification codes private, and report suspected unauthorized access to support."},
+      {"title": "Shopping and orders", "body": "Review the product description, variant, quantity, price, delivery address, and payment details before placing an order. Use the available order tracking and contact options for questions about your purchase."},
+      {"title": "Payments and delivery", "body": "Follow the payment instructions shown at checkout. Provide a reachable contact number and a complete delivery address. Coordinate delivery issues through the order and support features."},
+      {"title": "Cancellations, returns, and concerns", "body": "Use the available cancellation, return, refund, or after-sales process for your order. Eligibility and next steps depend on the order status and the policy shown for the transaction. Submit accurate information and supporting evidence when requested."},
+      {"title": "Responsible use", "body": "Do not submit fraudulent orders, impersonate another person, misuse messages, or attempt to access another account. Account restrictions may apply under ShopHop's existing review and enforcement processes."},
+      {"title": "Help and privacy", "body": "Review the Privacy Policy for how account and transaction information is used. Contact ShopHop support with your account or order reference when you need help."}
+    ]
+  },
+  "seller": {
+    "title": "Seller Terms and Conditions",
+    "introduction": "Review these terms before submitting your ShopHop Seller application. Email verification and administrator approval are required before selling access is available.",
+    "sections": [
+      {"title": "Business and verification information", "body": "Provide accurate personal, shop, contact, and address details. Submit authentic and readable identification and business documents. Submission or email verification does not guarantee approval; track the saved application for its actual review status."},
+      {"title": "Account security", "body": "Keep your sign-in credentials and verification codes private. Maintain current contact details and report suspected unauthorized account activity to ShopHop support."},
+      {"title": "Product listings", "body": "Keep product descriptions, images, categories, prices, variants, and inventory accurate. List only products you are authorized to offer and follow the platform's product review and compliance requirements."},
+      {"title": "Orders and fulfillment", "body": "Review incoming orders and use the Seller workspace to confirm, prepare, and hand over parcels through the authorized logistics process. Keep fulfillment information accurate and coordinate issues through the available order and messaging features."},
+      {"title": "Payments and after-sales", "body": "Review the earnings, settlement, and transaction details available in your workspace. Follow the applicable return, refund, and dispute process, and provide accurate supporting records when requested."},
+      {"title": "Review, restrictions, and support", "body": "ShopHop administrator review controls Seller account approval and restrictions. Use your application reference when asking support about corrections, rejected applications, or account restrictions. Review the Privacy Policy before submitting documents."}
+    ]
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "introduction": "This explains the account and transaction information used by the ShopHop registration and marketplace features.",
+    "sections": [
+      {"title": "Information you provide", "body": "Registration collects the identity, contact, address, account security, and verification information requested by the form. Seller applications also include shop information and business documents. Orders and support requests include the information needed to handle those transactions."},
+      {"title": "How information is used", "body": "ShopHop uses this information for account creation, email verification, application review, sign-in, order processing, delivery coordination, after-sales handling, and support. Required approval and access controls apply to account and document access."},
+      {"title": "Transaction participants", "body": "Authorized reviewers, sellers, buyers, and logistics participants receive the information needed for their permitted role in a review, order, delivery, or support request. Do not post passwords, verification codes, or unnecessary identity documents in messages."},
+      {"title": "Account updates and privacy questions", "body": "Use the available account settings to maintain your information. Contact ShopHop support for corrections you cannot make yourself, questions about your information, or account-related requests. Include your account or application reference and avoid sending verification codes."}
+    ]
+  }
+}

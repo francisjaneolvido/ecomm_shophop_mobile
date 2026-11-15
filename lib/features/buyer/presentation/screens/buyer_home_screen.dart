@@ -1,3 +1,4 @@
+import 'package:shophop/features/buyer/presentation/widgets/buyer_page_chrome.dart';
 import 'package:shophop/features/buyer/presentation/pages/buyer_messages_page.dart';
 import 'package:flutter/material.dart';
 import 'package:shophop/features/buyer/data/services/buyer_preferences.dart';
@@ -6,6 +7,7 @@ import 'package:shophop/core/session/auth_session_service.dart';
 import 'package:shophop/core/theme/app_colors.dart';
 import 'package:shophop/features/auth/data/services/auth_service.dart';
 import 'package:shophop/features/auth/presentation/screens/login_screen.dart';
+import 'package:shophop/features/auth/presentation/screens/application_status_screen.dart';
 import 'package:shophop/features/buyer/data/services/buyer_catalog_service.dart';
 import 'package:shophop/features/buyer/presentation/pages/buyer_account_page.dart';
 import 'package:shophop/features/buyer/presentation/pages/buyer_cart_page.dart';
@@ -86,6 +88,17 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
       }
 
       final accountType = result.data['account_type']?.toString();
+      if (accountType == 'buyer' && result.status != 'approved') {
+        if (result.status == 'email_unverified') {
+          await _expireSession();
+        } else {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const ApplicationStatusScreen()),
+            (_) => false,
+          );
+        }
+        return;
+      }
       if (accountType != null && accountType != 'buyer') {
         await _expireSession();
         return;
@@ -312,7 +325,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(
+      return const BuyerScaffold(
         backgroundColor: AppColors.grayBg,
         body: Center(child: CircularProgressIndicator(color: AppColors.teal)),
       );
@@ -369,7 +382,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
       ),
     ];
 
-    return Scaffold(
+    return BuyerScaffold(
       backgroundColor: AppColors.grayBg,
       body: IndexedStack(index: _currentIndex, children: pages),
       bottomNavigationBar: BuyerBottomNavigationBar(

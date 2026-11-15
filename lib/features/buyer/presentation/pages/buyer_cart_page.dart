@@ -1,3 +1,4 @@
+import 'package:shophop/features/buyer/presentation/widgets/buyer_page_chrome.dart';
 import 'package:flutter/material.dart';
 
 import 'package:shophop/features/buyer/data/services/buyer_cart_service.dart';
@@ -281,21 +282,18 @@ class _BuyerCartPageState extends State<BuyerCartPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return BuyerScaffold(
       backgroundColor: AppColors.grayBg,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
-        elevation: 0,
+      appBar: BuyerAppBar(
         leading: IconButton(
           onPressed: () => Navigator.of(context).maybePop(),
-          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.navy),
+          icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
         ),
         title: const Text(
           'My Cart',
           style: TextStyle(
-            color: AppColors.navy,
-            fontSize: 21,
+            color: Colors.white,
+            fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -311,9 +309,7 @@ class _BuyerCartPageState extends State<BuyerCartPage> {
                     )
                   : const Icon(Icons.delete_outline_rounded, size: 18),
               label: const Text('Delete'),
-              style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFFD94E60),
-              ),
+              style: TextButton.styleFrom(foregroundColor: Colors.white),
             ),
           const SizedBox(width: 4),
         ],
@@ -926,9 +922,7 @@ class _EmptyCart extends StatelessWidget {
             const SizedBox(height: 18),
             FilledButton.icon(
               onPressed: onContinueShopping,
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.tealDark,
-              ),
+              style: FilledButton.styleFrom(backgroundColor: AppColors.pink),
               icon: const Icon(Icons.storefront_outlined),
               label: const Text('Continue Shopping'),
             ),
@@ -978,9 +972,7 @@ class _CartErrorState extends StatelessWidget {
             const SizedBox(height: 16),
             FilledButton.icon(
               onPressed: onRetry,
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.tealDark,
-              ),
+              style: FilledButton.styleFrom(backgroundColor: AppColors.pink),
               icon: const Icon(Icons.refresh_rounded),
               label: const Text('Try again'),
             ),

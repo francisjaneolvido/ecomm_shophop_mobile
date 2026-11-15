@@ -1,3 +1,4 @@
+import 'package:shophop/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
 /// Shared icon treatment used by category, account and settings shortcuts.
@@ -19,10 +20,6 @@ class BuyerIconTile extends StatelessWidget {
       color: Theme.of(context).colorScheme.primaryContainer,
       borderRadius: BorderRadius.circular(6),
     ),
-    child: Icon(
-      icon,
-      size: iconSize,
-      color: Theme.of(context).colorScheme.primary,
-    ),
+    child: Icon(icon, size: iconSize, color: AppColors.pink),
   );
 }

@@ -107,9 +107,12 @@ class SellerBusinessStep extends StatelessWidget {
         const SizedBox(height: 8),
 
         DropdownButtonFormField<String>(
+          isDense: true,
+          itemHeight: 48,
+          borderRadius: BorderRadius.circular(6),
           initialValue: currentCategory,
           isExpanded: true,
-          menuMaxHeight: 360,
+          menuMaxHeight: 224,
           icon: Icon(
             Icons.keyboard_arrow_down_rounded,
             color: AppColors.navy.withValues(alpha: 0.40),
@@ -126,10 +129,22 @@ class SellerBusinessStep extends StatelessWidget {
             fontSize: 13,
             fontWeight: FontWeight.w500,
           ),
-          decoration: SellerUi.inputDecoration(
-            hint: 'Select line of business',
-            icon: Icons.sell_outlined,
-          ).copyWith(hintText: null),
+          decoration:
+              SellerUi.inputDecoration(
+                hint: 'Select line of business',
+                icon: Icons.sell_outlined,
+              ).copyWith(
+                hintText: null,
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                prefixIconConstraints: const BoxConstraints(
+                  minWidth: 40,
+                  minHeight: 40,
+                ),
+              ),
           items: _businessCategories
               .map(
                 (category) => DropdownMenuItem<String>(

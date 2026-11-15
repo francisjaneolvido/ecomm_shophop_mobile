@@ -1,10 +1,70 @@
 import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
+import 'package:mime/mime.dart';
 import 'package:shophop/core/config/api_config.dart';
 import 'package:shophop/features/auth/data/services/auth_service.dart';
+import 'rider_profile_photo.dart';
 
 class RiderManagementService {
+  static Future<AuthApiResult> uploadPhoto(
+    String token,
+    PlatformFile file,
+  ) async {
+    try {
+      file = await RiderProfilePhotoPreparation.prepare(file);
+    } catch (error) {
+      return AuthApiResult(
+        success: false,
+        status: 'invalid_photo',
+        message: error is FormatException
+            ? error.message
+            : 'Cannot read this photo. Choose another JPG, PNG or WebP.',
+      );
+    }
+    try {
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('${ApiConfig.baseUrl}/rider/profile/photo'),
+      );
+      request.headers.addAll({
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      });
+      final contentType = MediaType.parse(
+        lookupMimeType(file.name, headerBytes: file.bytes) ??
+            'application/octet-stream',
+      );
+      request.files.add(
+        file.bytes != null
+            ? http.MultipartFile.fromBytes(
+                'photo',
+                file.bytes!,
+                filename: file.name,
+                contentType: contentType,
+              )
+            : await http.MultipartFile.fromPath(
+                'photo',
+                file.path!,
+                filename: file.name,
+                contentType: contentType,
+              ),
+      );
+      return AuthApiResult.fromResponse(
+        await http.Response.fromStream(
+          await request.send().timeout(const Duration(seconds: 30)),
+        ),
+      );
+    } catch (_) {
+      return const AuthApiResult(
+        success: false,
+        status: 'network_error',
+        message: 'Your photo could not be uploaded. Please retry.',
+      );
+    }
+  }
+
   static Future<AuthApiResult> request(
     String path, {
     String? token,

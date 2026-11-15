@@ -620,7 +620,7 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
                   ),
                   child: Text(
                     _manifest!['route_warning']?.toString() ??
-                        'Road trip requires Logistics review.',
+                        'Linehaul trip requires Logistics review.',
                     style: const TextStyle(
                       color: Color(0xFF8C5100),
                       fontWeight: FontWeight.w700,
@@ -629,7 +629,7 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
                   ),
                 ),
               Text(
-                'ROAD trip ${_manifest!['trip_code']} · ${_manifest!['trip_status']}',
+                'LINEHAUL trip ${_manifest!['trip_code']} · ${_manifest!['trip_status']}',
               ),
               Text(
                 'Vehicle ${_manifest!['vehicle_code']} · ${_manifest!['plate_number']}',
@@ -860,7 +860,18 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
             ),
         const SizedBox(height: 12),
         OutlinedButton.icon(
-          onPressed: _busy ? null : () => _logout(),
+          onPressed: _busy
+              ? null
+              : () async {
+                  final confirmed = await showShopHopConfirmation(
+                    context,
+                    title: 'Sign out of ShopHop?',
+                    message:
+                        'Are you sure you want to sign out? You can sign back in anytime.',
+                    confirmLabel: 'Sign out',
+                  );
+                  if (confirmed && mounted) await _logout();
+                },
           icon: const Icon(Icons.logout),
           label: const Text('Sign out'),
         ),

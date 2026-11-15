@@ -85,11 +85,11 @@ class _OtpCodeFieldState extends State<OtpCodeField> {
                   padding: EdgeInsets.only(right: index == 5 ? 0 : 7),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 150),
-                    height: 58,
+                    height: 46,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(6),
                       border: Border.all(
                         color: current
                             ? AppColors.teal

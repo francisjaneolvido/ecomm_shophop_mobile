@@ -110,7 +110,7 @@ extension ShopHopRoleNavigation on ShopHopRole {
   };
 }
 
-/// Operational headers use the same teal palette as the web theme.
+/// Operational navigation headers use the shared brand pink.
 class ShopHopRoleAppBar extends StatelessWidget implements PreferredSizeWidget {
   const ShopHopRoleAppBar({
     super.key,
@@ -130,7 +130,7 @@ class ShopHopRoleAppBar extends StatelessWidget implements PreferredSizeWidget {
     automaticallyImplyLeading: false,
     toolbarHeight: 64,
     titleSpacing: 14,
-    backgroundColor: AppColors.tealDark,
+    backgroundColor: AppColors.pink,
     foregroundColor: Colors.white,
     surfaceTintColor: Colors.transparent,
     systemOverlayStyle: SystemUiOverlayStyle.light,

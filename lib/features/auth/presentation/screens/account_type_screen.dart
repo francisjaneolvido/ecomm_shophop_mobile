@@ -1,3 +1,4 @@
+import 'package:shophop/features/auth/presentation/widgets/shop_hop_auth_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:shophop/core/theme/app_colors.dart';
 import 'package:shophop/features/auth/presentation/screens/login_screen.dart';
@@ -44,7 +45,10 @@ class _AccountTypeScreenState extends State<AccountTypeScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      ShopHopAuthTheme(child: Builder(builder: _buildContent));
+
+  Widget _buildContent(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final compact = size.height < 700;
 
@@ -68,7 +72,7 @@ class _AccountTypeScreenState extends State<AccountTypeScreen> {
                             height: compact ? 54 : 60,
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: AppColors.tealLight.withValues(alpha: .55),
+                              color: AppColors.pinkSoft.withValues(alpha: .55),
                               shape: BoxShape.circle,
                             ),
                             child: Image.asset(
@@ -135,10 +139,10 @@ class _AccountTypeScreenState extends State<AccountTypeScreen> {
                             vertical: 12,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.tealLight.withValues(alpha: .38),
+                            color: AppColors.pinkSoft.withValues(alpha: .38),
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: AppColors.teal.withValues(alpha: .18),
+                              color: AppColors.pink.withValues(alpha: .18),
                             ),
                           ),
                           child: Row(
@@ -146,7 +150,7 @@ class _AccountTypeScreenState extends State<AccountTypeScreen> {
                             children: [
                               const Icon(
                                 Icons.info_outline_rounded,
-                                color: AppColors.tealDark,
+                                color: AppColors.pink,
                                 size: 18,
                               ),
                               const SizedBox(width: 9),
@@ -188,7 +192,7 @@ class _AccountTypeScreenState extends State<AccountTypeScreen> {
                           child: FilledButton(
                             onPressed: _selectedRole == null ? null : _continue,
                             style: FilledButton.styleFrom(
-                              backgroundColor: AppColors.teal,
+                              backgroundColor: AppColors.pink,
                               foregroundColor: Colors.white,
                               disabledBackgroundColor: const Color(0xFFE7EBEE),
                               disabledForegroundColor: AppColors.navy
@@ -227,7 +231,7 @@ class _AccountTypeScreenState extends State<AccountTypeScreen> {
                                     ),
                                   ),
                               style: TextButton.styleFrom(
-                                foregroundColor: AppColors.tealDark,
+                                foregroundColor: AppColors.pink,
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 5,
                                   vertical: 7,
@@ -284,17 +288,17 @@ class _RoleOption extends StatelessWidget {
         curve: Curves.easeOut,
         decoration: BoxDecoration(
           color: selected
-              ? AppColors.tealLight.withValues(alpha: .38)
+              ? AppColors.pinkSoft.withValues(alpha: .38)
               : Colors.white,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: selected ? AppColors.teal : AppColors.grayBorder,
+            color: selected ? AppColors.pink : AppColors.grayBorder,
             width: selected ? 1.6 : 1,
           ),
           boxShadow: selected
               ? [
                   BoxShadow(
-                    color: AppColors.teal.withValues(alpha: .08),
+                    color: AppColors.pink.withValues(alpha: .08),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -316,14 +320,14 @@ class _RoleOption extends StatelessWidget {
                     height: 46,
                     decoration: BoxDecoration(
                       color: selected
-                          ? AppColors.teal.withValues(alpha: .16)
-                          : AppColors.tealLight.withValues(alpha: .72),
+                          ? AppColors.pink.withValues(alpha: .16)
+                          : AppColors.pinkSoft.withValues(alpha: .72),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
                       icon,
                       size: 22,
-                      color: selected ? AppColors.tealDark : AppColors.tealDark,
+                      color: selected ? AppColors.pink : AppColors.pink,
                     ),
                   ),
                   const SizedBox(width: 13),
@@ -361,7 +365,7 @@ class _RoleOption extends StatelessWidget {
                       key: ValueKey(selected),
                       size: 23,
                       color: selected
-                          ? AppColors.teal
+                          ? AppColors.pink
                           : const Color(0xFFB9C6CE),
                     ),
                   ),

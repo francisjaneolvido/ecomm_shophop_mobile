@@ -46,6 +46,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
   int _secondsRemaining = 0;
 
   bool _isVerifying = false;
+  bool _completed = false;
   bool _isResending = false;
 
   String? _errorMessage;
@@ -53,7 +54,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
 
   bool get _codeIsValid => RegExp(r'^\d{6}$').hasMatch(_codeController.text);
 
-  bool get _enabled => !_isVerifying && !_isResending;
+  bool get _enabled => !_completed && !_isVerifying && !_isResending;
 
   bool get _canVerify => _enabled && _codeIsValid;
 
@@ -122,6 +123,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
       return;
     }
 
+    _completed = true;
     HapticFeedback.lightImpact();
 
     setState(() {
@@ -193,38 +195,58 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
             children: [
               _topBar(),
               Expanded(
-                child: SingleChildScrollView(
-                  keyboardDismissBehavior:
-                      ScrollViewKeyboardDismissBehavior.onDrag,
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
-                  child: Center(
+                child: LayoutBuilder(
+                  builder: (context, constraints) => SingleChildScrollView(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    padding: const EdgeInsets.all(16),
                     child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 480),
-                      child: Column(
-                        children: [
-                          const SizedBox(height: 12),
-                          VerificationHeader(role: widget.role),
-                          const SizedBox(height: 24),
-                          VerificationCard(
-                            email: widget.email,
-                            role: widget.role,
-                            codeController: _codeController,
-                            enabled: _enabled,
-                            canVerify: _canVerify,
-                            isVerifying: _isVerifying,
-                            isResending: _isResending,
-                            secondsRemaining: _secondsRemaining,
-                            errorMessage: _errorMessage,
-                            successMessage: _successMessage,
-                            onCodeChanged: (_) {
-                              setState(() {
-                                _errorMessage = null;
-                              });
-                            },
-                            onVerify: _verify,
-                            onResend: _resend,
+                      constraints: BoxConstraints(
+                        minHeight: (constraints.maxHeight - 32).clamp(
+                          0,
+                          double.infinity,
+                        ),
+                      ),
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 408),
+                          child: Container(
+                            padding: const EdgeInsets.all(18),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: AppColors.border),
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                VerificationHeader(role: widget.role),
+                                const SizedBox(height: 18),
+                                VerificationCard(
+                                  email: widget.email,
+                                  role: widget.role,
+                                  codeController: _codeController,
+                                  enabled: _enabled,
+                                  canVerify: _canVerify,
+                                  isVerifying: _isVerifying,
+                                  isResending: _isResending,
+                                  secondsRemaining: _secondsRemaining,
+                                  errorMessage: _errorMessage,
+                                  successMessage: _successMessage,
+                                  onCodeChanged: (code) {
+                                    setState(() => _errorMessage = null);
+                                    if (code.length == 6) {
+                                      FocusScope.of(context).unfocus();
+                                    }
+                                  },
+                                  onVerify: _verify,
+                                  onResend: _resend,
+                                ),
+                              ],
+                            ),
                           ),
-                        ],
+                        ),
                       ),
                     ),
                   ),

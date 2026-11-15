@@ -1,3 +1,4 @@
+import 'package:shophop/features/buyer/presentation/widgets/buyer_page_chrome.dart';
 import 'package:shophop/features/buyer/presentation/widgets/buyer_icon_tile.dart';
 import 'package:shophop/features/buyer/presentation/pages/buyer_messages_page.dart';
 import 'dart:convert';
@@ -132,13 +133,11 @@ class BuyerAccountSettingsPage extends StatelessWidget {
   );
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) => BuyerScaffold(
     backgroundColor: AppColors.page,
-    appBar: AppBar(
+    appBar: BuyerAppBar(
       title: const Text('Account Settings'),
-      backgroundColor: AppColors.surface,
-      surfaceTintColor: Colors.transparent,
-      scrolledUnderElevation: 1,
+
       actions: [
         IconButton(
           tooltip: 'Messages',
@@ -243,8 +242,8 @@ class _BuyerHelpPage extends StatelessWidget {
   const _BuyerHelpPage();
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Help Centre')),
+  Widget build(BuildContext context) => BuyerScaffold(
+    appBar: BuyerAppBar(title: const Text('Help Centre')),
     body: SafeArea(
       top: false,
       child: ListView(
@@ -481,8 +480,8 @@ class _BuyerAccountSecurityPageState extends State<BuyerAccountSecurityPage> {
   @override
   Widget build(BuildContext context) => PopScope(
     canPop: !_saving,
-    child: Scaffold(
-      appBar: AppBar(title: const Text('Account & Security')),
+    child: BuyerScaffold(
+      appBar: BuyerAppBar(title: const Text('Account & Security')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _profile == null
@@ -807,8 +806,8 @@ class _BuyerPasswordPageState extends State<BuyerPasswordPage> {
   @override
   Widget build(BuildContext context) => PopScope(
     canPop: !_saving,
-    child: Scaffold(
-      appBar: AppBar(title: const Text('Change password')),
+    child: BuyerScaffold(
+      appBar: BuyerAppBar(title: const Text('Change password')),
       body: SafeArea(
         top: false,
         child: Form(

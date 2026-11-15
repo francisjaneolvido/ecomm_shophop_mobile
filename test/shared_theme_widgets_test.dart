@@ -108,7 +108,7 @@ void main() {
         ),
       );
       expect(tester.takeException(), isNull);
-      expect(find.text('99+'), findsWidgets);
+      expect(find.text('150'), findsWidgets);
       expect(find.text('-1'), findsNothing);
       await tester.pumpAndSettle();
       final idle = await _navigationPixels(tester);

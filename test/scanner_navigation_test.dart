@@ -118,7 +118,7 @@ void main() {
         );
         expect(
           tester.widget<AppBar>(find.byType(AppBar)).backgroundColor,
-          AppColors.tealDark,
+          AppColors.pink,
         );
         if (raised != null) {
           expect(role.destinations[2].label, 'Scan');

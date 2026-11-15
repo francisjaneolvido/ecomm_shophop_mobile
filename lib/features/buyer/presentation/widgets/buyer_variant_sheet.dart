@@ -1,3 +1,4 @@
+import 'package:shophop/core/theme/app_colors.dart';
 import 'dart:math' as math;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -46,11 +47,11 @@ class _VariantPhotoCard extends StatelessWidget {
       label: onTap == null ? '$label, out of stock' : label,
       excludeSemantics: true,
       child: Material(
-        color: selected ? colors.primaryContainer : colors.surface,
+        color: selected ? AppColors.pinkSoft : colors.surface,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(6),
           side: BorderSide(
-            color: selected ? colors.primary : colors.outlineVariant,
+            color: selected ? AppColors.pink : colors.outlineVariant,
             width: selected ? 2 : 1,
           ),
         ),
@@ -59,55 +60,49 @@ class _VariantPhotoCard extends StatelessWidget {
           onTap: onTap,
           child: Opacity(
             opacity: onTap == null ? .45 : 1,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Stack(
-                  children: [
-                    AspectRatio(
-                      aspectRatio: 1,
-                      child: BuyerMediaImage(url: image),
+            child: Padding(
+              padding: const EdgeInsets.all(7),
+              child: Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: SizedBox.square(
+                      dimension: 40,
+                      child: BuyerMediaImage(url: image, fit: BoxFit.cover),
                     ),
-                    if (selected)
-                      Positioned(
-                        top: 6,
-                        right: 6,
-                        child: Icon(
-                          Icons.check_circle,
-                          size: 22,
-                          color: colors.primary,
-                        ),
-                      ),
-                  ],
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 10,
                   ),
-                  child: Column(
-                    children: [
-                      Text(
-                        label,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: selected
-                              ? FontWeight.w700
-                              : FontWeight.w500,
-                          color: selected ? colors.primary : colors.onSurface,
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          label,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: selected
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                            color: selected ? AppColors.pink : colors.onSurface,
+                          ),
                         ),
-                      ),
-                      if (onTap == null)
-                        const Text(
-                          'Out of stock',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 10),
-                        ),
-                    ],
+                        if (onTap == null)
+                          const Text(
+                            'Out of stock',
+                            style: TextStyle(fontSize: 10),
+                          ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                  if (selected)
+                    const Icon(
+                      Icons.check_circle,
+                      size: 16,
+                      color: AppColors.pink,
+                    ),
+                ],
+              ),
             ),
           ),
         ),
@@ -215,7 +210,10 @@ class _BuyerVariantSheetState extends State<BuyerVariantSheet> {
         : variants.map((v) => _value(v, axis)).toSet().toList();
     return LayoutBuilder(
       builder: (context, constraints) {
-        final columns = math.max(2, (constraints.maxWidth / 112).floor());
+        final largeText = MediaQuery.textScalerOf(context).scale(12) > 18;
+        final columns = largeText || constraints.maxWidth < 280
+            ? 1
+            : math.max(2, (constraints.maxWidth / 200).floor());
         final width = (constraints.maxWidth - (columns - 1) * 10) / columns;
         return Wrap(
           spacing: 10,
@@ -271,7 +269,7 @@ class _BuyerVariantSheetState extends State<BuyerVariantSheet> {
       (v) => buyerSelectionStock(widget.detail, v) > 0,
     );
     final previous = available.where((v) => v.id == widget.selected?.id);
-    _variant = previous.isNotEmpty ? previous.first : available.firstOrNull;
+    _variant = previous.firstOrNull;
     _quantity = widget.quantity.clamp(1, math.max(1, _stock));
   }
 
@@ -280,6 +278,11 @@ class _BuyerVariantSheetState extends State<BuyerVariantSheet> {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final product = widget.detail.product;
+    final available = !product.hasVariants
+        ? _stock > 0
+        : widget.detail.variants.any(
+            (v) => buyerSelectionStock(widget.detail, v) > 0,
+          );
     return ConstrainedBox(
       constraints: BoxConstraints(
         maxHeight: MediaQuery.sizeOf(context).height * .85,
@@ -297,7 +300,9 @@ class _BuyerVariantSheetState extends State<BuyerVariantSheet> {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
                     child: SizedBox.square(
-                      dimension: 88,
+                      dimension: MediaQuery.textScalerOf(context).scale(12) > 18
+                          ? 56
+                          : 88,
                       child: BuyerMediaImage(
                         url: _variant?.image.isNotEmpty == true
                             ? _variant!.image
@@ -310,16 +315,22 @@ class _BuyerVariantSheetState extends State<BuyerVariantSheet> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          buyerPrice(_variant?.price ?? product.price),
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w700,
-                            color: colors.primary,
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            buyerPrice(_variant?.price ?? product.price),
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.pink,
+                            ),
                           ),
                         ),
                         Text(
-                          '$_stock available',
+                          _variant == null && product.hasVariants && available
+                              ? 'Choose a variation'
+                              : '$_stock available',
                           key: const ValueKey('selection-stock'),
                           style: TextStyle(
                             fontSize: 12,
@@ -397,6 +408,24 @@ class _BuyerVariantSheetState extends State<BuyerVariantSheet> {
                                     _variant != null &&
                                     _value(_variant!, axis) == value,
                                 showCheckmark: false,
+                                selectedColor: AppColors.pinkSoft,
+                                side: BorderSide(
+                                  color:
+                                      _variant != null &&
+                                          _value(_variant!, axis) == value
+                                      ? AppColors.pink
+                                      : colors.outlineVariant,
+                                ),
+                                labelStyle: TextStyle(
+                                  color:
+                                      _variant != null &&
+                                          _value(_variant!, axis) == value
+                                      ? AppColors.pink
+                                      : colors.onSurface,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
                                 onSelected:
                                     _matches(
                                       axis,
@@ -468,7 +497,11 @@ class _BuyerVariantSheetState extends State<BuyerVariantSheet> {
                 child: FilledButton(
                   style: FilledButton.styleFrom(
                     minimumSize: const Size.fromHeight(50),
-                    shape: const StadiumBorder(),
+                    backgroundColor: AppColors.pink,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(6),
+                    ),
                   ),
                   onPressed: _stock <= 0
                       ? null
@@ -480,7 +513,7 @@ class _BuyerVariantSheetState extends State<BuyerVariantSheet> {
                           ),
                         ),
                   child: Text(
-                    _stock <= 0 ? 'Currently unavailable' : 'Confirm selection',
+                    !available ? 'Currently unavailable' : 'Confirm selection',
                   ),
                 ),
               ),

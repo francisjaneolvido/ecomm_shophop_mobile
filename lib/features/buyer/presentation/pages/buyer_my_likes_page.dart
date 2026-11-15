@@ -1,3 +1,5 @@
+import 'package:flutter/services.dart';
+import 'package:shophop/features/buyer/presentation/widgets/buyer_page_chrome.dart';
 import 'package:flutter/material.dart';
 
 import 'package:shophop/features/buyer/data/services/buyer_catalog_service.dart';
@@ -124,70 +126,116 @@ class _BuyerMyLikesPageState extends State<BuyerMyLikesPage>
     return categories;
   }
 
-  Future<void> _toggleLike(BuyerProductData product) async {
-    final index = _products.indexWhere((item) => item.id == product.id);
-    if (index < 0) return;
-
-    final removed = _products.removeAt(index);
-    setState(() {});
-
-    try {
-      await BuyerCatalogService.setFavorite(
-        token: widget.token,
-        productId: product.id,
-        liked: false,
-      );
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            behavior: SnackBarBehavior.floating,
-            content: const Text('Removed from My Likes'),
-            action: SnackBarAction(
-              label: 'UNDO',
-              onPressed: () => _restoreFavorite(removed),
+  Future<void> _manageLikes() async {
+    final busy = <int>{};
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, updateSheet) {
+          return SafeArea(
+            child: SizedBox(
+              height: MediaQuery.sizeOf(context).height * .6,
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            'Manage Likes',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: 'Close',
+                          onPressed: () => Navigator.pop(sheetContext),
+                          icon: const Icon(Icons.close),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: _products.length,
+                      itemBuilder: (context, index) {
+                        final product = _products[index];
+                        return ListTile(
+                          title: Text(
+                            product.name,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          subtitle: product.isAvailable
+                              ? null
+                              : const Text(
+                                  'Currently unavailable',
+                                  style: TextStyle(fontSize: 10),
+                                ),
+                          trailing: TextButton(
+                            onPressed: busy.contains(product.id)
+                                ? null
+                                : () async {
+                                    updateSheet(() => busy.add(product.id));
+                                    try {
+                                      await BuyerCatalogService.setFavorite(
+                                        token: widget.token,
+                                        productId: product.id,
+                                        liked: false,
+                                      );
+                                      if (!mounted) return;
+                                      setState(
+                                        () => _products.removeWhere(
+                                          (item) => item.id == product.id,
+                                        ),
+                                      );
+                                      if (sheetContext.mounted) {
+                                        updateSheet(
+                                          () => busy.remove(product.id),
+                                        );
+                                        if (_products.isEmpty) {
+                                          Navigator.pop(sheetContext);
+                                        }
+                                      }
+                                    } on BuyerCatalogException catch (error) {
+                                      if (!mounted) return;
+                                      if (sheetContext.mounted) {
+                                        updateSheet(
+                                          () => busy.remove(product.id),
+                                        );
+                                      }
+                                      _showError(error.message);
+                                      if (error.isUnauthorized) {
+                                        if (sheetContext.mounted) {
+                                          Navigator.pop(sheetContext);
+                                        }
+                                        await widget.onSessionExpired();
+                                      }
+                                    }
+                                  },
+                            child: Text(
+                              busy.contains(product.id)
+                                  ? 'Removing...'
+                                  : 'Remove',
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        );
-    } on BuyerCatalogException catch (error) {
-      if (!mounted) return;
-      if (error.isUnauthorized) {
-        await widget.onSessionExpired();
-        return;
-      }
-
-      setState(() {
-        final insertAt = index.clamp(0, _products.length).toInt();
-        _products.insert(insertAt, removed);
-      });
-      _showError(error.message);
-    }
-  }
-
-  Future<void> _restoreFavorite(BuyerProductData product) async {
-    if (_products.any((item) => item.id == product.id)) return;
-
-    try {
-      final liked = await BuyerCatalogService.setFavorite(
-        token: widget.token,
-        productId: product.id,
-        liked: true,
-      );
-      if (!mounted || !liked) return;
-
-      setState(() {
-        _products.insert(0, product.copyWith(isLiked: true));
-      });
-    } on BuyerCatalogException catch (error) {
-      if (!mounted) return;
-      if (error.isUnauthorized) {
-        await widget.onSessionExpired();
-        return;
-      }
-      _showError(error.message);
-    }
+          );
+        },
+      ),
+    );
   }
 
   void _showError(String message) {
@@ -261,7 +309,7 @@ class _BuyerMyLikesPageState extends State<BuyerMyLikesPage>
                         (category) => ListTile(
                           leading: const Icon(
                             Icons.sell_outlined,
-                            color: Color(0xFFED647C),
+                            color: AppColors.pink,
                           ),
                           title: Text(category),
                           trailing: _selectedCategory == category
@@ -295,9 +343,10 @@ class _BuyerMyLikesPageState extends State<BuyerMyLikesPage>
     final likedProducts = _filteredProducts;
 
     return SafeArea(
+      top: false,
       bottom: false,
       child: RefreshIndicator(
-        color: AppColors.teal,
+        color: AppColors.pink,
         onRefresh: () => _loadLikes(refresh: true),
         child: CustomScrollView(
           key: const PageStorageKey<String>('buyer-likes-scroll'),
@@ -308,60 +357,38 @@ class _BuyerMyLikesPageState extends State<BuyerMyLikesPage>
             SliverAppBar(
               pinned: true,
               automaticallyImplyLeading: false,
-              backgroundColor: Colors.white,
-              surfaceTintColor: Colors.white,
+              backgroundColor: AppColors.pink,
+              foregroundColor: Colors.white,
+              surfaceTintColor: Colors.transparent,
+              systemOverlayStyle: SystemUiOverlayStyle.light,
+              toolbarHeight: 64,
               elevation: 0,
-              titleSpacing: 16,
-              title: Row(
-                children: [
-                  const Text(
-                    'My Likes',
-                    style: TextStyle(
-                      color: AppColors.navy,
-                      fontSize: 21,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: -0.4,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFEEF2),
-                      borderRadius: BorderRadius.circular(99),
-                    ),
-                    child: Text(
-                      '${_products.length}',
-                      style: const TextStyle(
-                        color: Color(0xFFDE536B),
-                        fontSize: 10,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ),
-                ],
+              titleSpacing: 14,
+              title: const BuyerPageHeading(
+                title: 'My Likes',
+                icon: Icons.favorite_border,
               ),
               actions: [
+                TextButton(
+                  onPressed: _products.isEmpty ? null : _manageLikes,
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    disabledForegroundColor: Colors.white54,
+                  ),
+                  child: const Text('Manage'),
+                ),
+
                 IconButton(
                   onPressed: widget.onOpenSearch,
                   tooltip: 'Search',
-                  icon: const Icon(
-                    Icons.search_rounded,
-                    color: AppColors.tealDark,
-                  ),
+                  icon: const Icon(Icons.search_rounded, color: Colors.white),
                 ),
                 IconButton(
                   onPressed: widget.onOpenCart,
                   tooltip: 'Cart',
-                  icon: Image.asset(
-                    'assets/images/icon_cart_shophop.png',
-                    width: 24,
-                    height: 24,
-                    color: AppColors.navy,
-                    filterQuality: FilterQuality.high,
+                  icon: const Icon(
+                    Icons.shopping_cart_outlined,
+                    color: Colors.white,
                   ),
                 ),
                 const SizedBox(width: 6),
@@ -440,7 +467,7 @@ class _BuyerMyLikesPageState extends State<BuyerMyLikesPage>
                   icon: Icons.favorite_border_rounded,
                   title: 'No liked products yet',
                   message:
-                      'Tap the heart on any ShopHop product. Your likes are shared with the web version too.',
+                      'Save a product from its details page to find it here on web and mobile.',
                   actionLabel: 'Browse Products',
                   onAction: widget.onOpenSearch,
                 ),
@@ -464,6 +491,7 @@ class _BuyerMyLikesPageState extends State<BuyerMyLikesPage>
                       gridDelegate: BuyerProductCard.gridDelegate(
                         context,
                         width,
+                        likedProducts,
                       ),
                       delegate: SliverChildBuilderDelegate((context, index) {
                         final product = likedProducts[index];
@@ -478,7 +506,6 @@ class _BuyerMyLikesPageState extends State<BuyerMyLikesPage>
                               );
                             }
                           },
-                          onLike: () => _toggleLike(product),
                         );
                       }, childCount: likedProducts.length),
                     );
@@ -495,7 +522,7 @@ class _BuyerMyLikesPageState extends State<BuyerMyLikesPage>
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
-                        color: AppColors.teal,
+                        color: AppColors.pink,
                         strokeWidth: 2,
                       ),
                     ),
@@ -526,17 +553,17 @@ class _FilterChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: selected ? AppColors.tealLight : const Color(0xFFF7F9FA),
-      borderRadius: BorderRadius.circular(99),
+      borderRadius: BorderRadius.circular(6),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(99),
+        borderRadius: BorderRadius.circular(6),
         child: Container(
           height: 34,
           padding: const EdgeInsets.symmetric(horizontal: 13),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(99),
+            borderRadius: BorderRadius.circular(6),
             border: Border.all(
-              color: selected ? AppColors.teal : const Color(0xFFE2E7EA),
+              color: selected ? AppColors.pink : const Color(0xFFE2E7EA),
             ),
           ),
           child: Row(
@@ -546,16 +573,14 @@ class _FilterChip extends StatelessWidget {
                 Icon(
                   icon,
                   size: 15,
-                  color: selected
-                      ? AppColors.tealDark
-                      : const Color(0xFF7D8790),
+                  color: selected ? AppColors.pink : const Color(0xFF7D8790),
                 ),
                 const SizedBox(width: 5),
               ],
               Text(
                 label,
                 style: TextStyle(
-                  color: selected ? AppColors.tealDark : AppColors.navy,
+                  color: selected ? AppColors.pink : AppColors.navy,
                   fontSize: 10.5,
                   fontWeight: FontWeight.w800,
                 ),
@@ -598,7 +623,7 @@ class _LikesMessageState extends StatelessWidget {
                 color: Color(0xFFFFEEF2),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, color: const Color(0xFFDF647A), size: 31),
+              child: Icon(icon, color: AppColors.pink, size: 31),
             ),
             const SizedBox(height: 16),
             Text(
@@ -624,9 +649,7 @@ class _LikesMessageState extends StatelessWidget {
               const SizedBox(height: 16),
               FilledButton(
                 onPressed: onAction,
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.tealDark,
-                ),
+                style: FilledButton.styleFrom(backgroundColor: AppColors.pink),
                 child: Text(actionLabel!),
               ),
             ],

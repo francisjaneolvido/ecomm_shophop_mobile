@@ -1,3 +1,4 @@
+import 'package:shophop/features/buyer/presentation/widgets/buyer_page_chrome.dart';
 import 'package:flutter/material.dart';
 
 import 'package:shophop/features/buyer/data/services/buyer_checkout_service.dart';
@@ -351,9 +352,7 @@ class _BuyerCheckoutPageState extends State<BuyerCheckoutPage> {
             ),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(true),
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.tealDark,
-              ),
+              style: FilledButton.styleFrom(backgroundColor: AppColors.pink),
               child: const Text('Place Order'),
             ),
           ],
@@ -402,9 +401,7 @@ class _BuyerCheckoutPageState extends State<BuyerCheckoutPage> {
           actions: [
             FilledButton(
               onPressed: () => Navigator.of(context).pop(),
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.tealDark,
-              ),
+              style: FilledButton.styleFrom(backgroundColor: AppColors.pink),
               child: const Text('View My Orders'),
             ),
           ],
@@ -434,21 +431,18 @@ class _BuyerCheckoutPageState extends State<BuyerCheckoutPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return BuyerScaffold(
       backgroundColor: AppColors.grayBg,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
-        elevation: 0,
+      appBar: BuyerAppBar(
         leading: IconButton(
           onPressed: () => Navigator.of(context).maybePop(),
-          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.navy),
+          icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
         ),
         title: const Text(
           'Checkout',
           style: TextStyle(
-            color: AppColors.navy,
-            fontSize: 21,
+            color: Colors.white,
+            fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -462,7 +456,7 @@ class _BuyerCheckoutPageState extends State<BuyerCheckoutPage> {
                   height: 18,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: AppColors.tealDark,
+                    color: Colors.white,
                   ),
                 ),
               ),

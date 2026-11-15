@@ -1,3 +1,4 @@
+import 'package:shophop/features/buyer/presentation/widgets/buyer_page_chrome.dart';
 import 'dart:async';
 import 'package:shophop/shared/realtime/foreground_refresh.dart';
 
@@ -226,70 +227,6 @@ class _BuyerCatalogPageState extends State<BuyerCatalogPage> {
     _loadProducts(reset: true);
   }
 
-  Future<void> _toggleLike(BuyerProductData product) async {
-    final index = _products.indexWhere((item) => item.id == product.id);
-    if (index < 0) return;
-
-    final previous = _products[index];
-    final targetLiked = !previous.isLiked;
-    setState(() {
-      _products[index] = previous.copyWith(isLiked: targetLiked);
-    });
-
-    try {
-      final liked = await BuyerCatalogService.setFavorite(
-        token: widget.token,
-        productId: product.id,
-        liked: targetLiked,
-      );
-      if (!mounted) return;
-
-      final currentIndex = _products.indexWhere(
-        (item) => item.id == product.id,
-      );
-      if (currentIndex >= 0) {
-        setState(() {
-          _products[currentIndex] = _products[currentIndex].copyWith(
-            isLiked: liked,
-          );
-        });
-      }
-
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            behavior: SnackBarBehavior.floating,
-            content: Text(
-              liked ? 'Added to My Likes' : 'Removed from My Likes',
-            ),
-          ),
-        );
-    } on BuyerCatalogException catch (error) {
-      if (!mounted) return;
-      if (error.isUnauthorized) {
-        await widget.onSessionExpired();
-        return;
-      }
-
-      final currentIndex = _products.indexWhere(
-        (item) => item.id == product.id,
-      );
-      if (currentIndex >= 0) {
-        setState(() => _products[currentIndex] = previous);
-      }
-
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            behavior: SnackBarBehavior.floating,
-            content: Text(error.message),
-          ),
-        );
-    }
-  }
-
   void _changeSubcategory(String? value) {
     if (_subcategory == value) return;
     _debounce?.cancel();
@@ -349,8 +286,8 @@ class _BuyerCatalogPageState extends State<BuyerCatalogPage> {
           _ => 'Explore Products',
         };
     final scale = MediaQuery.textScalerOf(context).scale(12) / 12;
-    return Scaffold(
-      appBar: AppBar(
+    return BuyerScaffold(
+      appBar: BuyerAppBar(
         toolbarHeight: 72,
         titleSpacing: 0,
         leading: IconButton(
@@ -594,12 +531,13 @@ class _BuyerCatalogPageState extends State<BuyerCatalogPage> {
                     gridDelegate: BuyerProductCard.gridDelegate(
                       context,
                       constraints.crossAxisExtent,
+                      _products,
                     ),
                     delegate: SliverChildBuilderDelegate((context, index) {
                       final product = _products[index];
                       return BuyerProductCard(
                         product: product,
-                        onLike: () => _toggleLike(product),
+
                         onTap: () {
                           FocusScope.of(context).unfocus();
                           widget.onOpenProduct(product);
