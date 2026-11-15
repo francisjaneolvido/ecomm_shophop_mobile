@@ -2,6 +2,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:shophop/core/session/auth_session_service.dart';
 import 'package:shophop/features/rider/data/services/rider_return_service.dart';
+import 'package:shophop/features/after_sales/presentation/rider_buyer_returns_screen.dart';
 
 class RiderReturnsScreen extends StatefulWidget {
   const RiderReturnsScreen({super.key});
@@ -133,7 +134,11 @@ class _RiderReturnsScreenState extends State<RiderReturnsScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Return-to-Seller Tasks')),
+    appBar: AppBar(title: const Text('Return-to-Seller Tasks'), actions: [
+      IconButton(tooltip: 'Buyer pickup returns',
+        onPressed: () => Navigator.push(context, MaterialPageRoute(
+          builder: (_) => const RiderBuyerReturnsScreen())),
+        icon: const Icon(Icons.assignment_return_outlined))]),
     body: RefreshIndicator(
       onRefresh: _refresh,
       child: ListView(

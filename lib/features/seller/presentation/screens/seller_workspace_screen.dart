@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shophop/shared/realtime/foreground_refresh.dart';
 import 'package:shophop/features/seller/presentation/screens/seller_account_screen.dart';
 import 'package:shophop/features/seller/presentation/screens/seller_feedback_screen.dart';
+import 'package:shophop/features/after_sales/presentation/seller_after_sales_screen.dart';
 
 import 'package:shophop/core/session/auth_session_service.dart';
 import 'package:shophop/core/theme/app_colors.dart';
@@ -220,6 +221,7 @@ class _SellerWorkspaceScreenState extends State<SellerWorkspaceScreen> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<int>(
+                style: Theme.of(context).textTheme.bodyMedium,
                 initialValue: selected,
                 isExpanded: true,
                 decoration: const InputDecoration(
@@ -1085,6 +1087,23 @@ class _SellerWorkspaceScreenState extends State<SellerWorkspaceScreen> {
               subtitle: const Text('Order and sales summary'),
               trailing: const Icon(Icons.chevron_right),
               onTap: _openReports,
+            ),
+            const Divider(height: 1),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.assignment_return_outlined),
+              title: const Text('Buyer Returns'),
+              subtitle: const Text('Review returns and seller refund payments'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                if (_token == null) return;
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => SellerAfterSalesScreen(token: _token!),
+                  ),
+                );
+              },
             ),
             const Divider(height: 1),
             ListTile(

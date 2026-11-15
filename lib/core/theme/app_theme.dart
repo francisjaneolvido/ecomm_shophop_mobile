@@ -153,8 +153,14 @@ class AppTheme {
         isDense: false,
         filled: true,
         fillColor: AppColors.input,
-        hintStyle: text.bodyMedium?.copyWith(color: AppColors.textFaint),
-        labelStyle: text.bodyMedium?.copyWith(color: unselected),
+        hintStyle: text.bodyMedium?.copyWith(
+          color: AppColors.textFaint,
+          fontWeight: FontWeight.w400,
+        ),
+        labelStyle: text.bodyMedium?.copyWith(
+          color: unselected,
+          fontWeight: FontWeight.w400,
+        ),
         helperStyle: text.bodySmall?.copyWith(color: unselected),
         errorStyle: text.bodySmall?.copyWith(color: scheme.error),
         prefixIconColor: unselected,

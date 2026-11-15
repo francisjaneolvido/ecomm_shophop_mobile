@@ -32,28 +32,35 @@ Map<String, dynamic> application({String status = 'pending_review'}) => {
 };
 
 void main() {
-  test('work options send only selected logistics and Branch IDs', () async {
-    final client = MockClient((request) async {
-      expect(request.url.path, endsWith('/rider/work-options'));
-      expect(request.url.queryParameters, {
-        'company_id': '2',
-        'branch_id': '21',
+  test(
+    'work options send selected logistics, Branch and address filters',
+    () async {
+      final client = MockClient((request) async {
+        expect(request.url.path, endsWith('/rider/work-options'));
+        expect(request.url.queryParameters, {
+          'company_id': '2',
+          'branch_id': '21',
+          'municipality': 'City of Calamba',
+          'province': 'Laguna',
+        });
+        expect(request.headers.containsKey('Authorization'), isFalse);
+        return ok({
+          'branches': [
+            {'id': 21, 'name': 'Branch B'},
+          ],
+          'coverage': [],
+        });
       });
-      expect(request.headers.containsKey('Authorization'), isFalse);
-      return ok({
-        'branches': [
-          {'id': 21, 'name': 'Branch B'},
-        ],
-        'coverage': [],
-      });
-    });
-    final result = await RiderManagementService.options(
-      companyId: 2,
-      branchId: 21,
-      client: client,
-    );
-    expect(result.success, isTrue);
-  });
+      final result = await RiderManagementService.options(
+        companyId: 2,
+        branchId: 21,
+        municipality: 'City of Calamba',
+        province: 'Laguna',
+        client: client,
+      );
+      expect(result.success, isTrue);
+    },
+  );
   test(
     'application-only request retains scoped token and validation errors',
     () async {
@@ -116,6 +123,8 @@ void main() {
                     key: form,
                     child: RiderWorkPreferences(
                       companyId: 1,
+                      municipality: 'City of Calamba',
+                      province: 'Laguna',
                       value: selection,
                       onChanged: (v) => selection = v,
                     ),
@@ -140,8 +149,13 @@ void main() {
           expect(form.currentState!.validate(), isTrue);
           await tester.pumpWidget(const SizedBox.shrink());
         },
-        () => MockClient(
-          (request) async => ok({
+        () => MockClient((request) async {
+          expect(
+            request.url.queryParameters['municipality'],
+            'City of Calamba',
+          );
+          expect(request.url.queryParameters['province'], 'Laguna');
+          return ok({
             'branches': [
               {'id': 11, 'name': 'Calamba Branch'},
             ],
@@ -155,8 +169,8 @@ void main() {
                     },
                   ]
                 : [],
-          }),
-        ),
+          });
+        }),
       );
     },
   );
@@ -257,6 +271,7 @@ void main() {
         expect(tester.widget<FilledButton>(button).onPressed, isNull);
         final coverage = find.byType(CheckboxListTile);
         await tester.ensureVisible(coverage);
+        await tester.pumpAndSettle();
         await tester.tap(coverage);
         await tester.pumpAndSettle();
         await tester.ensureVisible(button);

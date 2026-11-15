@@ -12,10 +12,14 @@ class RiderWorkPreferences extends StatefulWidget {
   const RiderWorkPreferences({
     super.key,
     required this.companyId,
+    required this.municipality,
+    required this.province,
     required this.value,
     required this.onChanged,
   });
   final int companyId;
+  final String? municipality;
+  final String? province;
   final RiderWorkSelection value;
   final ValueChanged<RiderWorkSelection> onChanged;
   @override
@@ -41,10 +45,20 @@ class _RiderWorkPreferencesState extends State<RiderWorkPreferences> {
       _busy = true;
       _error = null;
       _coverage = [];
+      _branches = [];
     });
+    if (widget.municipality == null || widget.municipality!.trim().isEmpty) {
+      setState(() {
+        _busy = false;
+        _error = 'Select your municipality in the Address step first.';
+      });
+      return;
+    }
     final result = await RiderManagementService.options(
       companyId: widget.companyId,
       branchId: branchId,
+      municipality: widget.municipality,
+      province: widget.province,
     );
     if (!mounted || generation != _generation) return;
     setState(() {
@@ -86,11 +100,12 @@ class _RiderWorkPreferencesState extends State<RiderWorkPreferences> {
           ),
           const SizedBox(height: 5),
           const Text(
-            'Choose your preferred Branch and nearby barangays. Every rider handles both pickup and delivery. Main Hub confirms your Branch; the Branch confirms official coverage.',
+            'Choose a Branch in your address municipality and nearby barangays. Every rider handles both pickup and delivery. Main Hub confirms your Branch; the Branch confirms official coverage.',
             style: TextStyle(fontSize: 11, color: AppColors.navy, height: 1.5),
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<int>(
+            style: Theme.of(context).textTheme.bodyMedium,
             initialValue: _branches.any((b) => b['id'] == value.branchId)
                 ? value.branchId
                 : null,
@@ -111,13 +126,21 @@ class _RiderWorkPreferencesState extends State<RiderWorkPreferences> {
                   ),
                 )
                 .toList(),
-            onChanged: _busy
+            onChanged: _busy || _branches.isEmpty
                 ? null
                 : (id) {
                     change(RiderWorkSelection(branchId: id));
                     _load(id);
                   },
           ),
+          if (!_busy && _error == null && _branches.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Text(
+                'No available Branch in ${widget.municipality} for this logistics partner.',
+                style: const TextStyle(fontSize: 12, color: AppColors.navy),
+              ),
+            ),
           if (_busy)
             const Padding(
               padding: EdgeInsets.all(12),

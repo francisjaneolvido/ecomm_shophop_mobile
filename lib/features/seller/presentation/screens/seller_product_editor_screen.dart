@@ -341,6 +341,7 @@ class _SellerProductEditorScreenState extends State<SellerProductEditorScreen> {
                     _field('SKU', _sku),
                     _label('Subcategory', isRequired: true),
                     DropdownButtonFormField<String>(
+                      style: Theme.of(context).textTheme.bodyMedium,
                       initialValue: _subcategory,
                       isExpanded: true,
                       decoration: const InputDecoration(

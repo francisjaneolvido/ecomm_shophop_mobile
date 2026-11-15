@@ -372,6 +372,9 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
             });
           },
           onProvinceChanged: (code, name) => setState(() {
+            if (code != _provinceCode) {
+              _workPreferences = const RiderWorkSelection();
+            }
             _provinceCode = code;
             _provinceName = name.isEmpty ? null : name;
             _municipalityCode = null;
@@ -380,6 +383,9 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
             _barangayName = null;
           }),
           onMunicipalityChanged: (code, name) => setState(() {
+            if (code != _municipalityCode) {
+              _workPreferences = const RiderWorkSelection();
+            }
             _municipalityCode = code;
             _municipalityName = name.isEmpty ? null : name;
             _barangayCode = null;
@@ -402,8 +408,12 @@ class _RiderRegistrationScreenState extends State<RiderRegistrationScreen> {
             if (_logisticsPartnerId != null) ...[
               const SizedBox(height: 18),
               RiderWorkPreferences(
-                key: ValueKey(_logisticsPartnerId),
+                key: ValueKey(
+                  '$_logisticsPartnerId:$_provinceCode:$_municipalityCode',
+                ),
                 companyId: _logisticsPartnerId!,
+                municipality: _municipalityName,
+                province: _provinceName,
                 value: _workPreferences,
                 onChanged: (value) => setState(() => _workPreferences = value),
               ),

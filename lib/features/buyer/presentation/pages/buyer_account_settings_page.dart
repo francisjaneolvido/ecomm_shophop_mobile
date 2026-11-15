@@ -568,6 +568,7 @@ class _BuyerAccountSecurityPageState extends State<BuyerAccountSecurityPage> {
                       ],
                     ),
                     DropdownButtonFormField<String>(
+                      style: Theme.of(context).textTheme.bodyMedium,
                       key: ValueKey(_sex),
                       initialValue: _sex,
                       isExpanded: true,

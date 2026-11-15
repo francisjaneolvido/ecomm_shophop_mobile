@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shophop/core/session/auth_session_service.dart';
 import 'package:shophop/core/theme/app_colors.dart';
 import 'package:shophop/features/auth/presentation/screens/login_screen.dart';
 
@@ -6,10 +7,12 @@ import 'package:shophop/features/auth/presentation/screens/login_screen.dart';
 class LandingScreen extends StatelessWidget {
   const LandingScreen({super.key});
 
-  void _getStarted(BuildContext context) {
+  Future<void> _getStarted(BuildContext context) async {
+    await AuthSessionService.markWelcomeComplete();
+    if (!context.mounted) return;
     Navigator.of(
       context,
-    ).push(MaterialPageRoute(builder: (_) => const LoginScreen()));
+    ).pushReplacement(MaterialPageRoute(builder: (_) => const LoginScreen()));
   }
 
   @override
@@ -47,6 +50,7 @@ class LandingScreen extends StatelessWidget {
                             'Your marketplace,\none hop away.',
                             textAlign: TextAlign.center,
                             style: TextStyle(
+                              fontFamily: 'Poppins',
                               color: AppColors.navy,
                               fontSize: 30,
                               height: 1.12,
@@ -61,6 +65,7 @@ class LandingScreen extends StatelessWidget {
                               'Shop local finds, grow your store, and keep every delivery connected in one place.',
                               textAlign: TextAlign.center,
                               style: TextStyle(
+                                fontFamily: 'Poppins',
                                 color: AppColors.navy.withValues(alpha: .55),
                                 fontSize: 12.5,
                                 height: 1.6,
@@ -87,6 +92,7 @@ class LandingScreen extends StatelessWidget {
                               child: const Text(
                                 'Get Started',
                                 style: TextStyle(
+                                  fontFamily: 'Poppins',
                                   fontSize: 14,
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -340,6 +346,7 @@ class _MiniFeature extends StatelessWidget {
         Text(
           label,
           style: const TextStyle(
+            fontFamily: 'Poppins',
             color: AppColors.navy,
             fontSize: 11,
             fontWeight: FontWeight.w700,

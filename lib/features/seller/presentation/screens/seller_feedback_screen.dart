@@ -158,6 +158,7 @@ class _SellerFeedbackScreenState extends State<SellerFeedbackScreen> {
                   },
                 ),
                 DropdownButton<String>(
+                  style: Theme.of(context).textTheme.bodyMedium,
                   value: _rating,
                   isExpanded: true,
                   items: [

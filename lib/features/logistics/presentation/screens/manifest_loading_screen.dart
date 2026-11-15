@@ -401,6 +401,7 @@ class _ManifestLoadingScreenState extends State<ManifestLoadingScreen> {
           ),
           const SizedBox(height: 8),
           DropdownButtonFormField<int>(
+            style: Theme.of(context).textTheme.bodyMedium,
             key: ValueKey(_manifestId),
             initialValue: _manifestId,
             isExpanded: true,

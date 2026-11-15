@@ -260,6 +260,12 @@ class PersonalDetailsStep extends StatelessWidget {
         const SizedBox(height: 8),
 
         DropdownButtonFormField<String>(
+          style: const TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+            color: AppColors.text,
+          ),
           initialValue: selectedSex,
           isExpanded: true,
           icon: const Icon(

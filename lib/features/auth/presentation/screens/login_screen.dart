@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:shophop/features/auth/data/services/auth_service.dart';
+import 'package:shophop/features/auth/data/services/google_auth_service.dart';
 import 'package:shophop/core/session/auth_session_service.dart';
 import 'package:shophop/core/theme/app_colors.dart';
 import 'package:shophop/features/auth/presentation/screens/account_type_screen.dart';
@@ -34,6 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   bool _rememberMe = false;
   bool _isSigningIn = false;
+  String? _pendingGoogleIdToken;
 
   @override
   void dispose() {
@@ -46,10 +48,10 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  Future<void> _signIn() async {
+  Future<void> _signIn({AuthApiResult? googleResult}) async {
     FocusScope.of(context).unfocus();
 
-    if (!_formKey.currentState!.validate()) {
+    if (googleResult == null && !_formKey.currentState!.validate()) {
       return;
     }
 
@@ -61,11 +63,13 @@ class _LoginScreenState extends State<LoginScreen> {
       _isSigningIn = true;
     });
 
-    final result = await AuthService.login(
-      email: _emailController.text,
-      password: _passwordController.text,
-      rememberMe: _rememberMe,
-    );
+    final result =
+        googleResult ??
+        await AuthService.login(
+          email: _emailController.text,
+          password: _passwordController.text,
+          rememberMe: _rememberMe,
+        );
 
     if (!mounted) {
       return;
@@ -159,6 +163,22 @@ class _LoginScreenState extends State<LoginScreen> {
             'Approved $accountType mobile dashboard is not connected yet.',
           );
           return;
+        }
+
+        final pendingGoogleToken = _pendingGoogleIdToken;
+        _pendingGoogleIdToken = null;
+        if (pendingGoogleToken != null &&
+            googleResult == null &&
+            (accountType == 'buyer' || accountType == 'seller')) {
+          final linked = await AuthService.linkGoogle(
+            token: token,
+            idToken: pendingGoogleToken,
+          );
+          if (mounted && !linked.success) {
+            _showMessage(
+              'Signed in, but Google linking failed: ${linked.message}',
+            );
+          }
         }
 
         await AuthSessionService.saveSession(
@@ -281,12 +301,37 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  void _continueWithGoogle() {
+  Future<void> _continueWithGoogle() async {
     FocusScope.of(context).unfocus();
+    if (_isSigningIn) return;
+    setState(() => _isSigningIn = true);
+    try {
+      final idToken = await GoogleAuthService.getIdToken();
+      final result = await AuthService.googleLogin(idToken: idToken);
+      if (!mounted) return;
+      setState(() => _isSigningIn = false);
 
-    _showMessage(
-      'Google sign-in is available on ShopHop Web, but the mobile OAuth callback/token endpoint is not exposed in this mobile project yet.',
-    );
+      if (result.status == 'link_required') {
+        _pendingGoogleIdToken = idToken;
+        _emailController.text = result.data['email']?.toString() ?? '';
+        _showMessage(result.message);
+        return;
+      }
+      if (!result.success) {
+        _showMessage(result.message);
+        return;
+      }
+      _emailController.text = result.data['email']?.toString() ?? '';
+      await _signIn(googleResult: result);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _isSigningIn = false);
+      _showMessage(
+        error is StateError
+            ? error.message.toString()
+            : 'Google sign-in was cancelled or could not start. Please try again.',
+      );
+    }
   }
 
   void _forgotPassword() {
@@ -660,8 +705,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         SizedBox(height: compact ? 18 : 24),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                        Wrap(
+                          alignment: WrapAlignment.center,
+                          crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
                             Text(
                               'New to ShopHop?',

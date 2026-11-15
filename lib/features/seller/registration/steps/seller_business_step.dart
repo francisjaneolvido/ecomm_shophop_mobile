@@ -87,7 +87,7 @@ class SellerBusinessStep extends StatelessWidget {
           style: SellerUi.text(
             color: AppColors.navy,
             fontSize: 13,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w400,
           ),
           decoration: SellerUi.inputDecoration(
             hint: 'Enter your registered business name',

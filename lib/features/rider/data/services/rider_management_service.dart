@@ -66,12 +66,16 @@ class RiderManagementService {
   static Future<AuthApiResult> options({
     int? companyId,
     int? branchId,
+    String? municipality,
+    String? province,
     http.Client? client,
   }) {
     final query = Uri(
       queryParameters: {
         if (companyId != null) 'company_id': '$companyId',
         if (branchId != null) 'branch_id': '$branchId',
+        if (municipality != null) 'municipality': municipality,
+        if (province != null) 'province': province,
       },
     ).query;
     return request(

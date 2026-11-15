@@ -286,6 +286,7 @@ class _SellerAccountScreenState extends State<SellerAccountScreen> {
                   ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
+                  style: Theme.of(context).textTheme.bodyMedium,
                   initialValue: _sex,
                   decoration: const InputDecoration(
                     labelText: 'Sex',

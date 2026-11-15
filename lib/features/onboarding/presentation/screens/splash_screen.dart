@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import 'package:shophop/core/session/auth_session_service.dart';
 import 'package:shophop/core/theme/app_colors.dart';
+import 'package:shophop/features/auth/presentation/screens/login_screen.dart';
 import 'package:shophop/features/buyer/presentation/screens/buyer_home_screen.dart';
 import 'package:shophop/features/logistics/presentation/screens/logistics_scanner_screen.dart';
 import 'package:shophop/features/linehaul/presentation/screens/linehaul_driver_home_screen.dart';
@@ -220,7 +221,11 @@ class _SplashScreenState extends State<SplashScreen>
 
     if (!mounted) return;
 
-    Widget nextScreen = const LandingScreen();
+    Widget nextScreen = await AuthSessionService.hasCompletedWelcome()
+        ? const LoginScreen()
+        : const LandingScreen();
+
+    if (!mounted) return;
 
     if (rememberedSession != null) {
       switch (rememberedSession.accountType) {
@@ -289,11 +294,11 @@ class _SplashScreenState extends State<SplashScreen>
         decoration: BoxDecoration(
           shape: BoxShape.circle,
 
-          color: AppColors.teal,
+          color: AppColors.pink,
 
           boxShadow: [
             BoxShadow(
-              color: AppColors.teal.withValues(alpha: .7),
+              color: AppColors.pink.withValues(alpha: .7),
 
               blurRadius: 12,
             ),
@@ -359,7 +364,7 @@ class _SplashScreenState extends State<SplashScreen>
                         decoration: BoxDecoration(
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.teal.withValues(
+                              color: AppColors.pink.withValues(
                                 alpha: .25 * _glowAnimation.value,
                               ),
 
@@ -458,6 +463,7 @@ class _SplashScreenState extends State<SplashScreen>
                 children: [
                   RichText(
                     text: TextSpan(
+                      style: const TextStyle(fontFamily: 'Poppins'),
                       children: [
                         TextSpan(
                           text: "Shop",
@@ -477,7 +483,7 @@ class _SplashScreenState extends State<SplashScreen>
                           text: "Hop",
 
                           style: TextStyle(
-                            color: AppColors.teal,
+                            color: AppColors.pink,
 
                             fontSize: 32,
 
@@ -494,7 +500,8 @@ class _SplashScreenState extends State<SplashScreen>
                     "HOP IN. SHOP MORE.",
 
                     style: TextStyle(
-                      color: AppColors.teal,
+                      fontFamily: 'Poppins',
+                      color: AppColors.pink,
 
                       fontSize: 11,
 
@@ -517,7 +524,7 @@ class _SplashScreenState extends State<SplashScreen>
 
                         backgroundColor: Colors.white.withValues(alpha: .15),
 
-                        valueColor: AlwaysStoppedAnimation(AppColors.teal),
+                        valueColor: AlwaysStoppedAnimation(AppColors.pink),
                       ),
                     ),
                   ),

@@ -97,7 +97,7 @@ class RiderRegistrationProgress extends StatelessWidget {
                     duration: const Duration(milliseconds: 180),
                     height: 2,
                     color: lineStep < currentStep
-                        ? const Color(0xFF166534)
+                        ? AppColors.pink
                         : AppColors.grayBorder,
                   ),
                 );
@@ -114,12 +114,10 @@ class RiderRegistrationProgress extends StatelessWidget {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: completed || active
-                      ? const Color(0xFF166534)
-                      : Colors.white,
+                  color: completed || active ? AppColors.pink : Colors.white,
                   border: Border.all(
                     color: completed || active
-                        ? const Color(0xFF166534)
+                        ? AppColors.pink
                         : AppColors.grayBorder,
                     width: 1.5,
                   ),

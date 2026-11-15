@@ -601,6 +601,7 @@ class _AddressStepState extends State<AddressStep> {
         const SizedBox(height: 8),
 
         DropdownButtonFormField<String>(
+          style: Theme.of(context).textTheme.bodyMedium,
           // Re-create the form field when an upstream selection resets it.
           // initialValue by itself is not a controlled value.
           key: ValueKey<String>('$label|$value'),

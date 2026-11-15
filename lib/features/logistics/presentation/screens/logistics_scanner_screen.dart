@@ -514,6 +514,7 @@ class _LogisticsScannerScreenState extends State<LogisticsScannerScreen> {
           )
         else
           DropdownButtonFormField<int>(
+            style: Theme.of(context).textTheme.bodyMedium,
             key: ValueKey('$_branchId-$_branchLocked'),
             initialValue: _branchId,
             isExpanded: true,

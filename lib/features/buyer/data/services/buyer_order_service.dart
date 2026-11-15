@@ -26,6 +26,7 @@ class BuyerOrderItemData {
     this.id = 0,
     this.canRate = false,
     this.rating,
+    this.returnRemaining,
   });
   final String name;
   final String variant;
@@ -35,6 +36,8 @@ class BuyerOrderItemData {
   final int id;
   final bool canRate;
   final int? rating;
+  final int? returnRemaining;
+  int get availableReturnQuantity => returnRemaining ?? quantity;
 
   factory BuyerOrderItemData.fromJson(Map<String, dynamic> json) =>
       BuyerOrderItemData(
@@ -46,6 +49,7 @@ class BuyerOrderItemData {
         id: int.tryParse(json['id'].toString()) ?? 0,
         canRate: json['can_rate'] == true,
         rating: int.tryParse(json['rating'].toString()),
+        returnRemaining: int.tryParse(json['return_remaining'].toString()),
       );
 }
 
@@ -73,6 +77,8 @@ class BuyerOrderData {
     required this.trackingCode,
     required this.failureReason,
     required this.canConfirmReceipt,
+    this.canRequestReturn = false,
+    this.returnDeadlineAt,
     required this.items,
     required this.timeline,
     this.status = '',
@@ -90,6 +96,8 @@ class BuyerOrderData {
   final String? trackingCode;
   final String? failureReason;
   final bool canConfirmReceipt;
+  final bool canRequestReturn;
+  final String? returnDeadlineAt;
   final List<BuyerOrderItemData> items;
   final List<BuyerOrderMilestone> timeline;
 
@@ -109,6 +117,8 @@ class BuyerOrderData {
       trackingCode: json['tracking_code']?.toString(),
       failureReason: json['failure_reason']?.toString(),
       canConfirmReceipt: json['can_confirm_receipt'] == true,
+      canRequestReturn: json['can_request_return'] == true,
+      returnDeadlineAt: json['return_deadline_at']?.toString(),
       items: rawItems is List
           ? rawItems
                 .whereType<Map>()

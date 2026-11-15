@@ -4,6 +4,7 @@ import 'package:shophop/core/config/api_config.dart';
 import 'package:shophop/core/theme/app_colors.dart';
 import 'package:shophop/features/buyer/data/services/buyer_order_service.dart';
 import 'package:shophop/features/buyer/presentation/pages/buyer_item_rating_page.dart';
+import 'package:shophop/features/after_sales/presentation/buyer_after_sales_page.dart';
 
 class BuyerOrdersPage extends StatefulWidget {
   const BuyerOrdersPage({
@@ -105,7 +106,7 @@ class _BuyerOrdersPageState extends State<BuyerOrdersPage> {
       builder: (context) => AlertDialog(
         title: const Text('Confirm received?'),
         content: Text(
-          'Confirm only if you have received all items in ${order.displayId}. This completes the order.',
+          'Confirm that you physically received all items in ${order.displayId}. You can still request a return within 7 days of delivery.',
         ),
         actions: [
           TextButton(
@@ -143,6 +144,15 @@ class _BuyerOrdersPageState extends State<BuyerOrdersPage> {
     } finally {
       if (mounted) setState(() => _busyOrderId = null);
     }
+  }
+
+  Future<void> _openReturn(BuyerOrderData order) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => BuyerAfterSalesPage(token: widget.token, order: order),
+      ),
+    );
+    if (mounted) await _load();
   }
 
   static const _groups = [
@@ -757,20 +767,72 @@ class _BuyerOrdersPageState extends State<BuyerOrdersPage> {
                 ],
               ),
             ),
-            if (order.canConfirmReceipt)
-              SizedBox(
+            if (order.canConfirmReceipt || order.returnDeadlineAt != null) ...[
+              const SizedBox(height: 8),
+              Container(
                 width: double.infinity,
-                child: FilledButton(
-                  onPressed: _busyOrderId == null
-                      ? () => _confirmReceipt(order)
-                      : null,
-                  child: Text(
-                    _busyOrderId == order.id
-                        ? 'Confirming…'
-                        : 'Confirm order received',
-                  ),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceSoft,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'After delivery',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    if (order.returnDeadlineAt != null)
+                      Text(
+                        'Return by ${_eventTime(order.returnDeadlineAt!)}',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    if (order.canConfirmReceipt)
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton(
+                          onPressed: _busyOrderId == null
+                              ? () => _confirmReceipt(order)
+                              : null,
+                          child: Text(
+                            _busyOrderId == order.id
+                                ? 'Confirming…'
+                                : 'Confirm received',
+                          ),
+                        ),
+                      ),
+                    if (order.canRequestReturn)
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () => _openReturn(order),
+                          icon: const Icon(Icons.assignment_return_outlined),
+                          label: const Text('Request return/refund'),
+                        ),
+                      )
+                    else if (order.returnDeadlineAt != null)
+                      const Text(
+                        'The 7-day return window has ended.',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    const Text(
+                      'Confirming receipt does not remove your return option during the window.',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ],
                 ),
               ),
+            ],
           ],
         ),
       ),

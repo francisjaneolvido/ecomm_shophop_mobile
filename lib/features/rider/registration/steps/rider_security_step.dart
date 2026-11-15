@@ -261,7 +261,11 @@ class _RiderSecurityStepState extends State<RiderSecurityStep> {
         const SizedBox(width: 10),
         Expanded(
           child: Text(
-            'After email verification, please wait for the Logistics / Sorting Center approval. Your approval status will be sent to your registered email.',
+            'After creating your account, we will send a 6-digit verification '
+            'code to your email. Enter the code on the next screen to verify '
+            'your email. Your Rider application will then wait for Logistics / '
+            'Sorting Center approval. Your approval status will be sent to '
+            'your registered email.',
             style: TextStyle(
               color: AppColors.navy.withValues(alpha: 0.55),
               fontSize: 10.5,

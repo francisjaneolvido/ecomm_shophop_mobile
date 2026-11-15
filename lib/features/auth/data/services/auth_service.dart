@@ -333,6 +333,28 @@ class AuthService {
     });
   }
 
+  static Future<AuthApiResult> googleLogin({required String idToken}) {
+    return _postJson('${ApiConfig.baseUrl}/google/login', {
+      'id_token': idToken,
+    });
+  }
+
+  static Future<AuthApiResult> linkGoogle({
+    required String token,
+    required String idToken,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/google/link'),
+        headers: {..._jsonHeaders, 'Authorization': 'Bearer $token'},
+        body: jsonEncode({'id_token': idToken}),
+      );
+      return AuthApiResult.fromResponse(response);
+    } catch (_) {
+      return _networkError();
+    }
+  }
+
   static Future<AuthApiResult> me({required String token}) async {
     try {
       final response = await http.get(

@@ -92,6 +92,7 @@ class _RiderCodRemittanceScreenState extends State<RiderCodRemittanceScreen> {
                   'Enter the actual cash handed over. Your full collected COD remains owed until independently verified. Earnings do not reduce it.',
                 ),
                 DropdownButtonFormField<int>(
+                  style: Theme.of(context).textTheme.bodyMedium,
                   initialValue: facility,
                   isExpanded: true,
                   decoration: const InputDecoration(

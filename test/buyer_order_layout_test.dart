@@ -230,6 +230,81 @@ void main() {
   );
 
   testWidgets(
+    'delivered order keeps return action after receipt confirmation',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      var confirmed = false;
+      var confirmationCalls = 0;
+      await http.runWithClient(
+        () async {
+          await tester.pumpWidget(page());
+          await tester.pumpAndSettle();
+          await tester.scrollUntilVisible(find.text('After delivery'), 150);
+          expect(find.text('Confirm received'), findsOneWidget);
+          expect(find.text('Request return/refund'), findsOneWidget);
+
+          await tester.ensureVisible(find.text('Confirm received'));
+          await tester.pumpAndSettle();
+          await tester.fling(
+            find.byType(ListView).first,
+            const Offset(0, -260),
+            1000,
+          );
+          await tester.pumpAndSettle();
+          await tester.tap(find.text('Confirm received'));
+          await tester.pumpAndSettle();
+          expect(find.textContaining('still request a return'), findsOneWidget);
+          await tester.tap(find.text('Confirm'));
+          await tester.pumpAndSettle();
+          expect(confirmationCalls, 1);
+          expect(find.text('Confirm received'), findsNothing);
+          await tester.scrollUntilVisible(
+            find.text('Request return/refund'),
+            150,
+          );
+          await tester.tap(find.text('Request return/refund'));
+          await tester.pumpAndSettle();
+          expect(find.text('Request for SHP-1'), findsOneWidget);
+          expect(find.text('Refund wallet unavailable'), findsOneWidget);
+          expect(find.text('Submit return request'), findsOneWidget);
+          expect(tester.takeException(), isNull);
+        },
+        () => MockClient((request) async {
+          if (request.url.path.endsWith('/orders/1/confirm-receipt')) {
+            confirmationCalls++;
+            confirmed = true;
+            return http.Response('{"success":true}', 200);
+          }
+          if (request.url.path.endsWith('/buyer/after-sales')) {
+            return http.Response('{"success":true,"data":{"cases":[]}}', 200);
+          }
+          if (request.url.path.endsWith('/buyer/wallet')) {
+            return http.Response(
+              '{"success":false,"message":"Wallet setup pending."}',
+              503,
+            );
+          }
+          final data = order(1, confirmed ? 'completed' : 'to-receive');
+          data['can_confirm_receipt'] = !confirmed;
+          data['can_request_return'] = true;
+          data['return_deadline_at'] = DateTime.now()
+              .add(const Duration(days: 1))
+              .toUtc()
+              .toIso8601String();
+          (data['items'] as List).first.addAll({
+            'id': 7,
+            'return_remaining': 2,
+          });
+          return response([data]);
+        }),
+      );
+    },
+  );
+
+  testWidgets(
     'empty status has a clear recovery and large text does not overflow',
     (tester) async {
       tester.view.physicalSize = const Size(320, 900);

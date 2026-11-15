@@ -22,10 +22,29 @@ class AuthSessionService {
   static const String _emailKey = 'shophop_auth_email';
   static const String _accountTypeKey = 'shophop_auth_account_type';
   static const String _rememberKey = 'shophop_auth_remember';
+  static const String _welcomeCompletedKey = 'shophop_welcome_completed';
 
-  // The active session always lives in memory while the app is open.
-  // Secure storage is only used when the user explicitly enables Remember me.
+  // The active session lives in memory while the app is open. Login credentials
+  // are persisted only with Remember me; the welcome flag is independent.
   static AuthSession? _memorySession;
+
+  /// The welcome screen is a one-time introduction, independent of Remember me.
+  static Future<bool> hasCompletedWelcome() async {
+    try {
+      return await _storage.read(key: _welcomeCompletedKey) == 'true';
+    } catch (error) {
+      debugPrint('ShopHop welcome preference read failed: $error');
+      return false;
+    }
+  }
+
+  static Future<void> markWelcomeComplete() async {
+    try {
+      await _storage.write(key: _welcomeCompletedKey, value: 'true');
+    } catch (error) {
+      debugPrint('ShopHop welcome preference save failed: $error');
+    }
+  }
 
   static Future<void> saveSession({
     required String token,
@@ -40,6 +59,7 @@ class AuthSessionService {
     );
 
     _memorySession = session;
+    await markWelcomeComplete();
 
     if (!rememberMe) {
       // Prevent a previous remembered login from surviving after the user
@@ -100,6 +120,7 @@ class AuthSessionService {
         accountType: accountType,
       );
       _memorySession = session;
+      await markWelcomeComplete();
       return session;
     } catch (error, stackTrace) {
       debugPrint('ShopHop remembered session read failed: $error');
