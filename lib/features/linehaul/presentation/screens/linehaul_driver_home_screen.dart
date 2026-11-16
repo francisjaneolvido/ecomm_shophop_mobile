@@ -182,6 +182,8 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
       _message = null;
     });
     try {
+      await WidgetsBinding.instance.endOfFrame;
+      if (!mounted || !_scanning) return;
       await _camera.start();
     } catch (_) {
       if (mounted) {

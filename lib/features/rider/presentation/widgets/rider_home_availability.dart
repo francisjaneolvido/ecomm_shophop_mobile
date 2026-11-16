@@ -21,6 +21,14 @@ class RiderHomeAvailability extends StatelessWidget {
   final bool saving, enabled;
   final ValueChanged<String> onChanged;
 
+  static Color statusColor(String? state) => switch (state) {
+    'online' => const Color(0xFF15803D),
+    'on_break' => const Color(0xFFB45309),
+    'offline' => const Color(0xFF64748B),
+    'busy' => const Color(0xFF1D4ED8),
+    _ => AppColors.textMuted,
+  };
+
   @override
   Widget build(BuildContext context) {
     final busy = state == 'busy';
@@ -103,14 +111,34 @@ class RiderHomeAvailability extends StatelessWidget {
                         ),
                       ),
                     ),
-                  Text(
-                    saving ? 'Updating...' : label,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: state == 'offline' || state == null
-                          ? AppColors.textMuted
-                          : AppColors.pink,
-                      fontWeight: FontWeight.w600,
+                  Container(
+                    key: const ValueKey('rider-availability-status'),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 9,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: statusColor(state).withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          busy ? Icons.lock_outline : Icons.circle,
+                          size: busy ? 13 : 7,
+                          color: statusColor(state),
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          saving ? 'Updating...' : label,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: statusColor(state),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -133,7 +161,6 @@ class RiderHomeAvailability extends StatelessWidget {
                               enabled &&
                                   state != null &&
                                   !saving &&
-                                  !busy &&
                                   state != entry.key
                               ? () => onChanged(entry.key)
                               : null,
@@ -145,20 +172,28 @@ class RiderHomeAvailability extends StatelessWidget {
                             minimumSize: const Size(0, 44),
                             foregroundColor: state == entry.key
                                 ? Colors.white
-                                : AppColors.navy,
+                                : statusColor(entry.key),
                             disabledForegroundColor: state == entry.key
                                 ? Colors.white
-                                : AppColors.textMuted,
+                                : statusColor(
+                                    entry.key,
+                                  ).withValues(alpha: 0.65),
                             backgroundColor: state == entry.key
-                                ? AppColors.pink
-                                : Colors.white,
+                                ? statusColor(entry.key)
+                                : statusColor(
+                                    entry.key,
+                                  ).withValues(alpha: 0.06),
                             disabledBackgroundColor: state == entry.key
-                                ? AppColors.pink
-                                : Colors.white,
+                                ? statusColor(entry.key)
+                                : statusColor(
+                                    entry.key,
+                                  ).withValues(alpha: 0.06),
                             side: BorderSide(
                               color: state == entry.key
-                                  ? AppColors.pink
-                                  : AppColors.border,
+                                  ? statusColor(entry.key)
+                                  : statusColor(
+                                      entry.key,
+                                    ).withValues(alpha: 0.35),
                             ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(6),
@@ -168,7 +203,18 @@ class RiderHomeAvailability extends StatelessWidget {
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                          child: Text(entry.value, textAlign: TextAlign.center),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(switch (entry.key) {
+                                'online' => Icons.check_circle_outline,
+                                'on_break' => Icons.pause_circle_outline,
+                                _ => Icons.power_settings_new,
+                              }, size: 18),
+                              const SizedBox(height: 4),
+                              Text(entry.value, textAlign: TextAlign.center),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -180,7 +226,7 @@ class RiderHomeAvailability extends StatelessWidget {
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
                     busy
-                        ? 'Finish your active route before changing availability.'
+                        ? 'Busy while your route has pending work. Routes complete automatically after all deliveries and required branch handovers are resolved. Tap a status to refresh.'
                         : 'Refresh to load your current availability.',
                     style: const TextStyle(
                       fontSize: 11,

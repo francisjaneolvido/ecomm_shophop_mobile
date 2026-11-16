@@ -68,7 +68,15 @@ class _RiderCodRemittanceScreenState extends State<RiderCodRemittanceScreen> {
   }
 
   Future<void> _handover() async {
-    if (_submitting || _token == null || _selected.isEmpty) return;
+    if (_submitting ||
+        _token == null ||
+        _selected.isEmpty ||
+        !_overview.hasAssignedBranch) {
+      return;
+    }
+    // Send the displayed assignment as an assertion so reassignment during the
+    // dialog cannot silently redirect a physical cash handover.
+    final assignedBranchId = int.parse('${_overview.receivingFacility!['id']}');
     final rows = _overview.collections
         .where((row) => _selected.contains(row['collection_id']))
         .toList();
@@ -77,7 +85,6 @@ class _RiderCodRemittanceScreenState extends State<RiderCodRemittanceScreen> {
         TextEditingController(text: '${row['outstanding']}'),
     ];
     final reference = TextEditingController();
-    int? facility;
     String? validation;
     final dialog = DialogRoute<bool>(
       context: context,
@@ -91,22 +98,11 @@ class _RiderCodRemittanceScreenState extends State<RiderCodRemittanceScreen> {
                 const Text(
                   'Enter the actual cash handed over. Your full collected COD remains owed until independently verified. Earnings do not reduce it.',
                 ),
-                DropdownButtonFormField<int>(
-                  style: Theme.of(context).textTheme.bodyMedium,
-                  initialValue: facility,
-                  isExpanded: true,
+                InputDecorator(
                   decoration: const InputDecoration(
-                    labelText: 'Receiving branch / facility',
+                    labelText: 'Remit to your assigned branch',
                   ),
-                  items: _overview.facilities
-                      .map(
-                        (row) => DropdownMenuItem<int>(
-                          value: int.tryParse('${row['id']}'),
-                          child: Text('${row['name']}'),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (value) => facility = value,
+                  child: Text('${_overview.receivingFacility?['name']}'),
                 ),
                 TextField(
                   controller: reference,
@@ -138,8 +134,7 @@ class _RiderCodRemittanceScreenState extends State<RiderCodRemittanceScreen> {
             ),
             FilledButton(
               onPressed: () {
-                if (facility == null ||
-                    reference.text.trim().length < 4 ||
+                if (reference.text.trim().length < 4 ||
                     controllers.any(
                       (c) =>
                           !RegExp(
@@ -149,7 +144,7 @@ class _RiderCodRemittanceScreenState extends State<RiderCodRemittanceScreen> {
                     )) {
                   update(
                     () => validation =
-                        'Choose a facility, provide a reference, and enter positive cash amounts with at most two decimal places.',
+                        'Provide a reference and enter positive cash amounts with at most two decimal places.',
                   );
                   return;
                 }
@@ -179,7 +174,7 @@ class _RiderCodRemittanceScreenState extends State<RiderCodRemittanceScreen> {
     setState(() => _submitting = true);
     final response = await RiderDeliveryService.submitCodBatch(
       token: _token!,
-      facilityId: facility!,
+      facilityId: assignedBranchId,
       idempotencyKey: 'mobile-${DateTime.now().microsecondsSinceEpoch}',
       reference: evidence,
       items: items,
@@ -222,6 +217,18 @@ class _RiderCodRemittanceScreenState extends State<RiderCodRemittanceScreen> {
                 ),
                 if (_error != null)
                   Text(_error!, style: const TextStyle(color: Colors.red)),
+                if (_overview.hasAssignedBranch)
+                  ListTile(
+                    leading: const Icon(Icons.store_outlined),
+                    title: const Text('Your remittance branch'),
+                    subtitle: Text('${_overview.receivingFacility?['name']}'),
+                  )
+                else
+                  Text(
+                    _overview.remittanceBlockedReason ??
+                        'Assigned branch unavailable. Refresh or contact your logistics administrator.',
+                    style: const TextStyle(color: Colors.red),
+                  ),
                 Text('COD to collect: ?${_overview.toCollect}'),
                 Text('Collected: ₱${_overview.collected}'),
                 Text('Verified remitted: ₱${_overview.remitted}'),
@@ -254,7 +261,10 @@ class _RiderCodRemittanceScreenState extends State<RiderCodRemittanceScreen> {
                   ),
                 ),
                 FilledButton.icon(
-                  onPressed: _selected.isEmpty || _submitting
+                  onPressed:
+                      _selected.isEmpty ||
+                          _submitting ||
+                          !_overview.hasAssignedBranch
                       ? null
                       : _handover,
                   icon: const Icon(Icons.receipt_long),

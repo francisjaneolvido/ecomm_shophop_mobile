@@ -95,6 +95,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
   String? _photoUrl;
   String? _availability;
   bool _updatingAvailability = false;
+  bool _availabilityDialogOpen = false;
   String _logisticsCenter = 'Logistics / Sorting Center';
   String? _sortingCenterName;
   String? _sortingCenterCode;
@@ -117,6 +118,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
           mounted &&
           _requestFuture == null &&
           !_updatingAvailability &&
+          !_availabilityDialogOpen &&
           _tab != 2 &&
           _busyDeliveryId == null &&
           _busyReturnId == null &&
@@ -1238,7 +1240,79 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
         _requestFuture != null ||
         _token == null ||
         _availability == state ||
-        _availability == 'busy') {
+        _availabilityDialogOpen) {
+      return;
+    }
+    _availabilityDialogOpen = true;
+    bool confirmed = false;
+    try {
+      if (_availability == 'busy') {
+        // Refresh first: the route may have completed automatically since the last sync.
+        await _load(showLoader: false);
+        if (!mounted) return;
+        if (_availability == 'busy') {
+          await showDialog<void>(
+            context: context,
+            builder: (dialogContext) => AlertDialog(
+              title: const Text('Route still active'),
+              content: const Text(
+                'Your route still has pending deliveries, pickups, or required parcel returns. '
+                'Routes complete automatically once all parcel outcomes and branch handovers are resolved. '
+                'Finish the remaining work, then refresh to update your availability.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Got it'),
+                ),
+              ],
+            ),
+          );
+          return;
+        }
+        if (_availability == null || _availability == state) return;
+      }
+      if (!mounted) return;
+      final label = switch (state) {
+        'online' => 'Online',
+        'on_break' => 'On break',
+        _ => 'Offline',
+      };
+      final description = switch (state) {
+        'online' => 'You will be available for new route assignments.',
+        'on_break' =>
+          'You will be marked on break and unavailable for new route assignments.',
+        _ =>
+          'You will be marked offline and unavailable for new route assignments.',
+      };
+      confirmed =
+          await showDialog<bool>(
+            context: context,
+            builder: (dialogContext) => AlertDialog(
+              title: Text('Change availability to $label?'),
+              content: Text(description),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext, false),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  key: const ValueKey('confirm-rider-availability'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: RiderHomeAvailability.statusColor(state),
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: () => Navigator.pop(dialogContext, true),
+                  child: Text('Confirm $label'),
+                ),
+              ],
+            ),
+          ) ??
+          false;
+    } finally {
+      _availabilityDialogOpen = false;
+    }
+    if (!confirmed || !mounted || _token == null || _availability == 'busy') {
       return;
     }
     setState(() => _updatingAvailability = true);
@@ -1753,7 +1827,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
           _sectionHeader(
             title: 'My earnings',
             subtitle:
-                'Compensation recorded and paid by your Logistics Partner.',
+                'Per-parcel commissions and other Logistics compensation.',
           ),
           const SizedBox(height: 10),
           Row(
@@ -1791,7 +1865,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
           ),
           const SizedBox(height: 12),
           _notice(
-            'Your Logistics Partner pays these earnings separately. Earnings never reduce collected COD or depend on Seller settlement.',
+            'Parcel commission is Pending after successful delivery and Available after Admin distribution. Earnings never reduce collected COD. Commission is deducted once from the Logistics share.',
             Icons.info_outline_rounded,
           ),
           const SizedBox(height: 12),
@@ -1969,12 +2043,30 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  _humanize(row['status']?.toString() ?? 'Pending'),
+                  _humanize(RiderEarningsOverview.statusLabel(row)),
                   style: TextStyle(
                     color: AppColors.navy.withValues(alpha: 0.5),
                     fontSize: 10.5,
                   ),
                 ),
+                if (row['funding_source'] == 'order_distribution') ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    RiderEarningsOverview.parcelBreakdown(row),
+                    style: const TextStyle(
+                      fontSize: 10.5,
+                      color: AppColors.navy,
+                    ),
+                  ),
+                  if (row['distribution_reference'] != null)
+                    Text(
+                      'Distribution: ${row['distribution_reference']}',
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: AppColors.navy,
+                      ),
+                    ),
+                ],
               ],
             ),
           ),

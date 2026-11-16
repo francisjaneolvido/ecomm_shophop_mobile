@@ -358,7 +358,9 @@ void main() {
         expect(find.text('Return to branch'), findsNothing);
         expect(find.textContaining('Bring collected parcels to'), findsNothing);
         expect(
-          find.text('All outcomes resolved. Branch can complete this route.'),
+          find.text(
+            'All outcomes resolved. This route completes automatically. Refresh to sync.',
+          ),
           findsOneWidget,
         );
         expect(find.text('Scan parcel QR'), findsNothing);

@@ -113,7 +113,27 @@ class ShopHopCameraPanel extends StatelessWidget {
             fit: StackFit.expand,
             children: [
               if (scanning)
-                MobileScanner(controller: controller, onDetect: onDetect)
+                MobileScanner(
+                  controller: controller,
+                  onDetect: onDetect,
+                  errorBuilder: (context, error) => const ColoredBox(
+                    color: AppColors.navy,
+                    child: Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(24),
+                        child: Text(
+                          'Camera unavailable. Allow camera access in your device settings, or pause the camera and enter the printed code below.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            height: 1.6,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                )
               else
                 ColoredBox(
                   color: AppColors.navy,

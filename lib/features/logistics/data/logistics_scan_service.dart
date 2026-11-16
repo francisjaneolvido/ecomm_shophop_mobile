@@ -57,7 +57,7 @@ class LogisticsScanService {
           .replace(
             queryParameters: {
               'sorting_center_id': branchId.toString(),
-              'tracking_code': trackingCode.trim(),
+              'tracking_code': trackingCode.trim().toUpperCase(),
             },
           );
       final response = await http

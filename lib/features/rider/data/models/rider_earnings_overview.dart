@@ -13,6 +13,23 @@ class RiderEarningsOverview {
   final double paid;
   final List<Map<String, dynamic>> entries;
 
+  static String parcelBreakdown(Map<String, dynamic> entry) {
+    if (entry['funding_source'] != 'order_distribution') return '';
+    double number(dynamic value) => double.tryParse('$value') ?? 0;
+    return '${number(entry['weight_kg']).toStringAsFixed(3)} kg · '
+        'Base ₱${number(entry['base_amount']).toStringAsFixed(2)} + '
+        '${entry['extra_kg'] ?? 0} extra kg × '
+        '₱${number(entry['extra_kg_rate']).toStringAsFixed(2)}';
+  }
+
+  static String statusLabel(Map<String, dynamic> entry) {
+    if (entry['funding_source'] == 'order_distribution' &&
+        entry['status'] == 'pending') {
+      return 'Pending Admin distribution';
+    }
+    return (entry['status'] ?? 'pending').toString().replaceAll('_', ' ');
+  }
+
   factory RiderEarningsOverview.fromJson(Map<String, dynamic> data) {
     final partner = data['partner_compensation'] is Map
         ? data['partner_compensation'] as Map

@@ -9,6 +9,8 @@ class RiderCodOverview {
     required this.collections,
     required this.batches,
     required this.facilities,
+    this.receivingFacility,
+    this.remittanceBlockedReason,
   });
 
   final String toCollect;
@@ -19,6 +21,10 @@ class RiderCodOverview {
   final List<Map<String, dynamic>> collections;
   final List<Map<String, dynamic>> batches;
   final List<Map<String, dynamic>> facilities;
+  final Map<String, dynamic>? receivingFacility;
+  final String? remittanceBlockedReason;
+  bool get hasAssignedBranch =>
+      (int.tryParse('${receivingFacility?['id']}') ?? 0) > 0;
 
   factory RiderCodOverview.fromJson(Map<String, dynamic> data) {
     final summary = data['summary'] is Map ? data['summary'] as Map : {};
@@ -31,6 +37,10 @@ class RiderCodOverview {
       collections: rows(data['collections']),
       batches: rows(data['batches']),
       facilities: rows(data['facilities']),
+      receivingFacility: data['receiving_facility'] is Map
+          ? Map<String, dynamic>.from(data['receiving_facility'] as Map)
+          : null,
+      remittanceBlockedReason: data['remittance_blocked_reason']?.toString(),
     );
   }
 

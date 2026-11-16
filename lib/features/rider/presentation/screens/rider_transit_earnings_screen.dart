@@ -86,7 +86,7 @@ class _RiderTransitEarningsScreenState
           ),
           const SizedBox(height: 4),
           const Text(
-            'Your Logistics Partner configures and pays your compensation. Earnings never reduce collected COD and do not depend on the Seller settlement hold.',
+            'Parcel commission is Pending after successful delivery and Available after Admin distribution. Earnings never reduce collected COD. Commission is deducted once from the Logistics share.',
             style: TextStyle(color: Color(0xFF6B6B7B)),
           ),
           const SizedBox(height: 16),
@@ -127,6 +127,7 @@ class _RiderTransitEarningsScreenState
                 subtitle: Text(
                   '${(entry['kind'] ?? '').toString().replaceAll('_', ' ')}'
                   '${entry['compensation_type'] != null ? '\n${entry['compensation_type']} ? ${entry['schedule'] ?? ''}' : ''}'
+                  '${entry['funding_source'] == 'order_distribution' ? '\n${RiderEarningsOverview.parcelBreakdown(entry)}\n${RiderEarningsOverview.statusLabel(entry)}' : ''}'
                   '${entry['payment_reference'] != null
                       ? '\nPaid ref: ${entry['payment_reference']}'
                       : entry['distribution_reference'] != null
@@ -145,7 +146,13 @@ class _RiderTransitEarningsScreenState
                       ),
                     ),
                     Text(
-                      (entry['status'] ?? 'pending').toString().toUpperCase(),
+                      entry['funding_source'] == 'order_distribution'
+                          ? (entry['status'] ?? 'pending')
+                                .toString()
+                                .toUpperCase()
+                          : RiderEarningsOverview.statusLabel(
+                              entry,
+                            ).toUpperCase(),
                       style: const TextStyle(
                         fontSize: 10,
                         color: Color(0xFF6B6B7B),

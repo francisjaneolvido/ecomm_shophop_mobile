@@ -83,14 +83,39 @@ void main() {
           );
           await tester.tap(option('on_break'));
           await tester.pumpAndSettle();
+          expect(writes, isEmpty);
+          expect(find.text('Change availability to On break?'), findsOneWidget);
+          await tester.tap(find.text('Cancel'));
+          await tester.pumpAndSettle();
+          expect(state, 'online');
+          expect(writes, isEmpty);
+          await tester.tap(option('on_break'));
+          await tester.pumpAndSettle();
+          await tester.tap(
+            find.byKey(const ValueKey('confirm-rider-availability')),
+          );
+          await tester.pumpAndSettle();
           expect(writes, ['on_break']);
           expect(state, 'on_break');
+          expect(
+            tester
+                .widget<OutlinedButton>(option('on_break'))
+                .style!
+                .backgroundColor!
+                .resolve({}),
+            const Color(0xFFB45309),
+          );
           expect(
             tester.widget<OutlinedButton>(option('on_break')).onPressed,
             isNull,
           );
           fail = true;
           await tester.tap(option('offline'));
+          await tester.pumpAndSettle();
+          expect(find.text('Change availability to Offline?'), findsOneWidget);
+          await tester.tap(
+            find.byKey(const ValueKey('confirm-rider-availability')),
+          );
           await tester.pumpAndSettle();
           expect(find.text('Resolve assigned parcels first.'), findsOneWidget);
           expect(state, 'on_break');
@@ -100,6 +125,10 @@ void main() {
           );
           fail = false;
           await tester.tap(option('offline'));
+          await tester.pumpAndSettle();
+          await tester.tap(
+            find.byKey(const ValueKey('confirm-rider-availability')),
+          );
           await tester.pumpAndSettle();
           expect(state, 'offline');
           expect(
@@ -133,7 +162,7 @@ void main() {
   );
 
   testWidgets(
-    'Busy routes lock availability and Tasks use pink selected filters',
+    'Busy route buttons explain pending work without changing availability',
     (tester) async {
       var writes = 0;
       await http.runWithClient(
@@ -143,9 +172,22 @@ void main() {
           for (final state in ['online', 'on_break', 'offline']) {
             expect(
               tester.widget<OutlinedButton>(option(state)).onPressed,
-              isNull,
+              isNotNull,
             );
           }
+          await tester.tap(option('offline'));
+          await tester.pumpAndSettle();
+          expect(find.text('Route still active'), findsOneWidget);
+          expect(
+            find.descendant(
+              of: find.byType(AlertDialog),
+              matching: find.textContaining('Routes complete automatically'),
+            ),
+            findsOneWidget,
+          );
+          expect(writes, 0);
+          await tester.tap(find.text('Got it'));
+          await tester.pumpAndSettle();
           await tester.tap(
             find.descendant(
               of: find.byType(ShopHopNavigation),
@@ -180,4 +222,43 @@ void main() {
       );
     },
   );
+  testWidgets('Busy status refreshes before showing a change confirmation', (
+    tester,
+  ) async {
+    var state = 'busy';
+    final writes = <String>[];
+    await http.runWithClient(
+      () async {
+        await mount(tester);
+        state =
+            'online'; // The route completed automatically since the last screen refresh.
+        await tester.tap(option('offline'));
+        await tester.pumpAndSettle();
+        expect(find.text('Route still active'), findsNothing);
+        expect(find.text('Change availability to Offline?'), findsOneWidget);
+        expect(writes, isEmpty);
+        await tester.tap(
+          find.byKey(const ValueKey('confirm-rider-availability')),
+        );
+        await tester.pumpAndSettle();
+        expect(writes, ['offline']);
+        expect(state, 'offline');
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox());
+        await AuthSessionService.clearSession();
+      },
+      () => MockClient((request) async {
+        if (request.url.path.endsWith('/me')) return me(state);
+        if (request.method == 'PATCH') {
+          writes.add(jsonDecode(request.body)['state'] as String);
+          state = writes.last;
+          return result({
+            'success': true,
+            'data': {'availability': state},
+          });
+        }
+        return result({'success': true, 'data': {}});
+      }),
+    );
+  });
 }

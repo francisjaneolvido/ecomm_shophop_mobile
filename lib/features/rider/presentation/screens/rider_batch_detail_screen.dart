@@ -192,7 +192,7 @@ class RiderBatchCard extends StatelessWidget {
               if (active && done == total && total > 0) ...[
                 const SizedBox(height: 8),
                 const Text(
-                  'All outcomes resolved. Branch can complete this route.',
+                  'All outcomes resolved. This route completes automatically. Refresh to sync.',
                   style: TextStyle(fontSize: 11, color: AppColors.textMuted),
                 ),
               ],

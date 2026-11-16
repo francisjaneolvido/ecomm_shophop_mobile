@@ -142,6 +142,9 @@ class _ManifestLoadingScreenState extends State<ManifestLoadingScreen> {
       _message = null;
     });
     try {
+      // Mount the camera widget before starting its externally owned controller.
+      await WidgetsBinding.instance.endOfFrame;
+      if (!mounted || !_scanning) return;
       await _camera.start();
     } catch (_) {
       if (mounted) {

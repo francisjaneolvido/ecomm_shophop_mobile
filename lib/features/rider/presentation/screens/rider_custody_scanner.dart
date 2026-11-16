@@ -81,6 +81,8 @@ class _RiderCustodyScannerState extends State<RiderCustodyScanner> {
       _scanning = true;
     });
     try {
+      await WidgetsBinding.instance.endOfFrame;
+      if (!mounted || !_scanning) return;
       await _camera.start();
     } catch (_) {
       if (!mounted) return;

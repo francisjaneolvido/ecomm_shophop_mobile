@@ -9,6 +9,68 @@ import 'package:shophop/features/rider/data/models/rider_cod_overview.dart';
 import 'package:shophop/features/rider/presentation/screens/rider_cod_remittance_screen.dart';
 
 void main() {
+  testWidgets(
+    'missing assigned branch blocks handover without choosing another facility',
+    (tester) async {
+      FlutterSecureStorage.setMockInitialValues({});
+      await AuthSessionService.saveSession(
+        token: 'rider-test',
+        email: 'rider@example.test',
+        accountType: 'rider',
+        rememberMe: false,
+      );
+      var submissions = 0;
+      await http.runWithClient(
+        () async {
+          await tester.pumpWidget(
+            const MaterialApp(
+              home: RiderCodRemittanceScreen(initialCollectionId: 10),
+            ),
+          );
+          await tester.pumpAndSettle();
+          expect(
+            find.textContaining('No active assigned branch'),
+            findsOneWidget,
+          );
+          final button = tester.widget<FilledButton>(
+            find.widgetWithText(FilledButton, 'Hand over selected COD'),
+          );
+          expect(button.onPressed, isNull);
+          expect(find.byType(DropdownButtonFormField<int>), findsNothing);
+          expect(submissions, 0);
+          await tester.pumpWidget(const SizedBox.shrink());
+        },
+        () => MockClient((request) async {
+          if (request.method == 'POST') submissions++;
+          return http.Response(
+            jsonEncode({
+              'success': true,
+              'data': {
+                'receiving_facility': null,
+                'remittance_blocked_reason':
+                    'No active assigned branch. Contact your logistics administrator.',
+                'facilities': [
+                  {'id': 99, 'name': 'Another facility'},
+                ],
+                'collections': [
+                  {
+                    'collection_id': 10,
+                    'order_id': 1,
+                    'amount': '640.00',
+                    'outstanding': '640.00',
+                    'can_remit': true,
+                  },
+                ],
+              },
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+    },
+  );
+
   test('submitted cash is pending until independently verified', () {
     expect(
       RiderCodOverview.receiptStatus({'status': 'remitted'}),
@@ -35,7 +97,7 @@ void main() {
   });
 
   testWidgets(
-    'handover requires receiving branch and reference before submitting cash',
+    'handover shows assigned branch automatically and requires a reference',
     (tester) async {
       FlutterSecureStorage.setMockInitialValues({});
       await AuthSessionService.saveSession(
@@ -64,11 +126,9 @@ void main() {
           await tester.tap(find.text('Submit handover'));
           await tester.pumpAndSettle();
           expect(submissions, isEmpty);
-          expect(find.textContaining('Choose a facility'), findsOneWidget);
-          await tester.tap(find.byType(DropdownButtonFormField<int>));
-          await tester.pumpAndSettle();
-          await tester.tap(find.text('Calamba Branch').last);
-          await tester.pumpAndSettle();
+          expect(find.textContaining('Provide a reference'), findsOneWidget);
+          expect(find.byType(DropdownButtonFormField<int>), findsNothing);
+          expect(find.text('Calamba Branch'), findsWidgets);
           await tester.enterText(
             find.widgetWithText(TextField, 'Receipt / evidence reference'),
             'CASH-1005',
@@ -99,8 +159,10 @@ void main() {
                   'remitted': '0.00',
                 },
                 'facilities': [
+                  {'id': 99, 'name': 'Another company facility'},
                   {'id': 3, 'name': 'Calamba Branch'},
                 ],
+                'receiving_facility': {'id': 3, 'name': 'Calamba Branch'},
                 'collections': [
                   {
                     'collection_id': 10,

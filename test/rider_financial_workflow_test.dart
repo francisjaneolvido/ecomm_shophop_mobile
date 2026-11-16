@@ -461,7 +461,7 @@ void main() {
     },
   );
 
-  testWidgets('cash handover form submits full COD to its chosen facility', (
+  testWidgets('cash handover form submits full COD to the assigned branch', (
     tester,
   ) async {
     var submissions = 0;
@@ -476,10 +476,8 @@ void main() {
         await tester.ensureVisible(find.text('Hand over selected COD'));
         await tester.tap(find.text('Hand over selected COD'));
         await tester.pumpAndSettle();
-        await tester.tap(find.byType(DropdownButtonFormField<int>));
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('Receiving branch').last);
-        await tester.pumpAndSettle();
+        expect(find.byType(DropdownButtonFormField<int>), findsNothing);
+        expect(find.text('Receiving branch'), findsWidgets);
         await tester.enterText(find.byType(TextField).first, 'RECEIPT-1100');
         await tester.ensureVisible(find.text('Submit handover'));
         await tester.tap(find.text('Submit handover'));
@@ -519,12 +517,13 @@ void main() {
           'facilities': [
             {'id': 3, 'name': 'Receiving branch'},
           ],
+          'receiving_facility': {'id': 3, 'name': 'Receiving branch'},
         });
       }),
     );
   });
 
-  testWidgets('rider earnings display independent partner compensation', (
+  testWidgets('rider earnings show parcel weight and pending Admin release', (
     tester,
   ) async {
     await http.runWithClient(
@@ -538,7 +537,12 @@ void main() {
           find.textContaining('Earnings never reduce collected COD'),
           findsOneWidget,
         );
-        expect(find.text('delivery:12'), findsWidgets);
+        expect(find.textContaining('delivery:12'), findsWidgets);
+        expect(find.textContaining('2.001 kg'), findsOneWidget);
+        expect(
+          find.textContaining('Pending Admin distribution'),
+          findsOneWidget,
+        );
         await tester.pumpWidget(const SizedBox.shrink());
       },
       () => MockClient(
@@ -557,6 +561,11 @@ void main() {
                 'kind': 'delivery:12',
                 'amount': '25.00',
                 'status': 'pending',
+                'funding_source': 'order_distribution',
+                'weight_kg': 2.001,
+                'base_amount': '15.00',
+                'extra_kg': 2,
+                'extra_kg_rate': '5.00',
               },
             ],
           },
@@ -564,4 +573,54 @@ void main() {
       ),
     );
   });
+
+  testWidgets(
+    'distributed parcel commission shows available balance and reference',
+    (tester) async {
+      await http.runWithClient(
+        () async {
+          await tester.pumpWidget(
+            const MaterialApp(home: RiderTransitEarningsScreen()),
+          );
+          await tester.pumpAndSettle();
+          expect(find.text('₱100.00'), findsWidgets);
+          expect(find.text('AVAILABLE'), findsOneWidget);
+          expect(find.textContaining('DIST-PARCEL-12'), findsOneWidget);
+          expect(find.textContaining('2.001 kg'), findsOneWidget);
+          expect(
+            find.textContaining('Pending Admin distribution'),
+            findsNothing,
+          );
+          await tester.pumpWidget(const SizedBox.shrink());
+        },
+        () => MockClient(
+          (_) async => response({
+            'pending': 0,
+            'available': 0,
+            'paid': 0,
+            'entries': [],
+            'partner_compensation': {
+              'pending': '0.00',
+              'available': '100.00',
+              'paid': '0.00',
+              'entries': [
+                {
+                  'order_id': 12,
+                  'kind': 'delivery:12',
+                  'amount': '100.00',
+                  'status': 'available',
+                  'funding_source': 'order_distribution',
+                  'distribution_reference': 'DIST-PARCEL-12',
+                  'weight_kg': 2.001,
+                  'base_amount': '90.00',
+                  'extra_kg': 2,
+                  'extra_kg_rate': '5.00',
+                },
+              ],
+            },
+          }),
+        ),
+      );
+    },
+  );
 }
