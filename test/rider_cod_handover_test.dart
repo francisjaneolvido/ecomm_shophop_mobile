@@ -97,7 +97,7 @@ void main() {
   });
 
   testWidgets(
-    'handover shows assigned branch automatically and requires a reference',
+    'handover automatically attaches its receipt reference without typing',
     (tester) async {
       FlutterSecureStorage.setMockInitialValues({});
       await AuthSessionService.saveSession(
@@ -123,15 +123,21 @@ void main() {
           await tester.tap(find.text('Hand over selected COD'));
           await tester.pumpAndSettle();
           expect(submissions, isEmpty);
+          expect(find.byType(DropdownButtonFormField<int>), findsNothing);
+          expect(find.text('Calamba Branch'), findsWidgets);
+          expect(find.text('Type cash reference'), findsNothing);
+          expect(find.text('CASH-1005'), findsOneWidget);
+          await tester.enterText(
+            find.widgetWithText(TextField, 'Order #1 cash handed over'),
+            '',
+          );
+          await tester.ensureVisible(find.text('Submit handover'));
           await tester.tap(find.text('Submit handover'));
           await tester.pumpAndSettle();
           expect(submissions, isEmpty);
-          expect(find.textContaining('Provide a reference'), findsOneWidget);
-          expect(find.byType(DropdownButtonFormField<int>), findsNothing);
-          expect(find.text('Calamba Branch'), findsWidgets);
           await tester.enterText(
-            find.widgetWithText(TextField, 'Receipt / evidence reference'),
-            'CASH-1005',
+            find.widgetWithText(TextField, 'Order #1 cash handed over'),
+            '1005.00',
           );
           await tester.ensureVisible(find.text('Submit handover'));
           await tester.tap(find.text('Submit handover'));
@@ -139,6 +145,7 @@ void main() {
           expect(submissions, hasLength(1));
           expect(submissions.single['sorting_center_id'], 3);
           expect(submissions.single['reference'], 'CASH-1005');
+          expect(submissions.single['idempotency_key'], 'cash-draft-test');
           expect(submissions.single['items'], [
             {'collection_id': 10, 'amount': '1005.00'},
           ]);
@@ -163,6 +170,10 @@ void main() {
                   {'id': 3, 'name': 'Calamba Branch'},
                 ],
                 'receiving_facility': {'id': 3, 'name': 'Calamba Branch'},
+                'handover_draft': {
+                  'idempotency_key': 'cash-draft-test',
+                  'reference': 'CASH-1005',
+                },
                 'collections': [
                   {
                     'collection_id': 10,

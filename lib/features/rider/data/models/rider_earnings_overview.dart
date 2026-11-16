@@ -13,8 +13,13 @@ class RiderEarningsOverview {
   final double paid;
   final List<Map<String, dynamic>> entries;
 
+  static bool isParcel(Map<String, dynamic> entry) => [
+    'order_distribution',
+    'partner_settlement',
+  ].contains(entry['funding_source']);
+
   static String parcelBreakdown(Map<String, dynamic> entry) {
-    if (entry['funding_source'] != 'order_distribution') return '';
+    if (!isParcel(entry)) return '';
     double number(dynamic value) => double.tryParse('$value') ?? 0;
     return '${number(entry['weight_kg']).toStringAsFixed(3)} kg · '
         'Base ₱${number(entry['base_amount']).toStringAsFixed(2)} + '
@@ -23,6 +28,14 @@ class RiderEarningsOverview {
   }
 
   static String statusLabel(Map<String, dynamic> entry) {
+    if (entry['funding_source'] == 'partner_settlement') {
+      return switch (entry['status']) {
+        'pending' => 'Awaiting Logistics funding',
+        'approved' => 'Ready for Logistics payout',
+        'paid' => 'Paid by Logistics',
+        _ => (entry['status'] ?? 'pending').toString(),
+      };
+    }
     if (entry['funding_source'] == 'order_distribution' &&
         entry['status'] == 'pending') {
       return 'Pending Admin distribution';

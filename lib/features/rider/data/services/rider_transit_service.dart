@@ -16,6 +16,25 @@ class RiderTransitService {
   static Future<AuthApiResult> earnings(String token) async =>
       _get('/rider/earnings', token);
 
+  static Future<AuthApiResult> confirmPayroll(String token, int batch) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('${ApiConfig.baseUrl}/rider/payroll/$batch/received'),
+            headers: {...headers(token), 'Content-Type': 'application/json'},
+            body: jsonEncode({'receipt_confirmed': true}),
+          )
+          .timeout(const Duration(seconds: 20));
+      return AuthApiResult.fromResponse(response);
+    } catch (_) {
+      return const AuthApiResult(
+        success: false,
+        status: 'network_error',
+        message: 'Unable to confirm payroll receipt. Refresh before retrying.',
+      );
+    }
+  }
+
   static Future<AuthApiResult> depart(String token, int transferId) async {
     try {
       final response = await http

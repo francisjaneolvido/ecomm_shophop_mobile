@@ -1865,7 +1865,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
           ),
           const SizedBox(height: 12),
           _notice(
-            'Parcel commission is Pending after successful delivery and Available after Admin distribution. Earnings never reduce collected COD. Commission is deducted once from the Logistics share.',
+            'Logistics handles your payroll. Parcel commission becomes ready after company funding is confirmed. Review payment records and confirm received funds in Rider Earnings. Earnings never reduce collected COD.',
             Icons.info_outline_rounded,
           ),
           const SizedBox(height: 12),
@@ -2049,7 +2049,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
                     fontSize: 10.5,
                   ),
                 ),
-                if (row['funding_source'] == 'order_distribution') ...[
+                if (RiderEarningsOverview.isParcel(row)) ...[
                   const SizedBox(height: 4),
                   Text(
                     RiderEarningsOverview.parcelBreakdown(row),

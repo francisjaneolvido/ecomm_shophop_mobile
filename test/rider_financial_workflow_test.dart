@@ -22,6 +22,35 @@ http.Response response(Map<String, dynamic> data) => http.Response(
 );
 
 void main() {
+  test(
+    'company-funded parcel earnings distinguish funding, payroll readiness and actual payment',
+    () {
+      const entry = {
+        'funding_source': 'partner_settlement',
+        'weight_kg': 2.001,
+        'base_amount': '90.00',
+        'extra_kg': 2,
+        'extra_kg_rate': '5.00',
+      };
+      expect(
+        RiderEarningsOverview.parcelBreakdown(entry),
+        contains('2.001 kg'),
+      );
+      expect(
+        RiderEarningsOverview.statusLabel({...entry, 'status': 'pending'}),
+        'Awaiting Logistics funding',
+      );
+      expect(
+        RiderEarningsOverview.statusLabel({...entry, 'status': 'approved'}),
+        'Ready for Logistics payout',
+      );
+      expect(
+        RiderEarningsOverview.statusLabel({...entry, 'status': 'paid'}),
+        'Paid by Logistics',
+      );
+    },
+  );
+
   setUp(() async {
     FlutterSecureStorage.setMockInitialValues({});
     await AuthSessionService.clearSession();
@@ -100,6 +129,12 @@ void main() {
                 'Original discrepancy resolved. Original cash counts remain in history.',
               ),
               200,
+              scrollable: find
+                  .descendant(
+                    of: find.byType(ListView),
+                    matching: find.byType(Scrollable),
+                  )
+                  .first,
             );
             expect(
               find.text(
@@ -426,7 +461,16 @@ void main() {
         );
         await tester.pumpAndSettle();
         expect(find.text('Outstanding cash: ₱50.00'), findsOneWidget);
-        await tester.scrollUntilVisible(find.text('BATCH-1100'), 200);
+        await tester.scrollUntilVisible(
+          find.text('BATCH-1100'),
+          200,
+          scrollable: find
+              .descendant(
+                of: find.byType(ListView),
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        );
         expect(find.text('BATCH-1100'), findsOneWidget);
         expect(find.text('Difference -50.00'), findsOneWidget);
         await tester.pumpWidget(const SizedBox.shrink());
@@ -478,7 +522,8 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.byType(DropdownButtonFormField<int>), findsNothing);
         expect(find.text('Receiving branch'), findsWidgets);
-        await tester.enterText(find.byType(TextField).first, 'RECEIPT-1100');
+        expect(find.text('Type cash reference'), findsNothing);
+        expect(find.text('RECEIPT-1100'), findsOneWidget);
         await tester.ensureVisible(find.text('Submit handover'));
         await tester.tap(find.text('Submit handover'));
         await tester.pumpAndSettle();
@@ -518,6 +563,10 @@ void main() {
             {'id': 3, 'name': 'Receiving branch'},
           ],
           'receiving_facility': {'id': 3, 'name': 'Receiving branch'},
+          'handover_draft': {
+            'idempotency_key': 'cash-draft-1100',
+            'reference': 'RECEIPT-1100',
+          },
         });
       }),
     );

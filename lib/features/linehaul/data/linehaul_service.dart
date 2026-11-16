@@ -5,6 +5,25 @@ import 'package:shophop/core/config/api_config.dart';
 import 'package:shophop/features/auth/data/services/auth_service.dart';
 
 class LinehaulService {
+  static Future<AuthApiResult> confirmPayroll(String token, int batch) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('${ApiConfig.baseUrl}/linehaul/payroll/$batch/received'),
+            headers: {..._headers(token), 'Content-Type': 'application/json'},
+            body: jsonEncode({'receipt_confirmed': true}),
+          )
+          .timeout(const Duration(seconds: 20));
+      return AuthApiResult.fromResponse(response);
+    } catch (_) {
+      return const AuthApiResult(
+        success: false,
+        status: 'network_error',
+        message: 'Unable to confirm payroll receipt. Refresh before retrying.',
+      );
+    }
+  }
+
   const LinehaulService._();
   static Map<String, String> _headers(String token) => {
     'Accept': 'application/json',

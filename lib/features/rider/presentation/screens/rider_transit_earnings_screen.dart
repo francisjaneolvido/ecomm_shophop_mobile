@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shophop/shared/widgets/personnel_payroll_receipts.dart';
 import 'package:shophop/features/rider/data/models/rider_earnings_overview.dart';
 import 'package:shophop/core/session/auth_session_service.dart';
 import 'package:shophop/features/rider/data/services/rider_transit_service.dart';
@@ -22,6 +23,7 @@ class _RiderTransitEarningsScreenState
   double _pending = 0;
   double _available = 0;
   double _paid = 0;
+  List<Map<String, dynamic>> _payrollReceipts = [];
   List<Map<String, dynamic>> _entries = [];
 
   @override
@@ -56,6 +58,10 @@ class _RiderTransitEarningsScreenState
         _available = overview.available;
         _paid = overview.paid;
         _entries = overview.entries;
+        _payrollReceipts = (response.data['payroll_receipts'] as List? ?? [])
+            .whereType<Map>()
+            .map((row) => Map<String, dynamic>.from(row))
+            .toList();
       }
     });
   }
@@ -86,7 +92,7 @@ class _RiderTransitEarningsScreenState
           ),
           const SizedBox(height: 4),
           const Text(
-            'Parcel commission is Pending after successful delivery and Available after Admin distribution. Earnings never reduce collected COD. Commission is deducted once from the Logistics share.',
+            'Logistics handles your payroll. Parcel commission becomes ready after company funding is confirmed. Payment recorded means Logistics reported paying you; confirm receipt only after the money arrives. Earnings never reduce collected COD.',
             style: TextStyle(color: Color(0xFF6B6B7B)),
           ),
           const SizedBox(height: 16),
@@ -110,6 +116,20 @@ class _RiderTransitEarningsScreenState
             ],
           ),
           const SizedBox(height: 18),
+          PersonnelPayrollReceipts(
+            receipts: _payrollReceipts,
+            onConfirm: (batch) async {
+              final session = await AuthSessionService.readSession();
+              if (session == null) return 'Please sign in again.';
+              final result = await RiderTransitService.confirmPayroll(
+                session.token,
+                batch,
+              );
+              if (!result.success) return result.message;
+              await _load();
+              return null;
+            },
+          ),
           if (_entries.isEmpty && !_busy)
             const Card(
               child: Padding(
@@ -127,7 +147,7 @@ class _RiderTransitEarningsScreenState
                 subtitle: Text(
                   '${(entry['kind'] ?? '').toString().replaceAll('_', ' ')}'
                   '${entry['compensation_type'] != null ? '\n${entry['compensation_type']} ? ${entry['schedule'] ?? ''}' : ''}'
-                  '${entry['funding_source'] == 'order_distribution' ? '\n${RiderEarningsOverview.parcelBreakdown(entry)}\n${RiderEarningsOverview.statusLabel(entry)}' : ''}'
+                  '${RiderEarningsOverview.isParcel(entry) ? '\n${RiderEarningsOverview.parcelBreakdown(entry)}\n${RiderEarningsOverview.statusLabel(entry)}' : ''}'
                   '${entry['payment_reference'] != null
                       ? '\nPaid ref: ${entry['payment_reference']}'
                       : entry['distribution_reference'] != null

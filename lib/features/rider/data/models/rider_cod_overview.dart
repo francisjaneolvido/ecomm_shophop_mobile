@@ -11,6 +11,7 @@ class RiderCodOverview {
     required this.facilities,
     this.receivingFacility,
     this.remittanceBlockedReason,
+    this.handoverDraft,
   });
 
   final String toCollect;
@@ -23,6 +24,10 @@ class RiderCodOverview {
   final List<Map<String, dynamic>> facilities;
   final Map<String, dynamic>? receivingFacility;
   final String? remittanceBlockedReason;
+  final Map<String, dynamic>? handoverDraft;
+  bool get hasCashReference =>
+      (handoverDraft?['reference']?.toString().isNotEmpty ?? false) &&
+      (handoverDraft?['idempotency_key']?.toString().isNotEmpty ?? false);
   bool get hasAssignedBranch =>
       (int.tryParse('${receivingFacility?['id']}') ?? 0) > 0;
 
@@ -41,6 +46,9 @@ class RiderCodOverview {
           ? Map<String, dynamic>.from(data['receiving_facility'] as Map)
           : null,
       remittanceBlockedReason: data['remittance_blocked_reason']?.toString(),
+      handoverDraft: data['handover_draft'] is Map
+          ? Map<String, dynamic>.from(data['handover_draft'] as Map)
+          : null,
     );
   }
 
@@ -86,6 +94,25 @@ class RiderCodOverview {
       return 'Original discrepancy resolved. Original cash counts remain in history.';
     }
     return 'Under review. Shortages remain owed; overages require investigation.';
+  }
+
+  static String custodyDescription(Map<String, dynamic> batch) {
+    final custody = batch['cash_custody'];
+    if (custody is! Map) {
+      return batch['verified_at'] != null
+          ? 'Branch verified; awaiting onward remittance.'
+          : 'Await Branch cash verification.';
+    }
+    return switch (custody['status']) {
+      'branch_submitted' => 'Branch remitted; awaiting Main Hub receipt.',
+      'treasury_received' =>
+        'Main Hub received; awaiting Logistics remittance to Admin.',
+      'admin_submitted' => 'Logistics remitted; awaiting Admin receipt.',
+      'admin_received' => 'Cash custody complete: ShopHop Admin received.',
+      'treasury_review' => 'Main Hub cash count is under review.',
+      'admin_review' => 'ShopHop cash count is under review.',
+      _ => 'Review cash custody status with Logistics.',
+    };
   }
 
   static String platformReceiptDescription(Map<String, dynamic> cash) {

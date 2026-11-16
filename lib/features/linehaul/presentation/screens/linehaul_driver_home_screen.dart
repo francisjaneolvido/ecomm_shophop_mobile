@@ -3,6 +3,7 @@ import 'package:shophop/shared/widgets/shop_hop_scan_feedback.dart';
 import 'package:shophop/shared/widgets/shop_hop_role_layout.dart';
 import 'package:shophop/shared/realtime/foreground_refresh.dart';
 import 'package:flutter/material.dart';
+import 'package:shophop/shared/widgets/personnel_payroll_receipts.dart';
 import 'package:shophop/core/theme/app_colors.dart';
 import 'package:shophop/shared/widgets/shop_hop_navigation.dart';
 import 'package:shophop/shared/widgets/shop_hop_ui.dart';
@@ -28,6 +29,7 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
   final _manifestCode = TextEditingController();
   List<Map<String, dynamic>> _trips = [];
   List<Map<String, dynamic>> _earnings = [];
+  List<Map<String, dynamic>> _payrollReceipts = [];
   double _pendingEarnings = 0, _availableEarnings = 0, _paidEarnings = 0;
   Map<String, dynamic>? _manifest;
   String? _token, _email, _message;
@@ -144,6 +146,7 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
       if (r.success) _trips = _rows(r.data['trips']);
       if (e.success) {
         _earnings = _rows(e.data['entries']);
+        _payrollReceipts = _rows(e.data['payroll_receipts']);
         _pendingEarnings = (e.data['pending'] as num?)?.toDouble() ?? 0;
         _availableEarnings = (e.data['available'] as num?)?.toDouble() ?? 0;
         _paidEarnings = (e.data['paid'] as num?)?.toDouble() ?? 0;
@@ -835,6 +838,16 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
               child: Text('No completed-trip earnings yet.'),
             ),
           ),
+        PersonnelPayrollReceipts(
+          receipts: _payrollReceipts,
+          onConfirm: (batch) async {
+            if (_token == null) return 'Please sign in again.';
+            final result = await LinehaulService.confirmPayroll(_token!, batch);
+            if (!result.success) return result.message;
+            await _load();
+            return null;
+          },
+        ),
         ..._earnings
             .take(20)
             .map(

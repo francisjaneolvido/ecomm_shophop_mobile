@@ -71,12 +71,15 @@ class _RiderCodRemittanceScreenState extends State<RiderCodRemittanceScreen> {
     if (_submitting ||
         _token == null ||
         _selected.isEmpty ||
-        !_overview.hasAssignedBranch) {
+        !_overview.hasAssignedBranch ||
+        !_overview.hasCashReference) {
       return;
     }
     // Send the displayed assignment as an assertion so reassignment during the
     // dialog cannot silently redirect a physical cash handover.
     final assignedBranchId = int.parse('${_overview.receivingFacility!['id']}');
+    final draftKey = '${_overview.handoverDraft!['idempotency_key']}';
+    final cashReference = '${_overview.handoverDraft!['reference']}';
     final rows = _overview.collections
         .where((row) => _selected.contains(row['collection_id']))
         .toList();
@@ -84,7 +87,6 @@ class _RiderCodRemittanceScreenState extends State<RiderCodRemittanceScreen> {
       for (final row in rows)
         TextEditingController(text: '${row['outstanding']}'),
     ];
-    final reference = TextEditingController();
     String? validation;
     final dialog = DialogRoute<bool>(
       context: context,
@@ -104,12 +106,14 @@ class _RiderCodRemittanceScreenState extends State<RiderCodRemittanceScreen> {
                   ),
                   child: Text('${_overview.receivingFacility?['name']}'),
                 ),
-                TextField(
-                  controller: reference,
-                  maxLength: 120,
-                  decoration: const InputDecoration(
-                    labelText: 'Receipt / evidence reference',
-                  ),
+                const SizedBox(height: 12),
+                const Text('Cash reference for this handover'),
+                SelectableText(
+                  cashReference,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+                const Text(
+                  'This reference is automatically included on your receipt and stays with the cash through Branch, Main Hub and Admin.',
                 ),
                 for (int i = 0; i < rows.length; i++)
                   TextField(
@@ -134,17 +138,16 @@ class _RiderCodRemittanceScreenState extends State<RiderCodRemittanceScreen> {
             ),
             FilledButton(
               onPressed: () {
-                if (reference.text.trim().length < 4 ||
-                    controllers.any(
-                      (c) =>
-                          !RegExp(
-                            r'^\d{1,9}(\.\d{1,2})?$',
-                          ).hasMatch(c.text.trim()) ||
-                          (num.tryParse(c.text) ?? 0) <= 0,
-                    )) {
+                if (controllers.any(
+                  (c) =>
+                      !RegExp(
+                        r'^\d{1,9}(\.\d{1,2})?$',
+                      ).hasMatch(c.text.trim()) ||
+                      (num.tryParse(c.text) ?? 0) <= 0,
+                )) {
                   update(
                     () => validation =
-                        'Provide a reference and enter positive cash amounts with at most two decimal places.',
+                        'Enter positive cash amounts with at most two decimal places.',
                   );
                   return;
                 }
@@ -164,9 +167,7 @@ class _RiderCodRemittanceScreenState extends State<RiderCodRemittanceScreen> {
           'amount': controllers[i].text.trim(),
         },
     ];
-    final evidence = reference.text.trim();
     await dialog.completed;
-    reference.dispose();
     for (final controller in controllers) {
       controller.dispose();
     }
@@ -175,8 +176,8 @@ class _RiderCodRemittanceScreenState extends State<RiderCodRemittanceScreen> {
     final response = await RiderDeliveryService.submitCodBatch(
       token: _token!,
       facilityId: assignedBranchId,
-      idempotencyKey: 'mobile-${DateTime.now().microsecondsSinceEpoch}',
-      reference: evidence,
+      idempotencyKey: draftKey,
+      reference: cashReference,
       items: items,
     );
     if (!mounted) return;
@@ -260,11 +261,17 @@ class _RiderCodRemittanceScreenState extends State<RiderCodRemittanceScreen> {
                     ),
                   ),
                 ),
+                if (_overview.hasAssignedBranch && !_overview.hasCashReference)
+                  const Text(
+                    'Refresh to obtain a system cash reference before remitting.',
+                    style: TextStyle(color: Colors.red),
+                  ),
                 FilledButton.icon(
                   onPressed:
                       _selected.isEmpty ||
                           _submitting ||
-                          !_overview.hasAssignedBranch
+                          !_overview.hasAssignedBranch ||
+                          !_overview.hasCashReference
                       ? null
                       : _handover,
                   icon: const Icon(Icons.receipt_long),
@@ -284,7 +291,7 @@ class _RiderCodRemittanceScreenState extends State<RiderCodRemittanceScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          SelectableText(
                             '${batch['reference']}',
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
@@ -304,6 +311,7 @@ class _RiderCodRemittanceScreenState extends State<RiderCodRemittanceScreen> {
                             'Difference ${RiderCodOverview.minorDisplay(batch['difference_minor'])}',
                           ),
                           Text('Reference: ${batch['receipt_reference']}'),
+                          Text(RiderCodOverview.custodyDescription(batch)),
                           Text('Submitted: ${batch['created_at']}'),
                           if (batch['verified_at'] != null)
                             Text('Verified: ${batch['verified_at']}'),
