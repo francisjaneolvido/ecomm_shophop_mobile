@@ -151,12 +151,12 @@ class _BuyerHomePageState extends State<BuyerHomePage>
               pinned: true,
               automaticallyImplyLeading: false,
               toolbarHeight: 64,
-              backgroundColor: AppColors.pink,
-              foregroundColor: Colors.white,
-              iconTheme: const IconThemeData(color: Colors.white),
-              actionsIconTheme: const IconThemeData(color: Colors.white),
+              backgroundColor: AppColors.page,
+              foregroundColor: AppColors.navy,
+              iconTheme: const IconThemeData(color: AppColors.navy),
+              actionsIconTheme: const IconThemeData(color: AppColors.navy),
               surfaceTintColor: Colors.transparent,
-              systemOverlayStyle: SystemUiOverlayStyle.light,
+              systemOverlayStyle: SystemUiOverlayStyle.dark,
               scrolledUnderElevation: 0,
               titleSpacing: 16,
               title: Material(
@@ -199,13 +199,13 @@ class _BuyerHomePageState extends State<BuyerHomePage>
               actions: [
                 IconButton(
                   tooltip: 'Messages',
-                  style: IconButton.styleFrom(foregroundColor: Colors.white),
+                  style: IconButton.styleFrom(foregroundColor: AppColors.navy),
                   onPressed: widget.onOpenMessages,
                   icon: const Icon(CupertinoIcons.chat_bubble),
                 ),
                 IconButton(
                   tooltip: 'Cart',
-                  style: IconButton.styleFrom(foregroundColor: Colors.white),
+                  style: IconButton.styleFrom(foregroundColor: AppColors.navy),
                   onPressed: widget.onOpenCart,
                   icon: Badge.count(
                     count: home.cartCount < 0 ? 0 : home.cartCount,

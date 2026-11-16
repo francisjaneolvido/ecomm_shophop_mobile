@@ -44,7 +44,7 @@ class BuyerMediaImage extends StatelessWidget {
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
             : Icon(
-                CupertinoIcons.photo,
+                Icons.image_outlined,
                 color: dark ? Colors.white54 : colors.onSurfaceVariant,
                 size: 30,
               ),

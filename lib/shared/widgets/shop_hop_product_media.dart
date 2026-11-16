@@ -179,7 +179,7 @@ class _ShopHopVideoPlayerState extends State<ShopHopVideoPlayer> {
     final controller = VideoPlayerController.networkUrl(uri);
     _controller = controller;
     try {
-      await controller.initialize();
+      await controller.initialize().timeout(const Duration(seconds: 25));
       if (!mounted || !identical(_controller, controller)) return;
       await controller.setLooping(true);
       await controller.setVolume(0);
@@ -191,7 +191,7 @@ class _ShopHopVideoPlayerState extends State<ShopHopVideoPlayer> {
         });
       }
     } catch (_) {
-      if (mounted) {
+      if (mounted && identical(_controller, controller)) {
         setState(() {
           _failed = true;
           _ready = false;
@@ -252,12 +252,28 @@ class _ShopHopVideoPlayerState extends State<ShopHopVideoPlayer> {
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.white70, fontSize: 10),
                     ),
+                    TextButton(
+                      onPressed: () {
+                        final previous = _controller;
+                        _controller = null;
+                        previous?.dispose();
+                        setState(() {
+                          _failed = false;
+                          _ready = false;
+                        });
+                        _init();
+                      },
+                      child: const Text(
+                        'Retry video',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
                   ],
                 ),
               )
             : !_ready || controller == null
             ? const Center(
-                child: CircularProgressIndicator(color: AppColors.teal),
+                child: CircularProgressIndicator(color: AppColors.pink),
               )
             : Stack(
                 alignment: Alignment.center,

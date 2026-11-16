@@ -169,6 +169,7 @@ class BuyerProductData {
     required this.image,
     this.videoUrl = '',
     this.videoFirst = false,
+    this.media = const [],
     required this.rating,
     required this.reviews,
     required this.sold,
@@ -188,6 +189,7 @@ class BuyerProductData {
   final String image;
   final String videoUrl;
   final bool videoFirst;
+  final List<BuyerMediaItem> media;
   final double rating;
   final int reviews;
   final int sold;
@@ -213,6 +215,10 @@ class BuyerProductData {
       stock: _asInt(json['stock']),
       image: _productImageUrl(json),
       videoUrl: ApiConfig.resolveMediaUrl(json['video_url']?.toString()),
+      media: _mapList(
+        json['media'],
+        BuyerMediaItem.fromJson,
+      ).where((item) => item.url.isNotEmpty).toList(growable: false),
       videoFirst:
           json['media_first'] == 'video' || json['is_video_first'] == true,
       rating: _asDouble(json['rating']),
@@ -239,6 +245,7 @@ class BuyerProductData {
       image: image,
       videoUrl: videoUrl,
       videoFirst: videoFirst,
+      media: media,
       rating: rating,
       reviews: reviews,
       sold: sold,

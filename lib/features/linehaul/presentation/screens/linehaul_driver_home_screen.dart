@@ -3,7 +3,6 @@ import 'package:shophop/shared/widgets/shop_hop_scan_feedback.dart';
 import 'package:shophop/shared/widgets/shop_hop_role_layout.dart';
 import 'package:shophop/shared/realtime/foreground_refresh.dart';
 import 'package:flutter/material.dart';
-import 'package:shophop/shared/widgets/personnel_payroll_receipts.dart';
 import 'package:shophop/core/theme/app_colors.dart';
 import 'package:shophop/shared/widgets/shop_hop_navigation.dart';
 import 'package:shophop/shared/widgets/shop_hop_ui.dart';
@@ -28,9 +27,6 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
   final _camera = MobileScannerController(autoStart: false);
   final _manifestCode = TextEditingController();
   List<Map<String, dynamic>> _trips = [];
-  List<Map<String, dynamic>> _earnings = [];
-  List<Map<String, dynamic>> _payrollReceipts = [];
-  double _pendingEarnings = 0, _availableEarnings = 0, _paidEarnings = 0;
   Map<String, dynamic>? _manifest;
   String? _token, _email, _message;
   final _reviewKey = GlobalKey();
@@ -127,16 +123,9 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
       _email = session.email;
       if (!silent) _busy = true;
     });
-    final results = await Future.wait([
-      LinehaulService.trips(session.token),
-      LinehaulService.earnings(session.token),
-    ]);
+    final r = await LinehaulService.trips(session.token);
     if (!mounted) return;
-    final r = results[0], e = results[1];
-    if (r.statusCode == 401 ||
-        r.statusCode == 403 ||
-        e.statusCode == 401 ||
-        e.statusCode == 403) {
+    if (r.statusCode == 401 || r.statusCode == 403) {
       await _logout(localOnly: true);
       return;
     }
@@ -144,21 +133,7 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
       _busy = false;
       _initialLoading = false;
       if (r.success) _trips = _rows(r.data['trips']);
-      if (e.success) {
-        _earnings = _rows(e.data['entries']);
-        _payrollReceipts = _rows(e.data['payroll_receipts']);
-        _pendingEarnings = (e.data['pending'] as num?)?.toDouble() ?? 0;
-        _availableEarnings = (e.data['available'] as num?)?.toDouble() ?? 0;
-        _paidEarnings = (e.data['paid'] as num?)?.toDouble() ?? 0;
-        final partner = e.data['partner_compensation'];
-        if (partner is Map) {
-          _pendingEarnings += double.tryParse('${partner['pending']}') ?? 0;
-          _availableEarnings += double.tryParse('${partner['available']}') ?? 0;
-          _paidEarnings += double.tryParse('${partner['paid']}') ?? 0;
-          _earnings.addAll(_rows(partner['entries']));
-        }
-      }
-      _syncError = r.success ? (e.success ? null : e.message) : r.message;
+      _syncError = r.success ? null : r.message;
     });
   }
 
@@ -717,8 +692,6 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
     );
   }
 
-  String _money(double value) => '₱${value.toStringAsFixed(2)}';
-
   Widget _accountPage() => RefreshIndicator(
     onRefresh: _load,
     child: ListView(
@@ -727,9 +700,9 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 20),
       children: [
         const ShopHopWorkflowHeader(
-          title: 'Account & earnings',
-          subtitle: 'Your linehaul work and completed-trip earnings.',
-          icon: Icons.wallet_outlined,
+          title: 'Driver account',
+          subtitle: 'Your transport account and company assignments.',
+          icon: Icons.badge_outlined,
         ),
         const SizedBox(height: 16),
         Card(
@@ -740,139 +713,15 @@ class _LinehaulDriverHomeScreenState extends State<LinehaulDriverHomeScreen> {
           ),
         ),
         const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Pending',
-                        style: TextStyle(color: Color(0xFF6B6B7B)),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _money(_pendingEarnings),
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: _navy,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Available',
-                        style: TextStyle(color: Color(0xFF6B6B7B)),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _money(_availableEarnings),
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: _teal,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Paid',
-                        style: TextStyle(color: Color(0xFF6B6B7B)),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _money(_paidEarnings),
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: _navy,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        const Text(
-          'Trip Earnings',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: _navy,
-          ),
-        ),
-        const SizedBox(height: 8),
-        if (_earnings.isEmpty)
-          const Card(
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: Text('No completed-trip earnings yet.'),
+        const Card(
+          child: ListTile(
+            leading: Icon(Icons.local_shipping_outlined),
+            title: Text('Linehaul transport'),
+            subtitle: Text(
+              'Manage assigned trips, vehicle custody and Manifest QR scans.',
             ),
           ),
-        PersonnelPayrollReceipts(
-          receipts: _payrollReceipts,
-          onConfirm: (batch) async {
-            if (_token == null) return 'Please sign in again.';
-            final result = await LinehaulService.confirmPayroll(_token!, batch);
-            if (!result.success) return result.message;
-            await _load();
-            return null;
-          },
         ),
-        ..._earnings
-            .take(20)
-            .map(
-              (e) => Card(
-                child: ListTile(
-                  leading: Icon(
-                    e['status'] == 'paid'
-                        ? Icons.check_circle_outline
-                        : (e['status'] == 'available' ||
-                              e['status'] == 'approved')
-                        ? Icons.account_balance_wallet_outlined
-                        : Icons.schedule,
-                    color: _teal,
-                  ),
-                  title: Text(
-                    '${e['event_key'] ?? e['trip_code'] ?? 'Trip'} · ${_money(double.tryParse('${e['amount']}') ?? 0)}',
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  subtitle: Text(
-                    '${e['from'] ?? 'Origin'} → ${e['to'] ?? 'Destination'}\n${(e['status'] ?? 'pending').toString().toUpperCase()}${e['payment_reference'] != null ? ' · Ref ${e['payment_reference']}' : ''}',
-                  ),
-                  isThreeLine: true,
-                ),
-              ),
-            ),
         const SizedBox(height: 12),
         OutlinedButton.icon(
           onPressed: _busy

@@ -466,7 +466,7 @@ class _ShopCartCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(22),
         border: Border.all(color: const Color(0xFFE5EAED)),
       ),
       child: Column(

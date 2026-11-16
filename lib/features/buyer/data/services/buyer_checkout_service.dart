@@ -314,6 +314,7 @@ class BuyerCheckoutPlatformVoucherData {
 
 class BuyerCheckoutPreviewData {
   const BuyerCheckoutPreviewData({
+    this.shippingPolicyVersion,
     required this.address,
     required this.groups,
     required this.vouchers,
@@ -327,6 +328,7 @@ class BuyerCheckoutPreviewData {
   });
 
   final BuyerCheckoutAddressData address;
+  final int? shippingPolicyVersion;
   final List<BuyerCheckoutGroupData> groups;
   final List<BuyerCheckoutVoucherData> vouchers;
   final String initialVoucherCode;
@@ -346,6 +348,9 @@ class BuyerCheckoutPreviewData {
         : <String, dynamic>{};
 
     return BuyerCheckoutPreviewData(
+      shippingPolicyVersion: json['shipping_policy_version'] == null
+          ? null
+          : _asInt(json['shipping_policy_version']),
       address: BuyerCheckoutAddressData.fromJson(address),
       groups: _mapList(json['cart_groups'], BuyerCheckoutGroupData.fromJson),
       vouchers: _mapList(
@@ -439,6 +444,7 @@ class BuyerCheckoutService {
   }
 
   static Future<BuyerCheckoutPlaceResult> placeOrder({
+    int? shippingPolicyVersion,
     required String token,
     required Map<String, int> items,
     required Map<int, String> shippingMethods,
@@ -451,6 +457,7 @@ class BuyerCheckoutService {
     Map<int, String> notes = const <int, String>{},
   }) async {
     final payload = _checkoutPayload(
+      shippingPolicyVersion: shippingPolicyVersion,
       items: items,
       shippingMethods: shippingMethods,
       logisticsPartners: logisticsPartners,
@@ -479,6 +486,7 @@ class BuyerCheckoutService {
   }
 
   static Map<String, dynamic> _checkoutPayload({
+    int? shippingPolicyVersion,
     required Map<String, int> items,
     required Map<int, String> shippingMethods,
     required Map<int, int> logisticsPartners,
@@ -489,6 +497,8 @@ class BuyerCheckoutService {
     required String shippingVoucherCode,
   }) {
     return <String, dynamic>{
+      if (shippingPolicyVersion != null)
+        'shipping_policy_version': shippingPolicyVersion,
       'items': {
         for (final entry in items.entries) entry.key: {'quantity': entry.value},
       },

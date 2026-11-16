@@ -1,6 +1,7 @@
 import 'package:shophop/features/rider/presentation/screens/rider_custody_scanner.dart';
 import 'package:shophop/features/rider/presentation/widgets/rider_contact_actions.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shophop/core/theme/app_colors.dart';
 import 'package:shophop/features/rider/data/services/rider_batch_service.dart';
 import 'package:shophop/shared/realtime/foreground_refresh.dart';
@@ -26,9 +27,28 @@ bool pickupAwaitingBranch(Map<String, dynamic> route) =>
     batchRows(route['items']).any((item) => item['status'] == 'picked_up');
 
 bool pickupCollectionPending(Map<String, dynamic> route) =>
-    batchRows(route['items']).any(
-      (item) => ['pickup_assigned', 'pickup_accepted'].contains(item['status']),
-    );
+    batchRows(route['items']).any((item) => pickupItemPending(item));
+
+bool pickupItemPending(Map<String, dynamic> item) =>
+    item['settled'] != true &&
+    ['assigned', 'pickup_assigned', 'pickup_accepted'].contains(item['status']);
+
+AppBar riderRouteAppBar(String title, {List<Widget>? actions}) => AppBar(
+  leading: const BackButton(color: Colors.white),
+  title: Text(
+    title,
+    style: const TextStyle(
+      fontSize: 17,
+      fontWeight: FontWeight.w600,
+      color: Colors.white,
+    ),
+  ),
+  backgroundColor: AppColors.pink,
+  foregroundColor: Colors.white,
+  surfaceTintColor: Colors.transparent,
+  systemOverlayStyle: SystemUiOverlayStyle.light,
+  actions: actions,
+);
 
 String pickupBranchInstruction(Map<String, dynamic> route) {
   final branch = route['branch']?.toString().trim();
@@ -341,13 +361,8 @@ class _RiderBatchDetailScreenState extends State<RiderBatchDetailScreen> {
         : const {};
     return Scaffold(
       backgroundColor: AppColors.grayBg,
-      appBar: AppBar(
-        title: Text(
-          '${batchLabel(_batch['type'])} route',
-          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
-        ),
-        backgroundColor: AppColors.tealDark,
-        foregroundColor: Colors.white,
+      appBar: riderRouteAppBar(
+        '${batchLabel(_batch['type'])} route',
         actions: [
           IconButton(
             tooltip: 'Refresh route',
@@ -407,7 +422,7 @@ class _RiderBatchDetailScreenState extends State<RiderBatchDetailScreen> {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: Text(
-                      '${_batch['code'] ?? ''}\n${batchWindow(context, _batch)}\n${_batch['branch'] ?? 'Assigned branch'}\n${totals['weight_kg'] ?? 0} kg - ${totals['volume_m3'] ?? 0} m3 - ${totals['minutes'] ?? 0} min',
+                      '${_batch['code'] ?? ''}\n${batchWindow(context, _batch)}\n${_batch['branch'] ?? 'Assigned branch'}\n${items.length} parcels · ${totals['minutes'] ?? 0} min',
                       style: const TextStyle(
                         fontSize: 11,
                         color: AppColors.textMuted,
@@ -431,7 +446,8 @@ class _RiderBatchDetailScreenState extends State<RiderBatchDetailScreen> {
                 child: FilledButton.icon(
                   onPressed: _mutating || _loading
                       ? null
-                      : () => Navigator.pop(context, 'scan'),
+                      : () =>
+                            _collectPickup(items.firstWhere(pickupItemPending)),
                   icon: const Icon(Icons.qr_code_scanner),
                   label: const Text('Scan parcel QR'),
                 ),
@@ -470,6 +486,36 @@ class _RiderBatchDetailScreenState extends State<RiderBatchDetailScreen> {
     );
   }
 
+  Future<void> _collectPickup(Map<String, dynamic> item) async {
+    if (_loading || _mutating || !_active || !pickupItemPending(item)) return;
+    final tracking = '${item['tracking_code'] ?? ''}';
+    if (tracking.isEmpty) return;
+    setState(() => _mutating = true);
+    try {
+      await Navigator.push<void>(
+        context,
+        MaterialPageRoute(
+          builder: (scanContext) => Scaffold(
+            appBar: riderRouteAppBar('Scan pickup parcel'),
+            body: RiderCustodyScanner(
+              token: widget.token,
+              expectedTrackingCode: tracking,
+              expectedAction: 'seller_pickup',
+              onConfirmed: () async {
+                if (scanContext.mounted) Navigator.pop(scanContext);
+              },
+            ),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _mutating = false);
+        await _load();
+      }
+    }
+  }
+
   Future<void> _deliveryAction(Map<String, dynamic> item, String action) async {
     if (_loading || _mutating) return;
     final id = int.tryParse('${item['delivery_id']}');
@@ -505,7 +551,7 @@ class _RiderBatchDetailScreenState extends State<RiderBatchDetailScreen> {
         context,
         MaterialPageRoute(
           builder: (scanContext) => Scaffold(
-            appBar: AppBar(title: const Text('Scan & collect')),
+            appBar: riderRouteAppBar('Scan & collect'),
             body: RiderCustodyScanner(
               token: widget.token,
               expectedTrackingCode: tracking,
@@ -781,17 +827,20 @@ class _RiderBatchDetailScreenState extends State<RiderBatchDetailScreen> {
                     TextButton(
                       onPressed: _loading || _mutating
                           ? null
+                          : _batch['type'] == 'pickup' &&
+                                pickupItemPending(item)
+                          ? () => _collectPickup(item)
                           : () => Navigator.pop(
                               context,
                               'parcel:${item['delivery_id']}',
                             ),
-                      child: const Text('Parcel actions'),
+                      child: Text(
+                        _batch['type'] == 'pickup'
+                            ? 'Scan pickup QR'
+                            : 'Parcel actions',
+                      ),
                     ),
-                    if (_batch['type'] == 'pickup' &&
-                        [
-                          'pickup_assigned',
-                          'pickup_accepted',
-                        ].contains(item['status']))
+                    if (_batch['type'] == 'pickup' && pickupItemPending(item))
                       TextButton(
                         onPressed: _mutating || _loading
                             ? null
@@ -850,11 +899,7 @@ class _RiderBatchHistoryScreenState extends State<RiderBatchHistoryScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: const Text('Route history'),
-      backgroundColor: AppColors.tealDark,
-      foregroundColor: Colors.white,
-    ),
+    appBar: riderRouteAppBar('Route history'),
     body: RefreshIndicator(
       onRefresh: _load,
       child: ListView(

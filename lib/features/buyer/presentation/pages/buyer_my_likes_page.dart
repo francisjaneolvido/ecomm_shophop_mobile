@@ -357,10 +357,10 @@ class _BuyerMyLikesPageState extends State<BuyerMyLikesPage>
             SliverAppBar(
               pinned: true,
               automaticallyImplyLeading: false,
-              backgroundColor: AppColors.pink,
-              foregroundColor: Colors.white,
+              backgroundColor: AppColors.page,
+              foregroundColor: AppColors.navy,
               surfaceTintColor: Colors.transparent,
-              systemOverlayStyle: SystemUiOverlayStyle.light,
+              systemOverlayStyle: SystemUiOverlayStyle.dark,
               toolbarHeight: 64,
               elevation: 0,
               titleSpacing: 14,
@@ -372,8 +372,8 @@ class _BuyerMyLikesPageState extends State<BuyerMyLikesPage>
                 TextButton(
                   onPressed: _products.isEmpty ? null : _manageLikes,
                   style: TextButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    disabledForegroundColor: Colors.white54,
+                    foregroundColor: AppColors.navy,
+                    disabledForegroundColor: AppColors.textMuted,
                   ),
                   child: const Text('Manage'),
                 ),
@@ -381,14 +381,14 @@ class _BuyerMyLikesPageState extends State<BuyerMyLikesPage>
                 IconButton(
                   onPressed: widget.onOpenSearch,
                   tooltip: 'Search',
-                  icon: const Icon(Icons.search_rounded, color: Colors.white),
+                  icon: const Icon(Icons.search_rounded, color: AppColors.navy),
                 ),
                 IconButton(
                   onPressed: widget.onOpenCart,
                   tooltip: 'Cart',
                   icon: const Icon(
                     Icons.shopping_cart_outlined,
-                    color: Colors.white,
+                    color: AppColors.navy,
                   ),
                 ),
                 const SizedBox(width: 6),

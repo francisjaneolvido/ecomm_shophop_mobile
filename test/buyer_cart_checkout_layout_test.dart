@@ -29,6 +29,7 @@ Map<String, dynamic> shop = {
 http.Response response(Map<String, dynamic> data) =>
     http.Response(jsonEncode({'success': true, 'data': data}), 200);
 Map<String, dynamic> preview({int courier = 3, double shipping = 60}) => {
+  'shipping_policy_version': 7,
   'address': {
     'name': 'Test Buyer With A Long Name',
     'phone': '09171234567',
@@ -47,7 +48,8 @@ Map<String, dynamic> preview({int courier = 3, double shipping = 60}) => {
       'selected_shipping_method': 'standard',
       'selected_logistics_partner_id': courier,
       'shipping_quote': {
-        'route_label': 'Same municipality / local route',
+        'route_label':
+            'Same province / inter-branch route · Estimated area distance 45.91 km',
         'weight_kg': 0.05,
         'base_fee': 40,
         'distance_fee': 20,
@@ -402,6 +404,7 @@ void main() {
             placed++;
             expect(body['logistics_partner'], {'2': 4});
             expect(body['payment_method'], 'cod');
+            expect(body['shipping_policy_version'], 7);
             return pending.future;
           }
           courier =

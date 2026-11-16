@@ -42,6 +42,49 @@ class BuyerChatMessage {
       );
 }
 
+class BuyerChatFaq {
+  const BuyerChatFaq({required this.id, required this.question});
+  final String id, question;
+  factory BuyerChatFaq.fromJson(Map<String, dynamic> json) => BuyerChatFaq(
+    id: json['id'].toString(),
+    question: json['question'].toString(),
+  );
+}
+
+class BuyerChatThread {
+  const BuyerChatThread({
+    this.messages = const [],
+    this.faqs = const [],
+    this.automationEnabled = false,
+    this.paused = false,
+  });
+  final List<BuyerChatMessage> messages;
+  final List<BuyerChatFaq> faqs;
+  final bool automationEnabled, paused;
+  factory BuyerChatThread.fromJson(Map<String, dynamic> json) {
+    final assistant = json['assistant'] is Map
+        ? Map<String, dynamic>.from(json['assistant'] as Map)
+        : <String, dynamic>{};
+    return BuyerChatThread(
+      messages: (json['messages'] as List? ?? [])
+          .map(
+            (item) => BuyerChatMessage.fromJson(
+              Map<String, dynamic>.from(item as Map),
+            ),
+          )
+          .toList(),
+      faqs: (assistant['faqs'] as List? ?? [])
+          .map(
+            (item) =>
+                BuyerChatFaq.fromJson(Map<String, dynamic>.from(item as Map)),
+          )
+          .toList(),
+      automationEnabled: assistant['enabled'] == true,
+      paused: assistant['paused'] == true,
+    );
+  }
+}
+
 class BuyerChatException implements Exception {
   const BuyerChatException(this.message, {this.statusCode});
   final String message;
@@ -89,14 +132,29 @@ class BuyerChatService {
     int id, {
     int after = 0,
   }) async {
-    final body = await _request(token, '/$id/messages?after=$after');
-    return (body['messages'] as List)
-        .map(
-          (item) =>
-              BuyerChatMessage.fromJson(Map<String, dynamic>.from(item as Map)),
-        )
-        .toList();
+    return (await thread(token, id, after: after)).messages;
   }
+
+  static Future<BuyerChatThread> thread(
+    String token,
+    int id, {
+    int after = 0,
+  }) async => BuyerChatThread.fromJson(
+    await _request(token, '/$id/messages?after=$after'),
+  );
+
+  static Future<BuyerChatThread> chooseFaq(
+    String token,
+    int id,
+    String faqId, {
+    required String clientMessageId,
+  }) async => BuyerChatThread.fromJson(
+    await _request(
+      token,
+      '/$id/faq',
+      data: {'faq_id': faqId, 'client_message_id': clientMessageId},
+    ),
+  );
 
   static Future<BuyerChatMessage> send(
     String token,

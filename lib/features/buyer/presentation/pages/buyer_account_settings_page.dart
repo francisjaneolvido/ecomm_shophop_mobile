@@ -2,6 +2,8 @@ import 'package:shophop/features/buyer/presentation/widgets/buyer_page_chrome.da
 import 'package:shophop/features/buyer/presentation/widgets/buyer_icon_tile.dart';
 import 'package:shophop/features/buyer/presentation/pages/buyer_messages_page.dart';
 import 'dart:convert';
+import 'package:file_picker/file_picker.dart';
+import 'package:shophop/features/buyer/presentation/widgets/buyer_profile_photo.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -216,7 +218,7 @@ class BuyerAccountSettingsPage extends StatelessWidget {
             'Help Centre',
             onTap: () => Navigator.push(
               context,
-              MaterialPageRoute<void>(builder: (_) => const _BuyerHelpPage()),
+              MaterialPageRoute<void>(builder: (_) => const BuyerHelpPage()),
             ),
           ),
           _row(
@@ -238,8 +240,8 @@ class BuyerAccountSettingsPage extends StatelessWidget {
   );
 }
 
-class _BuyerHelpPage extends StatelessWidget {
-  const _BuyerHelpPage();
+class BuyerHelpPage extends StatelessWidget {
+  const BuyerHelpPage({super.key});
 
   @override
   Widget build(BuildContext context) => BuyerScaffold(
@@ -412,6 +414,41 @@ class _BuyerAccountSecurityPageState extends State<BuyerAccountSecurityPage> {
     }
   }
 
+  Future<void> _uploadAvatar() async {
+    if (_saving) return;
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      final result = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'],
+        withData: true,
+      );
+      if (!mounted || result == null || result.files.isEmpty) return;
+      final profile = await BuyerAccountService.uploadAvatar(
+        widget.token,
+        result.files.single,
+      );
+      if (!mounted) return;
+      // A photo upload must preserve any unsaved text edits.
+      setState(() => _profile = profile);
+      widget.onProfileSaved?.call(profile);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Profile photo updated.')));
+    } on BuyerAccountException catch (error) {
+      await _handleError(error);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = 'Could not open your photo. Please try again.');
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
   Future<void> _pickBirthday() async {
     final now = DateTime.now();
     final last = DateTime(now.year, now.month, now.day - 1);
@@ -524,6 +561,25 @@ class _BuyerAccountSecurityPageState extends State<BuyerAccountSecurityPage> {
                     Text(
                       'Your sign-in email is fixed to your verified account.',
                       style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 24),
+                    Center(
+                      child: BuyerProfilePhoto(
+                        token: widget.token,
+                        url: _profile!.avatarUrl,
+                        size: 80,
+                      ),
+                    ),
+                    Center(
+                      child: TextButton.icon(
+                        onPressed: _saving ? null : _uploadAvatar,
+                        icon: const Icon(Icons.add_a_photo_outlined),
+                        label: const Text('Upload profile photo'),
+                      ),
+                    ),
+                    const Text(
+                      'JPG, PNG or WebP, up to 2 MB. Your photo is shared with ShopHop web.',
+                      textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 24),
                     if (_error != null) ...[

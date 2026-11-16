@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
+import 'package:shophop/features/buyer/presentation/widgets/buyer_card_carousel.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/material.dart';
 import 'package:shophop/core/theme/app_colors.dart';
-import 'package:shophop/core/theme/app_theme.dart';
 import 'package:shophop/features/buyer/data/services/buyer_catalog_service.dart';
 
 part 'buyer_product_grid.dart';
@@ -55,7 +55,7 @@ class BuyerProductCard extends StatelessWidget {
     return Material(
       color: colors.surface,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+        borderRadius: BorderRadius.circular(20),
         side: BorderSide(color: colors.outline),
       ),
       clipBehavior: Clip.antiAlias,
@@ -69,28 +69,7 @@ class BuyerProductCard extends StatelessWidget {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  ColoredBox(
-                    color: colors.surfaceContainerLow,
-                    child: product.image.isEmpty
-                        ? _PhotoUnavailable(category: product.category)
-                        : Image.network(
-                            product.image,
-                            webHtmlElementStrategy:
-                                WebHtmlElementStrategy.fallback,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, _, _) =>
-                                _PhotoUnavailable(category: product.category),
-                            loadingBuilder: (context, child, progress) =>
-                                progress == null
-                                ? child
-                                : Center(
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: colors.primary,
-                                    ),
-                                  ),
-                          ),
-                  ),
+                  BuyerCardCarousel(product: product, onOpen: onTap),
                   if (product.discountPercent > 0 || product.stock <= 5)
                     Positioned(
                       top: 8,
@@ -115,7 +94,7 @@ class BuyerProductCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                  if (hasVideo(product))
+                  if (product.videoUrl.isNotEmpty)
                     Positioned(
                       left: 8,
                       bottom: 8,
@@ -285,17 +264,4 @@ String buyerPrice(double value) {
     if (remaining > 1 && remaining % 3 == 1) formatted.write(',');
   }
   return '\u20b1$formatted.${parts.last}';
-}
-
-class _PhotoUnavailable extends StatelessWidget {
-  const _PhotoUnavailable({required this.category});
-  final String category;
-  @override
-  Widget build(BuildContext context) => Center(
-    child: Icon(
-      Icons.image_outlined,
-      size: 34,
-      color: Theme.of(context).colorScheme.outline,
-    ),
-  );
 }

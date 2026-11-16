@@ -418,6 +418,8 @@ class _BuyerChatPageState extends State<BuyerChatPage> {
   final _draft = TextEditingController();
   final _scroll = ScrollController();
   final Map<int, BuyerChatMessage> _messages = {};
+  BuyerChatThread _assistant = const BuyerChatThread();
+  String? _pendingFaqChoice, _pendingFaqId, _faqFailed;
   int? _chatId;
   int _cursor = 0;
   bool _loading = true, _busy = false, _sending = false, _denied = false;
@@ -474,20 +476,22 @@ class _BuyerChatPageState extends State<BuyerChatPage> {
       // messages, and keep the fetch cursor independent of send responses.
       for (var batch = 0; batch < 5; batch++) {
         final previous = _cursor;
-        final items = await BuyerChatService.messages(
+        final thread = await BuyerChatService.thread(
           widget.token,
           _chatId!,
           after: _cursor,
         );
+        final items = thread.messages;
         if (!mounted) return;
         setState(() {
+          _assistant = thread;
           for (final message in items) {
             _messages[message.id] = message;
             if (message.id > _cursor) _cursor = message.id;
           }
           _denied = false;
           // Keep a failed-send warning until the user retries sending.
-          if (!_sendFailed) _error = null;
+          if (!_sendFailed && _faqFailed == null) _error = null;
         });
         if (items.length < 100 || previous == _cursor) break;
       }
@@ -502,6 +506,43 @@ class _BuyerChatPageState extends State<BuyerChatPage> {
 
   bool _sendFailed = false;
   String? _pendingBody, _pendingId;
+
+  Future<void> _chooseFaq(String choice) async {
+    if (_sending || _busy || _chatId == null || _denied) return;
+    if (_pendingFaqChoice != choice || _pendingFaqId == null) {
+      _pendingFaqChoice = choice;
+      _pendingFaqId = BuyerChatService.newMessageId();
+    }
+    setState(() {
+      _sending = true;
+      _error = null;
+      _sendFailed = false;
+      _faqFailed = null;
+    });
+    try {
+      final result = await BuyerChatService.chooseFaq(
+        widget.token,
+        _chatId!,
+        choice,
+        clientMessageId: _pendingFaqId!,
+      );
+      if (!mounted) return;
+      setState(() {
+        for (final message in result.messages) {
+          _messages[message.id] = message;
+        }
+        _assistant = result;
+        _pendingFaqChoice = null;
+        _pendingFaqId = null;
+      });
+      _bottom();
+    } on BuyerChatException catch (error) {
+      _faqFailed = choice;
+      await _handle(error);
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
 
   Future<void> _chooseEmoji() async {
     final emoji = await showModalBottomSheet<String>(
@@ -581,6 +622,7 @@ class _BuyerChatPageState extends State<BuyerChatPage> {
       _sending = true;
       _error = null;
       _sendFailed = false;
+      _faqFailed = null;
     });
     try {
       final message = await BuyerChatService.send(
@@ -664,7 +706,11 @@ class _BuyerChatPageState extends State<BuyerChatPage> {
             if (_error != null)
               _ChatError(
                 message: _error!,
-                onRetry: _sendFailed ? _send : _load,
+                onRetry: _faqFailed != null
+                    ? () => _chooseFaq(_faqFailed!)
+                    : _sendFailed
+                    ? _send
+                    : _load,
               ),
             Expanded(
               child: _loading
@@ -746,6 +792,48 @@ class _BuyerChatPageState extends State<BuyerChatPage> {
                       },
                     ),
             ),
+            if (_assistant.automationEnabled)
+              Container(
+                width: double.infinity,
+                color: AppColors.surface,
+                padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
+                constraints: const BoxConstraints(maxHeight: 130),
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _assistant.paused
+                            ? 'Your seller will reply here.'
+                            : 'Quick questions - answers from this shop',
+                        style: const TextStyle(fontSize: 11),
+                      ),
+                      if (!_assistant.paused)
+                        Wrap(
+                          spacing: 6,
+                          children: [
+                            for (final faq in [
+                              ..._assistant.faqs,
+                              const BuyerChatFaq(
+                                id: 'seller',
+                                question: 'Kausapin si seller',
+                              ),
+                            ])
+                              ActionChip(
+                                label: Text(
+                                  faq.question,
+                                  style: const TextStyle(fontSize: 11),
+                                ),
+                                onPressed: _sending || _busy || _denied
+                                    ? null
+                                    : () => _chooseFaq(faq.id),
+                              ),
+                          ],
+                        ),
+                    ],
+                  ),
+                ),
+              ),
             const Divider(height: 1),
             Container(
               color: AppColors.surface,

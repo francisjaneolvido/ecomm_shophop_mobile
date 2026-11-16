@@ -37,6 +37,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
   String _token = '';
   String _email = '';
   String _displayName = 'Shopper';
+  String? _avatarUrl;
 
   @override
   void initState() {
@@ -113,6 +114,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
         if (email != null && email.isNotEmpty) {
           _email = email;
         }
+        _avatarUrl = result.data['avatar_url']?.toString();
         if (firstName != null && firstName.isNotEmpty) {
           _displayName = [
             firstName,
@@ -170,6 +172,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
   }
 
   Future<void> _openTab(int index) async {
+    if (index == 4) _refreshProfile(_token);
     if (index == _currentIndex) return;
     String? defaultOrderView;
     if (index == 2) {
@@ -369,6 +372,8 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
         onAction: () => _openTab(0),
       ),
       BuyerAccountPage(
+        avatarUrl: _avatarUrl,
+        onAvatarChanged: (url) => setState(() => _avatarUrl = url),
         onDisplayNameChanged: (name) => setState(() => _displayName = name),
         onSessionExpired: _expireSession,
         token: _token,

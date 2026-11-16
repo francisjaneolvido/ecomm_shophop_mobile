@@ -8,8 +8,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shophop/core/theme/app_theme.dart';
+import 'package:shophop/core/theme/app_colors.dart';
 import 'package:shophop/features/rider/data/services/rider_batch_service.dart';
 import 'package:shophop/features/rider/presentation/screens/rider_batch_detail_screen.dart';
+import 'package:shophop/features/rider/presentation/screens/rider_custody_scanner.dart';
 
 http.Response ok(Map<String, dynamic> data) => http.Response(
   jsonEncode({'success': true, 'data': data}),
@@ -42,7 +44,7 @@ Map<String, dynamic> batch({
         'address': 'Real, Calamba',
         'phone': '09123456789',
       },
-      'status': failed ? 'pickup_failed' : 'pickup_assigned',
+      'status': failed ? 'pickup_failed' : 'assigned',
       'settled': failed,
       'cod_amount': 100,
       if (failed) 'reason': 'Seller unavailable',
@@ -53,7 +55,7 @@ Map<String, dynamic> batch({
       'tracking_code': 'SHP-20261108-000102',
       'stop_sequence': 2,
       'stop': {'name': 'Seller Two', 'address': 'Real, Calamba'},
-      'status': 'pickup_assigned',
+      'status': 'assigned',
       'settled': false,
       'cod_amount': null,
     },
@@ -70,7 +72,7 @@ Future<void> mount(WidgetTester tester, Widget child) async {
 
 void main() {
   testWidgets(
-    'home and Tasks show assigned routes without duplicate parcel task cards',
+    'home shows routes and Tasks exposes every route parcel without duplicates',
     (tester) async {
       FlutterSecureStorage.setMockInitialValues({});
       await AuthSessionService.saveSession(
@@ -84,6 +86,7 @@ void main() {
           await mount(tester, const RiderHomeScreen());
           expect(find.text('Pickup route'), findsOneWidget);
           expect(find.text('Seller Pickup'), findsNothing);
+          expect(find.text('See all 2 active tasks'), findsOneWidget);
           await tester.tap(
             find.descendant(
               of: find.byType(ShopHopNavigation),
@@ -91,8 +94,20 @@ void main() {
             ),
           );
           await tester.pumpAndSettle();
-          expect(find.text('Pickup route'), findsOneWidget);
-          expect(find.text('Seller Pickup'), findsNothing);
+          expect(find.text('Pickup route'), findsNothing);
+          expect(find.text('SHP-20261108-000101'), findsOneWidget);
+          await tester.scrollUntilVisible(
+            find.text('SHP-20261108-000102'),
+            150,
+            scrollable: find.byType(Scrollable).first,
+          );
+          expect(find.text('SHP-20261108-000102'), findsOneWidget);
+          await tester.enterText(
+            find.byKey(const ValueKey('rider-task-search')),
+            'no-such-parcel',
+          );
+          await tester.pumpAndSettle();
+          expect(find.text('No matching tasks'), findsOneWidget);
           expect(tester.takeException(), isNull);
           await tester.pumpWidget(const SizedBox.shrink());
         },
@@ -139,6 +154,43 @@ void main() {
           return ok({});
         }),
       );
+    },
+  );
+
+  testWidgets(
+    'canonical assigned pickup has a visible pink route header and QR action',
+    (tester) async {
+      await http.runWithClient(() async {
+        await mount(
+          tester,
+          RiderBatchDetailScreen(token: 'test', initial: batch()),
+        );
+        expect(
+          tester.widget<AppBar>(find.byType(AppBar)).backgroundColor,
+          AppColors.pink,
+        );
+        expect(find.byType(BackButton), findsOneWidget);
+        expect(find.text('Scan parcel QR'), findsWidgets);
+        await tester.scrollUntilVisible(
+          find.text('Could not collect').first,
+          150,
+          scrollable: find.byType(Scrollable).first,
+        );
+        expect(find.text('Could not collect'), findsWidgets);
+        await tester.tap(find.text('Scan parcel QR'));
+        await tester.pumpAndSettle();
+        expect(find.text('Scan pickup parcel'), findsOneWidget);
+        final scanner = tester.widget<RiderCustodyScanner>(
+          find.byType(RiderCustodyScanner),
+        );
+        expect(scanner.expectedTrackingCode, 'SHP-20261108-000101');
+        expect(scanner.expectedAction, 'seller_pickup');
+        await tester.tap(find.byType(BackButton));
+        await tester.pumpAndSettle();
+        expect(find.text('Pickup route'), findsWidgets);
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox.shrink());
+      }, () => MockClient((_) async => ok({'batch': batch()})));
     },
   );
 

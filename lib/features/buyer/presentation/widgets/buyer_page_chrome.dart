@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shophop/core/theme/app_colors.dart';
 
-/// Buyer pages use the same pink header and cream surfaces as the Rider app.
+/// Buyer pages use the same cream header, rounded surfaces and pink accents as the Rider app.
 class BuyerScaffold extends StatelessWidget {
   const BuyerScaffold({
     super.key,
@@ -20,7 +20,7 @@ class BuyerScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final base = Theme.of(context);
     final shape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(6),
+      borderRadius: BorderRadius.circular(14),
     );
     return Theme(
       data: base.copyWith(
@@ -58,7 +58,7 @@ class BuyerScaffold extends StatelessWidget {
         ),
         inputDecorationTheme: base.inputDecorationTheme.copyWith(
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(14),
             borderSide: const BorderSide(color: AppColors.pink, width: 1.7),
           ),
         ),
@@ -91,40 +91,40 @@ class BuyerAppBar extends AppBar {
              : IconButtonTheme(
                  data: IconButtonThemeData(
                    style: IconButton.styleFrom(
-                     foregroundColor: Colors.white,
-                     disabledForegroundColor: Colors.white54,
+                     foregroundColor: AppColors.navy,
+                     disabledForegroundColor: AppColors.textMuted,
                    ),
                  ),
                  child: leading,
                ),
-         backgroundColor: AppColors.pink,
-         foregroundColor: Colors.white,
+         backgroundColor: AppColors.page,
+         foregroundColor: AppColors.navy,
          surfaceTintColor: Colors.transparent,
          elevation: 0,
          scrolledUnderElevation: 0,
-         systemOverlayStyle: SystemUiOverlayStyle.light,
+         systemOverlayStyle: SystemUiOverlayStyle.dark,
          titleTextStyle: const TextStyle(
            fontFamily: 'Poppins',
            fontSize: 18,
            fontWeight: FontWeight.w600,
-           color: Colors.white,
+           color: AppColors.navy,
          ),
-         iconTheme: const IconThemeData(color: Colors.white, size: 22),
-         actionsIconTheme: const IconThemeData(color: Colors.white, size: 22),
+         iconTheme: const IconThemeData(color: AppColors.navy, size: 22),
+         actionsIconTheme: const IconThemeData(color: AppColors.navy, size: 22),
          actions: actions
              ?.map(
                (child) => TextButtonTheme(
                  data: TextButtonThemeData(
                    style: TextButton.styleFrom(
-                     foregroundColor: Colors.white,
-                     disabledForegroundColor: Colors.white54,
+                     foregroundColor: AppColors.navy,
+                     disabledForegroundColor: AppColors.textMuted,
                    ),
                  ),
                  child: IconButtonTheme(
                    data: IconButtonThemeData(
                      style: IconButton.styleFrom(
-                       foregroundColor: Colors.white,
-                       disabledForegroundColor: Colors.white54,
+                       foregroundColor: AppColors.navy,
+                       disabledForegroundColor: AppColors.textMuted,
                      ),
                    ),
                    child: child,
@@ -147,10 +147,10 @@ class BuyerPageHeading extends StatelessWidget {
         width: 38,
         height: 38,
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: .18),
+          color: AppColors.pinkSoft,
           borderRadius: BorderRadius.circular(11),
         ),
-        child: Icon(icon, size: 21, color: Colors.white),
+        child: Icon(icon, size: 21, color: AppColors.navy),
       ),
       const SizedBox(width: 10),
       Expanded(
@@ -165,7 +165,7 @@ class BuyerPageHeading extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w400,
-                  color: Colors.white,
+                  color: AppColors.navy,
                 ),
               ),
             Text(
@@ -175,7 +175,7 @@ class BuyerPageHeading extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: Colors.white,
+                color: AppColors.navy,
               ),
             ),
           ],

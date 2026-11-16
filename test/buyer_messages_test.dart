@@ -14,6 +14,119 @@ http.Response reply(Map<String, dynamic> body, [int status = 200]) =>
     );
 
 void main() {
+  testWidgets('FAQ buttons show saved answers and retry with the same message ID', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    var attempts = 0;
+    String? clientId;
+    const assistant = {
+      'enabled': true,
+      'paused': false,
+      'faqs': [
+        {'id': 'faq-1', 'question': 'Shipping options?'},
+      ],
+    };
+    await http.runWithClient(
+      () async {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: AppTheme.light,
+            home: const BuyerChatPage(token: 'test', chatId: 4, name: 'Shop'),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Shipping options?'), findsOneWidget);
+        expect(find.text('Kausapin si seller'), findsOneWidget);
+        await tester.enterText(find.byType(TextField), 'Keep my draft');
+        await tester.tap(find.text('Shipping options?'));
+        await tester.pumpAndSettle();
+        expect(find.textContaining('Unable to connect'), findsOneWidget);
+        await tester.tap(find.text('Retry'));
+        await tester.pumpAndSettle();
+        expect(attempts, 2);
+        expect(
+          find.text(
+            'Shop Assistant - Automated reply\nSeller-configured shipping answer.',
+          ),
+          findsOneWidget,
+        );
+        expect(
+          tester.widget<TextField>(find.byType(TextField)).controller!.text,
+          'Keep my draft',
+        );
+        await tester.pumpWidget(const SizedBox());
+        expect(tester.takeException(), isNull);
+      },
+      () => MockClient((request) async {
+        if (request.method == 'GET')
+          return reply({'ok': true, 'messages': [], 'assistant': assistant});
+        expect(request.url.path.endsWith('/4/faq'), isTrue);
+        final data = jsonDecode(request.body);
+        expect(data['faq_id'], 'faq-1');
+        clientId ??= data['client_message_id'] as String;
+        expect(data['client_message_id'], clientId);
+        if (++attempts == 1) throw http.ClientException('offline');
+        return reply({
+          'ok': true,
+          'assistant': assistant,
+          'messages': [
+            {
+              'id': 1,
+              'body': 'Shipping options?',
+              'mine': true,
+              'time': '1:00 PM',
+            },
+            {
+              'id': 2,
+              'body':
+                  'Shop Assistant - Automated reply\nSeller-configured shipping answer.',
+              'mine': false,
+              'time': '1:00 PM',
+            },
+          ],
+        });
+      }),
+    );
+  });
+
+  testWidgets('Seller handoff hides FAQ buttons while keeping the composer', (
+    tester,
+  ) async {
+    await http.runWithClient(
+      () async {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: AppTheme.light,
+            home: const BuyerChatPage(token: 'test', chatId: 4, name: 'Shop'),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Kausapin si seller'));
+        await tester.pumpAndSettle();
+        expect(find.text('Your seller will reply here.'), findsOneWidget);
+        expect(find.byType(ActionChip), findsNothing);
+        expect(find.byType(TextField), findsOneWidget);
+        await tester.pumpWidget(const SizedBox());
+        expect(tester.takeException(), isNull);
+      },
+      () => MockClient(
+        (request) async => reply({
+          'ok': true,
+          'messages': [],
+          'assistant': {
+            'enabled': true,
+            'paused': request.method == 'POST',
+            'faqs': [],
+          },
+        }),
+      ),
+    );
+  });
+
   testWidgets(
     'Chats searches shops and filters unread conversations on a small phone',
     (tester) async {

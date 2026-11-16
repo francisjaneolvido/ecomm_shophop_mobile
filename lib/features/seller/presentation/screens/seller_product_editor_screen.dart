@@ -200,9 +200,10 @@ class _SellerProductEditorScreenState extends State<SellerProductEditorScreen> {
           return;
         }
         if (extension == 'mp4') {
-          if (file.size > 30 * 1024 * 1024 || videoSeen) {
+          if (file.size > SellerWorkspaceService.maxProductVideoBytes ||
+              videoSeen) {
             setState(
-              () => _error = 'Only one MP4 video up to 30 MB can be selected.',
+              () => _error = 'Only one MP4 video up to 25 MB can be selected.',
             );
             return;
           }
@@ -458,7 +459,7 @@ class _SellerProductEditorScreenState extends State<SellerProductEditorScreen> {
                     ),
                     const SizedBox(height: 6),
                     const Text(
-                      'Up to 8 photos (5 MB each) and one video (30 MB).',
+                      'Up to 8 photos (5 MB each) and one MP4 video (25 MB).',
                       style: TextStyle(fontSize: 11, color: Color(0xFF6B6B7B)),
                     ),
                     const SizedBox(height: 12),

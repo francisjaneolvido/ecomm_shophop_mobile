@@ -37,9 +37,11 @@ void main() {
           ),
         ),
       );
+      await tester.pumpAndSettle();
       for (final group in ['to-ship', 'to-receive', 'to-rate', 'completed']) {
         final target = find.byKey(ValueKey('account-$group'));
         await tester.ensureVisible(target);
+        await tester.pumpAndSettle();
         await tester.tap(target);
         await tester.pump();
       }

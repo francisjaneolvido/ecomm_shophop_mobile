@@ -304,7 +304,7 @@ class _BuyerOrdersPageState extends State<BuyerOrdersPage> {
   Widget _purchaseShortcuts() => Container(
     decoration: BoxDecoration(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(22),
       border: Border.all(color: AppColors.border),
     ),
     padding: const EdgeInsets.fromLTRB(12, 6, 12, 14),
@@ -526,7 +526,7 @@ class _BuyerOrdersPageState extends State<BuyerOrdersPage> {
       color: Colors.white,
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(22),
         side: const BorderSide(color: AppColors.border),
       ),
       child: Padding(
@@ -845,7 +845,7 @@ class _BuyerOrdersPageState extends State<BuyerOrdersPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ClipRRect(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(22),
           child: SizedBox(
             width: 58,
             height: 58,

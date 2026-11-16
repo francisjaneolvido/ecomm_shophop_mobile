@@ -365,9 +365,9 @@ class _BuyerProductDetailPageState extends State<BuyerProductDetailPage> {
               pinned: true,
               toolbarHeight: 64,
               titleSpacing: 0,
-              backgroundColor: AppColors.pink,
-              foregroundColor: Colors.white,
-              systemOverlayStyle: SystemUiOverlayStyle.light,
+              backgroundColor: AppColors.page,
+              foregroundColor: AppColors.navy,
+              systemOverlayStyle: SystemUiOverlayStyle.dark,
               surfaceTintColor: Colors.transparent,
               scrolledUnderElevation: 0,
               leading: _GalleryAction(
@@ -816,8 +816,8 @@ class _GalleryAction extends StatelessWidget {
     tooltip: label,
     onPressed: onTap,
     style: IconButton.styleFrom(
-      backgroundColor: Colors.white.withValues(alpha: .18),
-      foregroundColor: Colors.white,
+      backgroundColor: Colors.white,
+      foregroundColor: AppColors.navy,
     ),
     icon: Icon(icon, size: 21),
   );
@@ -852,8 +852,11 @@ class _DetailSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     width: double.infinity,
-    margin: const EdgeInsets.only(bottom: 6),
-    color: Theme.of(context).colorScheme.surface,
+    margin: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+    decoration: BoxDecoration(
+      color: Theme.of(context).colorScheme.surface,
+      borderRadius: BorderRadius.circular(22),
+    ),
     padding: const EdgeInsets.all(16),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,

@@ -366,6 +366,7 @@ class _BuyerCheckoutPageState extends State<BuyerCheckoutPage> {
     setState(() => _placingOrder = true);
     try {
       final result = await BuyerCheckoutService.placeOrder(
+        shippingPolicyVersion: preview.shippingPolicyVersion,
         token: widget.token,
         items: widget.items,
         shippingMethods: {
@@ -738,7 +739,7 @@ class _CheckoutShopCard extends StatelessWidget {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: AppColors.surfaceSoft,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(22),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -771,7 +772,7 @@ class _CheckoutShopCard extends StatelessWidget {
                         onTap: disabled
                             ? null
                             : () => onLogisticsChanged(partner.id),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(22),
                         child: Container(
                           constraints: const BoxConstraints(minHeight: 48),
                           padding: const EdgeInsets.symmetric(
@@ -782,7 +783,7 @@ class _CheckoutShopCard extends StatelessWidget {
                             color: selectedLogisticsPartnerId == partner.id
                                 ? AppColors.pinkSoft
                                 : AppColors.surface,
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(22),
                             border: Border.all(
                               color: selectedLogisticsPartnerId == partner.id
                                   ? AppColors.navy
@@ -916,7 +917,7 @@ class _VoucherCard extends StatelessWidget {
     return _SurfaceCard(
       child: InkWell(
         onTap: enabled ? onTap : null,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(22),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 2),
           child: Row(
@@ -926,7 +927,7 @@ class _VoucherCard extends StatelessWidget {
                 height: 38,
                 decoration: BoxDecoration(
                   color: AppColors.pinkSoft,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(22),
                 ),
                 child: const Icon(
                   Icons.confirmation_number_outlined,
@@ -1229,12 +1230,12 @@ class _VoucherTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(22),
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: selected ? AppColors.tealLight : const Color(0xFFF9FAFB),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(22),
           border: Border.all(
             color: selected ? AppColors.tealDark : AppColors.grayBorder,
           ),
@@ -1246,7 +1247,7 @@ class _VoucherTile extends StatelessWidget {
               height: 38,
               decoration: BoxDecoration(
                 color: selected ? AppColors.tealLight : AppColors.pinkSoft,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(22),
               ),
               child: Icon(
                 Icons.confirmation_number_outlined,
@@ -1345,7 +1346,7 @@ class _SurfaceCard extends StatelessWidget {
     return Material(
       color: AppColors.surface,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(22),
         side: const BorderSide(color: AppColors.border),
       ),
       clipBehavior: Clip.antiAlias,

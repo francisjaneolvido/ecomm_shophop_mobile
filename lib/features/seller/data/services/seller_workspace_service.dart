@@ -3,11 +3,14 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import 'package:file_picker/file_picker.dart';
+import 'package:http_parser/http_parser.dart';
 import 'package:shophop/core/config/api_config.dart';
 import 'package:shophop/features/auth/data/services/auth_service.dart';
 
 class SellerWorkspaceService {
   const SellerWorkspaceService._();
+
+  static const maxProductVideoBytes = 25 * 1024 * 1024;
 
   static Future<AuthApiResult> get(String token, String path) =>
       _send('GET', token, path);
@@ -84,6 +87,25 @@ class SellerWorkspaceService {
     PlatformFile? video,
     bool removeVideo = false,
   }) async {
+    if (video != null) {
+      if (video.size > maxProductVideoBytes ||
+          (video.bytes?.length ?? 0) > maxProductVideoBytes) {
+        return const AuthApiResult(
+          success: false,
+          status: 'validation_error',
+          message: 'The product video must be 25 MB or smaller.',
+        );
+      }
+      if (video.extension?.toLowerCase() != 'mp4' ||
+          video.bytes == null ||
+          video.bytes!.isEmpty) {
+        return const AuthApiResult(
+          success: false,
+          status: 'validation_error',
+          message: 'Could not read the MP4 video. Select it again and retry.',
+        );
+      }
+    }
     final path = productId == null
         ? 'inventory/products'
         : 'inventory/products/$productId';
@@ -103,6 +125,7 @@ class SellerWorkspaceService {
             'video',
             video!.bytes!,
             filename: video.name,
+            contentType: MediaType('video', 'mp4'),
           ),
         );
       }
@@ -117,12 +140,19 @@ class SellerWorkspaceService {
           ),
         );
       }
-      final streamed = await client
-          .send(request)
-          .timeout(const Duration(seconds: 50));
-      return AuthApiResult.fromResponse(
-        await http.Response.fromStream(streamed),
-      );
+      final response = await (() async => http.Response.fromStream(
+        await client.send(request),
+      ))().timeout(const Duration(minutes: 2));
+      if (response.statusCode == 413) {
+        return const AuthApiResult(
+          success: false,
+          status: 'upload_too_large',
+          statusCode: 413,
+          message:
+              'The server could not accept this upload. Use one MP4 up to 25 MB and up to 8 photos (5 MB each). Your draft is kept; try again after checking the server upload limit.',
+        );
+      }
+      return AuthApiResult.fromResponse(response);
     } on TimeoutException {
       return const AuthApiResult(
         success: false,

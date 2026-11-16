@@ -86,7 +86,17 @@ void main() {
       expect(find.byType(IconButton), findsNothing);
       await tester.tap(first);
       expect(opened, 1);
-      await tester.scrollUntilVisible(find.byKey(const ValueKey(23)), 400);
+      await tester.scrollUntilVisible(
+        find.byKey(const ValueKey(23)),
+        400,
+        scrollable: find
+            .byWidgetPredicate(
+              (widget) =>
+                  widget is Scrollable &&
+                  widget.axisDirection == AxisDirection.down,
+            )
+            .first,
+      );
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
     });

@@ -429,6 +429,11 @@ void main() {
           );
           await tab(tester, 'History');
           expect(find.text('TRIP-001'), findsOneWidget);
+          await tab(tester, 'Account');
+          expect(find.text('Driver account'), findsOneWidget);
+          expect(find.text('Linehaul transport'), findsOneWidget);
+          expect(find.text('Trip Earnings'), findsNothing);
+          expect(find.text('Payroll receipts'), findsNothing);
           expect(tester.takeException(), isNull);
           await tester.pumpWidget(const SizedBox());
           await tester.pumpAndSettle();

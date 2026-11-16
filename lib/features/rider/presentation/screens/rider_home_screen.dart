@@ -41,6 +41,7 @@ class _RiderTask {
     required this.priority,
     this.assignment,
     this.raw,
+    this.route,
   });
 
   final String key;
@@ -54,6 +55,7 @@ class _RiderTask {
   final int priority;
   final RiderAssignment? assignment;
   final Map<String, dynamic>? raw;
+  final Map<String, dynamic>? route;
 }
 
 class RiderHomeScreen extends StatefulWidget {
@@ -65,7 +67,6 @@ class RiderHomeScreen extends StatefulWidget {
 
 class _RiderHomeScreenState extends State<RiderHomeScreen> {
   final List<Map<String, dynamic>> _batches = [];
-  final Set<int> _batchedDeliveryIds = {};
   final Set<int> _failedBatchPickupIds = {};
   int _batchPages = 1;
   bool _batchMore = false;
@@ -310,14 +311,6 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
           _batchMore = batchResult.data['next_page'] != null;
         }
         if (assignmentResult.success) {
-          _batchedDeliveryIds
-            ..clear()
-            ..addAll(
-              _rows(rawAssignments)
-                  .where((row) => row['rider_batch_id'] != null)
-                  .map((row) => _id(row['id']))
-                  .whereType<int>(),
-            );
           _failedBatchPickupIds
             ..clear()
             ..addAll(
@@ -657,8 +650,50 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
           nextStep: _nextStep(assignment),
           priority: _assignmentPriority(assignment),
           assignment: assignment,
+          route: _routeForDelivery(assignment.id),
         ),
       );
+    }
+
+    final represented = tasks
+        .map((task) => task.assignment?.id)
+        .whereType<int>()
+        .toSet();
+    for (final route in _batches) {
+      final pickup = route['type'] == 'pickup';
+      for (final item in _rows(route['items'])) {
+        final id = _id(item['delivery_id']);
+        if (id == null || item['settled'] == true || !represented.add(id)) {
+          continue;
+        }
+        final stop = item['stop'] is Map ? item['stop'] as Map : const {};
+        final stopName = '${stop['name'] ?? (pickup ? 'Seller' : 'Buyer')}';
+        final branch = '${route['branch'] ?? 'Assigned branch'}';
+        final queued = route['status'] == 'queued';
+        tasks.add(
+          _RiderTask(
+            key: 'delivery-$id',
+            kind: pickup ? _RiderTaskKind.pickup : _RiderTaskKind.delivery,
+            title: pickup ? 'Seller Pickup' : 'Buyer Delivery',
+            trackingCode: '${item['tracking_code'] ?? 'Parcel #$id'}',
+            status: batchLabel(item['status']),
+            from: pickup ? stopName : branch,
+            to: pickup ? branch : stopName,
+            nextStep: queued
+                ? 'Waiting for Branch dispatch.'
+                : pickup
+                ? (item['status'] == 'picked_up'
+                      ? pickupBranchInstruction(route)
+                      : 'Scan the parcel QR at the seller to collect it.')
+                : item['status'] == 'delivery_assigned'
+                ? 'Scan and collect this parcel from the branch.'
+                : 'Open the route for the delivery action and proof.',
+            priority: queued ? 8 : 3,
+            raw: item,
+            route: route,
+          ),
+        );
+      }
     }
 
     for (final item in _activeReturns) {
@@ -961,12 +996,11 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
     }
     final tasks = _todayTasks;
     final filtered = tasks.where((task) {
-      if (_isBatchTask(task)) return false;
       final query = _taskSearch.trim().toLowerCase();
       final assignment = task.assignment;
       final searchable =
           '${task.trackingCode} ${task.from} ${task.to} '
-          '${assignment?.deliveryAddress ?? ''} ${assignment?.sellerAddress ?? ''}';
+          '${assignment?.deliveryAddress ?? ''} ${assignment?.sellerAddress ?? ''} ${task.raw?['stop'] ?? ''}';
       if (!searchable.toLowerCase().contains(query)) return false;
       if (_taskFilter == 'pickup') return task.kind == _RiderTaskKind.pickup;
       if (_taskFilter == 'delivery') {
@@ -983,7 +1017,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 20),
       children: [
         _taskModeSwitch(),
-        if (_batchesEnabled) ..._batchCards(),
+        if (_error != null) _notice(_error!, Icons.sync_problem_rounded),
         const SizedBox(height: 10),
         TextFormField(
           key: const ValueKey('rider-task-search'),
@@ -1022,25 +1056,36 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
           ),
         ),
         const SizedBox(height: 12),
-        if (filtered.isEmpty && _batches.isEmpty)
+        if (filtered.isEmpty)
           _empty(
             icon: Icons.assignment_turned_in_outlined,
             title: 'No matching tasks',
             text: 'Choose another filter, or pull down to refresh.',
           ),
         for (final task in filtered) _taskCard(task),
+        if (_batchMore)
+          TextButton(
+            onPressed: _requestFuture != null
+                ? null
+                : () {
+                    _batchPages++;
+                    _load(showLoader: false);
+                  },
+            child: const Text('Load more assigned work'),
+          ),
       ],
     );
   }
 
-  bool _isBatchTask(_RiderTask task) =>
-      task.assignment != null &&
-      (_batchedDeliveryIds.contains(task.assignment!.id) ||
-          _batches.any(
-            (batch) => _rows(
-              batch['items'],
-            ).any((item) => _id(item['delivery_id']) == task.assignment!.id),
-          ));
+  Map<String, dynamic>? _routeForDelivery(int id) => _batches
+      .where(
+        (batch) => _rows(batch['items']).any(
+          (item) => _id(item['delivery_id']) == id && item['settled'] != true,
+        ),
+      )
+      .firstOrNull;
+
+  bool _isBatchTask(_RiderTask task) => task.route != null;
 
   List<Widget> _batchCards() {
     final query = _taskSearch.trim().toLowerCase();
@@ -1419,6 +1464,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
   }
 
   Widget _taskCard(_RiderTask task, {bool emphasized = false}) {
+    if (task.route != null) return _routeTaskCard(task);
     final busy = _isTaskBusy(task);
     final color = _taskColor(task.kind);
     return Container(
@@ -1516,6 +1562,60 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
       ),
     );
   }
+
+  Widget _routeTaskCard(_RiderTask task) => Card(
+    key: ValueKey('route-task-${task.trackingCode}'),
+    margin: const EdgeInsets.only(bottom: 12),
+    child: Padding(
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(_taskIcon(task.kind), color: AppColors.pink, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  task.title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+              _statusPill(task.status),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            task.trackingCode,
+            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '${task.from} → ${task.to}',
+            style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+          ),
+          const SizedBox(height: 8),
+          Text(task.nextStep, style: const TextStyle(fontSize: 12)),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => _openBatch(task.route!),
+              icon: const Icon(Icons.route_outlined, size: 18),
+              label: Text(
+                task.kind == _RiderTaskKind.pickup
+                    ? 'Open pickup route'
+                    : 'Open delivery route',
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 
   bool _isTaskBusy(_RiderTask task) {
     if (task.assignment != null) {
